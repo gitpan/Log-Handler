@@ -1,0 +1,51 @@
+Log/Handler.pm 0.30
+
+---
+
+Standard build
+
+perl Makefile.PL
+make
+make install
+
+
+Psychic build
+
+concentrate
+focus your energies
+burst embolism
+be rushed to hospital
+
+
+'True' hackers build
+
+set modem to auto-answer
+dial up phone line from remote location
+using 'true' hacker skills, establish connection to computer using only your voice
+(I can make those modem sounds with my voice, how about you?)
+follow steps from Standard build using voice to execute commands
+
+
+Standard build is recommended by the author.
+
+---
+
+new in 0.30
+
+fixed bug that cause lh_int_error.$$ to always be deleted (oops!)
+added ability to specify cleanup on a per file basis.
+added ability to use user provided objects in place of file names.
+
+---
+
+perldoc Log::Handler for detailed information.
+
+
+Copyright (c) 1998 David Rolsky. All rights reserved.
+This program is free software; you can redistribute it
+and/or modify it under the same terms as Perl itself.
+
+My user directory on CPAN is PGRIMES.
+I can be reached at grimes@waste.org
+I welcome all comments, questions, bug reports, etc.
+but please read the documentation first.
