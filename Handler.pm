@@ -15,7 +15,7 @@ use Carp;
 use strict;
 use vars qw[$VERSION $SENDMAIL $LH_ERROR];
 
-$VERSION = '0.30';
+$VERSION = '0.31';
 
 $LH_ERROR = FileHandle::new FileHandle (">lh_int_error.$$") or carp ("can't create file lh_int_error.$$");
 
@@ -131,8 +131,7 @@ sub DESTROY
 {
     my ($self) = @_;
 
-    exit if ( (not ref ($self->{'leave'}) &&
-	       ($self->{'leave'}) ) );
+    exit if ($self->{'leave'} eq '1');
 
     if ($self->{'log'})
     {
@@ -141,29 +140,42 @@ sub DESTROY
 	    my $name = $self->{'log'}->{$_}->{'name'};
 
 	    next if ($name eq "\0\0");
-	    next if ($self->{'leave'}->{$_});
 
-	    close $self->{'log'}->{$_}->{'fh'};
+	    if (ref ($self->{'leave'}))
+	    {
+		next if ($self->{'leave'}->{$_} eq '1');
+	    }
+
+	    my $temp_fh = $self->{'log'}->{$_}->{'fh'};
+
+	    unless (close $temp_fh)
+	    {
+		carp "unable to close $name\n$!\n";
+		print $LH_ERROR "unable to close $name\n$!\n";
+		next;
+	    }
 
 	    unless (-s $name)
 	    {
-		unless (unlink ($self->{'log'}->{$_}->{'name'}))
+		unless (unlink $name)
 		{
-		    carp "unable to delete $self->{'log'}->{$_}->{'name'}\n$!\n";
-		    print $LH_ERROR "unable to delete $self->{'log'}->{$_}->{'name'}\n$!\n";
+		    carp "unable to delete $name\n$!\n";
+		    print $LH_ERROR "unable to delete $name\n$!\n";
 		}
 	    }
 	}
     }
 
-    close $LH_ERROR;
+    if (ref ($LH_ERROR))
+    {
+	close $LH_ERROR;
+    }
 
     unless (-s "lh_int_error.$$")
     {
 	unlink ("lh_int_error.$$")
 	    || carp "unable to delete lh_int_error.$$\n$!\n";
     }
-
 }
 
 sub lhdie
@@ -662,6 +674,12 @@ I consider it to be an alpha release.  The interface may change
 current interface through any possible future changes.
 
 =head1 HISTORY
+
+0.31
+fixed bugs in DESTROY
+This may be OS dependent.  Please let me know if you
+encounter bugs with the file cleanup.  Make sure to tell me
+what OS you are using.
 
 0.30
 fixed bug that cause lh_int_error.$$ to always be deleted (oops!)

@@ -1,4 +1,4 @@
-Log/Handler.pm 0.30
+Log/Handler.pm 0.31
 
 ---
 
@@ -29,6 +29,10 @@ follow steps from Standard build using voice to execute commands
 Standard build is recommended by the author.
 
 ---
+
+new in 0.31
+bug fixes for DESTROY method.  Problems appear to be OS dependent.
+It's been tested on Linux 2.0.35 & SunOS 5.5.1
 
 new in 0.30
 
