@@ -1,0 +1,338 @@
+NAME
+    Log::Handler - A simple log file handler.
+
+SYNOPSIS
+        use Log::Handler;
+
+        my $log = Log::Handler->new( filename => $logfile, mode => 'append' );
+
+        $log->alert("foo bar") or die $log->errstr;
+
+DESCRIPTION
+    This module is just a simple log file handler. It's possible to define a
+    log level for your programs and control the amount of informations that
+    be logged to the log file. In addition it's possible to define how you
+    wish to open the log file, transient or permanent and if you wish you
+    can activate the handler to check the inode of the log file. This could
+    be very useful if a rotate mechanism moves and zip the log file.
+
+METHODS
+  new()
+    Call "new()" to create a new log file object.
+
+    The "new()" method expected the options for the log file. The only one
+    mandatory option is "filename". All other options be set to a default
+    value.
+
+  errstr()
+    Call "errstr()" if you want to get the last error string. This is useful
+    with the option "die_on_errors". If you set this option to 0 the handler
+    don't execute "die()" on errors.
+
+        $log->info("log information") or die $log->errstr;
+
+    Or
+
+        $error_string = $log->errstr
+           unless $log->info("log informations");
+
+    The error string contains $! in parantheses at the end of the error
+    string.
+
+    The exeption is that "die()" will be executed if the call of "new()"
+    fail.
+
+  CLOSE()
+    Call "CLOSE()" if you want to close the log file.
+
+    This option is only useful if you set option "fileopen" to 1.
+
+  Log levels
+    There a eigth log level methods:
+
+    debug()
+    info()
+    notice(), note()
+    warning()
+    error(), err()
+    critical(), crit()
+    alert()
+    emergency(), emerg()
+
+    "debug()" is the highest and "emergency()" or "emerg()" is the lowest
+    log level. You can define the log level with the options "maxlevel()"
+    and "minlevel()".
+
+    Example:
+
+    If you set the option "maxlevel" to "warning" the levels emergency,
+    alert, critical, error and warning are logged to the log file, because
+    the default "minlevel" is set to "emergency".
+
+    Further example:
+
+    If you set the option "maxlevel" and "minlevel" both to "alert" then
+    only this one level will be logged.
+
+OPTIONS
+  filename
+    The logfile name. This is the only one mandatory option and the script
+    croak if it not set.
+
+  filelock
+    It's maybe desirable to lock the log file by each write operation. You
+    can set the option "filelock" to activate or deactivate the locking.
+
+        0 - no file lock
+        1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each log message
+
+  fileopen
+    Open a log file transient or permanent.
+
+        0 - open and close the logfile by each write operation (default)
+        1 - open the logfile if C<new()> called and try to reopen the
+            file if reopen is set to 1 and the inode of the file has changed
+
+  reopen
+    This option works only if option "fileopen" is set to 1.
+
+        0 - deactivate
+        1 - try to reopen logfile if the inode changed (default)
+
+  mode
+    There are thress possible modes to open a log file.
+
+        append - O_WRONLY | O_APPEND | O_CREAT
+        excl   - O_WRONLY | O_EXCL   | O_CREAT (default)
+        trunc  - O_WRONLY | O_TRUNC  | O_CREAT
+
+    "append" would open the log file in any case and appends the messages at
+    the end of the log file.
+
+    "excl" would fail to open the log file if the log file already exists.
+    If the log file doesn't exist it will be created.
+
+    "trunc" would truncate the complete log file if it exist. Please take
+    care to use this option!
+
+    Take a look to the documentation of "sysopen()" to get more informations
+    and take care to use "append" or "trunc"!
+
+  autoflush
+        0 - autoflush off
+        1 - autoflush on (default)
+
+  permissions
+    "permissions" sets the permission of the file if it creates and must be
+    set as a octal value. These permission values need to be in octal and
+    are modified by your process's current "umask".
+
+    0640 is the default for this option. That means that the owner got write
+    and read permissions and the users in the same group got read
+    permissions. All other users got no access.
+
+    Take a look to the documentation of "sysopen()" to get more
+    informations.
+
+  timeformat
+    You can set with "timeformat" a date and time format that will be
+    coverted by POSIX::strftime(). The default format is "%b %d %H:%M:%S"
+    and looks like
+
+        Feb 01 12:56:31
+
+    As example "%Y/%m/%d %H:%M:%S" would looks like
+
+        2007/02/01 12:56:31
+
+  newline
+    This helpful option appends a newline to the log message if not exist.
+
+        0 - deactivated (default)
+        1 - appends a newline to the log message if not exist
+
+  prefix
+    Set "prefix" to define your own prefix for each message. The default
+    value is "[<--LEVEL-->] ".
+
+    "<--LEVEL-->" is replaced with the current message level. Default
+    example:
+
+        $log->alert("message ...");
+
+    would log
+
+        Feb 01 12:56:31 [ALERT] message ...
+
+    If you set "prefix" to
+
+        prefix => 'foo <--LEVEL--> bar: '
+
+        $log->info("foobar");
+
+    than it would log
+
+        Feb 01 12:56:31 foo INFO bar: foobar
+
+    Take a look to the EXAMPLES to see more.
+
+  maxlevel and minlevel
+    With the options "maxlevel" and "minlevel" you can set the log levels
+    you wish to log to your log file. The log levels are:
+
+        0 - debug
+        1 - info
+        2 - notice, note
+        3 - warning
+        4 - error, err
+        5 - critical, crit
+        6 - alert
+        7 - emergency, emerg
+
+    It's possible to set the log level as a string or as number. The default
+    maxlevel is 0 and the default minlevel is 3.
+
+    Example: If "maxlevel" is set to 4 and "minlevel" to 7 then only
+    emergency (emerg), alert, critical (crit) and error (err) messages will
+    be logged to the logfile.
+
+    You can set both to 8 if you don't want to log any message.
+
+  die_on_errors
+    Set "die_on_errors" to 0 if you don't want that the handler exexute
+    "die()" if some operations fail.
+
+        0 - will not die on errors
+        1 - will die (e.g. croak) on errors
+
+    The exception is that the handler will execute "die()" in any case if
+    the call of "new()" fails!
+
+USED MODULES
+        strict            -  to restrict unsafe constructs
+        warnings          -  to control optional warnings
+        Fcntl             -  for sysopen(), flock() and more
+        IO::Handle        -  to set autoflush on file handle
+        File::stat        -  to get the inode of the log file
+        POSIX             -  to generate the time stamp with strftime()
+        Params::Validate  -  to validate all options
+        Carp              -  to croak() on errors if die_on_errors is active
+
+EXAMPLES
+  Simple example to log all level
+        use Log::Handler;
+
+        my $log = Log::Handler->new(
+           filename => 'file1.log',
+           mode => 'append',
+           newline => 1,
+           maxlevel => 0,
+           minlevel => 7,
+        );
+
+        $log->debug("this is a debug message");
+        $log->info("this is a info message");
+        $log->notice("this is a notice");
+        $log->note("this is a notice as well");
+        $log->warning("this is a warning");
+        $log->error("this is a error message");
+        $log->err("this is a error message as well");
+        $log->critical("this is a critical message");
+        $log->crit("this is a critical message as well");
+        $log->alert("this is a alert message");
+        $log->emergency("this is a emergency message");
+        $log->emerg("this is a emergency message as well");
+
+    Would log this:
+
+        Feb 01 12:56:31 [DEBUG] this is a debug message
+        Feb 01 12:56:31 [INFO] this is a info message
+        Feb 01 12:56:31 [NOTICE] this is a notice
+        Feb 01 12:56:31 [NOTE] this is a notice as well
+        Feb 01 12:56:31 [WARNING] this is a warning
+        Feb 01 12:56:31 [ERROR] this is a error message
+        Feb 01 12:56:31 [ERR] this is a error message as well
+        Feb 01 12:56:31 [CRITICAL] this is a critical message
+        Feb 01 12:56:31 [CRIT] this is a critial message as well
+        Feb 01 12:56:31 [ALERT] this is a alert message
+        Feb 01 12:56:31 [EMERGENCY] this is a emergency message
+        Feb 01 12:56:31 [EMERG] this is a emergency message as well
+
+  Just a notice:
+        use Log::Handler;
+
+        my $log = Log::Handler->new(
+           filename => '/var/run/pid-file1',
+           mode => 'trunc',
+           maxlevel => 2,
+           minlevel => 2,
+           prefix => '',
+           timeformat => ''
+        );
+
+        $log->note("$$");
+
+    Would truncate /var/run/pid-file1 and write just the pid to the logfile.
+
+  Selfmade prefix:
+        use Log::Handler;
+        use Sys::Hostname;
+
+        my $hostname =  hostname;
+        my $pid      =  $$;
+        my $progname =  $0;
+           $progname =~ s@.*[/\\]@@;
+
+        my $log = Log::Handler->new(
+           filename => "${progname}.log",
+           mode => 'append',
+           maxlevel => 1,
+           newline => 1,
+           prefix => "${hostname}[$pid] [<--LEVEL-->] $progname:"
+        );
+
+        $log->info("Hello World!");
+        $log->warning("There is something wrong!");
+
+    Would log:
+
+        Feb 01 12:56:31 hostname[8923] [INFO] progname: Hello world
+        Feb 01 12:56:31 hostname[8923] [WARNING] progname: There is something wrong!
+
+EXPORTS
+    No exports.
+
+REPORT BUGS
+    Please report all bugs to <jschulz.cpan(at)bloonix.de>.
+
+AUTHOR
+    Jonny Schulz <jschulz.cpan(at)bloonix.de>.
+
+COPYRIGHT
+    Copyright (C) 2006 by Jonny Schulz. All rights reserved.
+
+    This program is free software; you can redistribute it and/or modify it
+    under the same terms as Perl itself.
+
+DISCLAIMER OF WARRANTY
+    BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
+    FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
+    OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
+    PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
+    EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
+    ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
+    YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+    NECESSARY SERVICING, REPAIR, OR CORRECTION.
+
+    IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+    WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
+    REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE LIABLE
+    TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL, OR
+    CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE
+    SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
+    RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
+    FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
+    SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
+    DAMAGES.
+

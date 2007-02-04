@@ -1,0 +1,24 @@
+---
+name: Log-Handler
+version: 0.01
+author:
+  - Jonny Schulz
+abstract: A simple log file handler.
+license: perl
+resources:
+  license: http://dev.perl.org/licenses/
+requires:
+  Carp: 0
+  File::Spec: 0
+  File::stat: 0
+  IO::Handle: 0
+  Params::Validate: 0
+  Test::More: 0
+provides:
+  Log::Handler:
+    file: lib/Log/Handler.pm
+    version: 0.01
+generated_by: Module::Build version 0.2806
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
