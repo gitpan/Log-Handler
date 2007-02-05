@@ -74,6 +74,34 @@ METHODS
     If you set the option "maxlevel" and "minlevel" both to "alert" then
     only this one level will be logged.
 
+  would_log_* methods
+    would_log_debug()
+    would_log_info()
+    would_log_notice(), would_log_note()
+    would_log_warning()
+    would_log_error(), would_log_err()
+    would_log_critical(), would_log_crit()
+    would_log_alert()
+    would_log_emergency(), would_log_emerg()
+
+    This eight methods can we very useful if you want to kwow if the current
+    log level would log the message that you generate. All methods returns
+    TRUE if the handler would log the message and FALSE if not. Example:
+
+    You want to dump a big hash with Data::Dumper to the log file, but you
+    don't want to generate the dump in any case, because it costs a lot of
+    ressources.
+
+        $log->debug(Dumper($hash));
+
+    This code would dump the $hash in any case and handoff it to the log
+    object, but this isn't what we really want!
+
+        $log->debug(Dumper($hash))
+           if $log->would_log_debug();
+
+    We dump the $hash only if the current log level would dump it.
+
 OPTIONS
   filename
     The logfile name. This is the only one mandatory option and the script
@@ -299,6 +327,29 @@ EXAMPLES
         Feb 01 12:56:31 hostname[8923] [INFO] progname: Hello world
         Feb 01 12:56:31 hostname[8923] [WARNING] progname: There is something wrong!
 
+  would_log_* example:
+        use Log::Handler;
+        use Data::Dumper;
+
+        my $log = Log::Handler->new(
+           filename => '/var/run/pid-file1',
+           mode => 'trunc',
+           maxlevel => 3,
+           minlevel => 7,
+           prefix => '',
+           timeformat => ''
+        );
+
+        my %hash = (
+            foo => 1,
+            bar => 2,
+        );
+
+        $log->debug("\n".Dumper(\%hash))
+            if $log->would_log_debug();
+
+    Would NOT dump %hash to the $log object!
+
 EXPORTS
     No exports.
 
@@ -309,7 +360,7 @@ AUTHOR
     Jonny Schulz <jschulz.cpan(at)bloonix.de>.
 
 COPYRIGHT
-    Copyright (C) 2006 by Jonny Schulz. All rights reserved.
+    Copyright (C) 2007 by Jonny Schulz. All rights reserved.
 
     This program is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.

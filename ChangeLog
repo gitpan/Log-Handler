@@ -1,2 +1,13 @@
+0.02    Released at 2007-02-05
+        Added eight new methods:
+          would_log_debug()
+          would_log_info()
+          would_log_notice(), would_log_note()
+          would_log_warning()
+          would_log_error(), would_log_err()
+          would_log_critical(), would_log_crit()
+          would_log_alert()
+          would_log_emergency(), would_log_emerg()
+        Changed the POD.
 0.01	Released at 2007-02-04.
 x.xx	Thanks to Larry Wall and all other Perl developer for Perl :-)

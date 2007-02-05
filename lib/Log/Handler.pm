@@ -89,6 +89,45 @@ Further example:
 If you set the option C<maxlevel> and C<minlevel> both to C<alert> then only this
 one level will be logged.
 
+=head2 would_log_* methods
+
+=over 4
+
+=item would_log_debug()
+
+=item would_log_info()
+
+=item would_log_notice(), would_log_note()
+
+=item would_log_warning()
+
+=item would_log_error(), would_log_err()
+
+=item would_log_critical(), would_log_crit()
+
+=item would_log_alert()
+
+=item would_log_emergency(), would_log_emerg()
+
+=back
+
+This eight methods can we very useful if you want to kwow if the current
+log level would log the message that you generate. All methods returns
+TRUE if the handler would log the message and FALSE if not. Example:
+
+You want to dump a big hash with Data::Dumper to the log file, but you don't
+want to generate the dump in any case, because it costs a lot of ressources.
+
+    $log->debug(Dumper($hash));
+
+This code would dump the $hash in any case and handoff it to the log object, 
+but this isn't what we really want!
+
+    $log->debug(Dumper($hash))
+       if $log->would_log_debug();
+
+We dump the $hash only if the current log level would dump it.
+
 =head1 OPTIONS
 
 =head2 filename
@@ -327,6 +366,30 @@ Would log:
     Feb 01 12:56:31 hostname[8923] [INFO] progname: Hello world
     Feb 01 12:56:31 hostname[8923] [WARNING] progname: There is something wrong!
 
+=head2 would_log_* example:
+
+    use Log::Handler;
+    use Data::Dumper;
+
+    my $log = Log::Handler->new(
+       filename => '/var/run/pid-file1',
+       mode => 'trunc',
+       maxlevel => 3,
+       minlevel => 7,
+       prefix => '',
+       timeformat => ''
+    );
+
+    my %hash = (
+        foo => 1,
+        bar => 2,
+    );
+
+    $log->debug("\n".Dumper(\%hash))
+        if $log->would_log_debug();
+
+Would NOT dump %hash to the $log object!
+
 =head1 EXPORTS
 
 No exports.
@@ -341,7 +404,7 @@ Jonny Schulz <jschulz.cpan(at)bloonix.de>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2006 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -373,7 +436,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use strict;
 use warnings;
@@ -398,12 +461,31 @@ use constant EMERGENCY =>  7;
 use constant EMERG     =>  7;
 use constant NOTHING   =>  8;
 
+# the BEGIN block is used to generate the syslog methods
+# and the would_log_* methods to check if the handler would
+# log the current level to the log file
+
 BEGIN {
    for my $level (qw(DEBUG INFO NOTICE NOTE WARNING ERROR ERR CRITICAL CRIT ALERT EMERGENCY EMERG)) {
       my $routine = lc($level);
-      {  no strict 'refs';
-         *{$routine} = sub { my $self = shift; return $self->_print($level, @_); };
-      }  # smaller no strict block isn't possible :)
+      {  # start "no strict" block
+         no strict 'refs';
+
+         # syslog level method
+         *{"$routine"} = sub {
+            my $self = shift;
+            return $self->_print($level, @_);
+         };
+
+         # would log syslog method
+         *{"would_log_$routine"} = sub {
+            my $self = shift;
+            return 1
+               if &{$level} >= $self->{maxlevel}
+               && &{$level} <= $self->{minlevel};
+            return undef;
+         };
+      } # end "no strict" block
    }
 }
 
