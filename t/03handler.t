@@ -22,62 +22,66 @@ my $log = Log::Handler->new(
 
 ok(1, "new");
 
-ok($log->debug("this is a debug message"), "checking debug")
+ok($log->debug("debug"), "checking debug")
    if $log->would_log_debug();
 
-ok($log->info("this is a info message"), "checking info")
+ok($log->info("info"), "checking info")
    if $log->would_log_info();
 
-ok($log->notice("this is a notice"), "checking notice")
+ok($log->notice("notice"), "checking notice")
    if $log->would_log_notice();
 
-ok($log->note("this is a notice as well"), "checking note")
+ok($log->note("note"), "checking note")
    if $log->would_log_note();
 
-ok($log->warning("this is a warning"), "checking warning")
+ok($log->warning("warning"), "checking warning")
    if $log->would_log_warning();
 
-ok($log->error("this is a error message"), "checking error")
+ok($log->error("error"), "checking error")
    if $log->would_log_error();
 
-ok($log->err("this is a error message as well"), "checking err")
+ok($log->err("err"), "checking err")
    if $log->would_log_err();
 
-ok($log->critical("this is a critical message"), "checking critical")
+ok($log->critical("critical"), "checking critical")
    if $log->would_log_critical();
 
-ok($log->crit("this is a critical message as well"), "checking crit")
+ok($log->crit("crit"), "checking crit")
    if $log->would_log_crit();
 
-ok($log->alert("this is a alert message"), "checking alert")
+ok($log->alert("alert"), "checking alert")
    if $log->would_log_alert();
 
-ok($log->emergency("this is a emergency message"), "checking emergency")
+ok($log->emergency("emergency"), "checking emergency")
    if $log->would_log_emergency();
 
-ok($log->emerg("this is a emergency message as well"), "checking emerg")
+ok($log->emerg("emerg"), "checking emerg")
    if $log->would_log_emerg();
 
-my $exidence = qr/^\w\w\w \d\d \d\d:\d\d:\d\d \[DEBUG\] this is a debug message
-\w\w\w \d\d \d\d:\d\d:\d\d \[INFO\] this is a info message
-\w\w\w \d\d \d\d:\d\d:\d\d \[NOTICE\] this is a notice
-\w\w\w \d\d \d\d:\d\d:\d\d \[NOTE\] this is a notice as well
-\w\w\w \d\d \d\d:\d\d:\d\d \[WARNING\] this is a warning
-\w\w\w \d\d \d\d:\d\d:\d\d \[ERROR\] this is a error message
-\w\w\w \d\d \d\d:\d\d:\d\d \[ERR\] this is a error message as well
-\w\w\w \d\d \d\d:\d\d:\d\d \[CRITICAL\] this is a critical message
-\w\w\w \d\d \d\d:\d\d:\d\d \[CRIT\] this is a critical message as well
-\w\w\w \d\d \d\d:\d\d:\d\d \[ALERT\] this is a alert message
-\w\w\w \d\d \d\d:\d\d:\d\d \[EMERGENCY\] this is a emergency message
-\w\w\w \d\d \d\d:\d\d:\d\d \[EMERG\] this is a emergency message as well
-$/;
+my $lines = 0;
 
-open my $fh, '<', $logfile or die $!;
-local $/;
-my $fileout = <$fh>;
-print $fileout;
+open(my $fh, '<', $logfile) or do {
+   ok(0, "open logfile");
+   exit(0);
+};
+
+ok(1, "open logfile");
+
+while (my $line = <$fh>) {
+   chomp($line);
+   next unless $line =~ /^\w\w\w \d\d \d\d:\d\d:\d\d \[([A-Z]+)\] ([a-z]+)$/;
+   my ($x, $y) = ($1, $2);
+   $x = lc($x);
+   next unless $x eq $y;
+   ++$lines;
+}
+
 close $fh;
 
-ok($fileout =~ /$exidence/, "checking logfile");
-unlink($logfile)
-   if -e $logfile;
+if ($lines == 12) {
+   ok(1, "checking logfile $lines");
+} else {
+   ok(0, "checking logfile $lines");
+}
+
+ok(unlink($logfile), "unlink logfile");

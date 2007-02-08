@@ -13,8 +13,8 @@ DESCRIPTION
     log level for your programs and control the amount of informations that
     be logged to the log file. In addition it's possible to define how you
     wish to open the log file, transient or permanent and if you wish you
-    can activate the handler to check the inode of the log file. This could
-    be very useful if a rotate mechanism moves and zip the log file.
+    can assign the handler to check the inode of the log file. This could be
+    very useful if a rotate mechanism moves and zip the log file.
 
 METHODS
   new()
@@ -24,31 +24,8 @@ METHODS
     mandatory option is "filename". All other options be set to a default
     value.
 
-  errstr()
-    Call "errstr()" if you want to get the last error string. This is useful
-    with the option "die_on_errors". If you set this option to 0 the handler
-    don't execute "die()" on errors.
-
-        $log->info("log information") or die $log->errstr;
-
-    Or
-
-        $error_string = $log->errstr
-           unless $log->info("log informations");
-
-    The error string contains $! in parantheses at the end of the error
-    string.
-
-    The exeption is that "die()" will be executed if the call of "new()"
-    fail.
-
-  CLOSE()
-    Call "CLOSE()" if you want to close the log file.
-
-    This option is only useful if you set option "fileopen" to 1.
-
   Log levels
-    There a eigth log level methods:
+    There are eigth log level and twelve methods to handle this levels:
 
     debug()
     info()
@@ -65,14 +42,21 @@ METHODS
 
     Example:
 
-    If you set the option "maxlevel" to "warning" the levels emergency,
-    alert, critical, error and warning are logged to the log file, because
-    the default "minlevel" is set to "emergency".
+    If you set the option "maxlevel" to "warning" and "minlevel" to
+    "emergency" then the levels emergency, alert, critical, error and
+    warning will be logged.
 
-    Further example:
+    The call of all methods is very simple:
 
-    If you set the option "maxlevel" and "minlevel" both to "alert" then
-    only this one level will be logged.
+        $log->info("Hello World! How are you?");
+
+    Or maybe:
+
+        $log->info("Hello World!", "How are you?");
+
+    Both calls would log (provided that the log level INFO would log)
+
+        Feb 01 12:56:31 [INFO] Hello World! How are you?
 
   would_log_* methods
     would_log_debug()
@@ -84,23 +68,61 @@ METHODS
     would_log_alert()
     would_log_emergency(), would_log_emerg()
 
-    This eight methods can we very useful if you want to kwow if the current
-    log level would log the message that you generate. All methods returns
-    TRUE if the handler would log the message and FALSE if not. Example:
+    This twelve methods could be very useful if you want to kwow if the
+    current log level would log the message to the log file. All methods
+    returns TRUE if the handler would log the message and FALSE if not.
+    Example:
 
     You want to dump a big hash with Data::Dumper to the log file, but you
-    don't want to generate the dump in any case, because it costs a lot of
-    ressources.
+    don't want to pass the dump in any case, because it would costs a lot of
+    resources.
 
         $log->debug(Dumper($hash));
 
-    This code would dump the $hash in any case and handoff it to the log
-    object, but this isn't what we really want!
+    This example would dump the $hash in any case and handoff it to the log
+    handler, but this isn't what we really want!
 
         $log->debug(Dumper($hash))
            if $log->would_log_debug();
 
-    We dump the $hash only if the current log level would dump it.
+    Now we dump the $hash only if the current log level would really log it.
+
+  errstr()
+    Call "errstr()" if you want to get the last error string. This is useful
+    with the option "die_on_errors". If you set this option to 0 the handler
+    wouldn't croak on errors. Set "die_on_errors" to control it yourself.
+
+        $log->info("log information") or die $log->errstr;
+
+    Or
+
+        $error_string = $log->errstr
+           unless $log->info("log some informations");
+
+    The error string contains $! in parantheses at the end of the error
+    string.
+
+    The exception is that the handler croaks in any case if the call of
+    "new()" failed because on missing params or on wrong settings!
+
+        my $log = Log::Handler->new(filename => 'file.log', mode => 'foo bar');
+
+    This would croaks, because option "mode" except "append" or "trunc" or
+    "excl".
+
+    If you set the option "fileopen" to 1 to open the log file permanent and
+    the call of "new" failed then you can absorb the error.
+
+        my $log = Log::Handler->new(filename => 'file.log')
+           or warn Log::Handler->errstr;
+
+  CLOSE()
+    Call "CLOSE()" if you want to close the log file.
+
+    This option is only useful if you set option "fileopen" to 1.
+
+    Note the if you close the log file it's necessary to call "new()" to
+    open it again.
 
 OPTIONS
   filename
@@ -227,14 +249,14 @@ OPTIONS
     You can set both to 8 if you don't want to log any message.
 
   die_on_errors
-    Set "die_on_errors" to 0 if you don't want that the handler exexute
-    "die()" if some operations fail.
+    Set "die_on_errors" to 0 if you don't want that the handler croaks if
+    normal operations failed.
 
         0 - will not die on errors
         1 - will die (e.g. croak) on errors
 
-    The exception is that the handler will execute "die()" in any case if
-    the call of "new()" fails!
+    The exception is that the handler croaks in any case if the call of
+    "new()" failed because on missing params or wrong settings.
 
 USED MODULES
         strict            -  to restrict unsafe constructs
@@ -349,6 +371,21 @@ EXAMPLES
             if $log->would_log_debug();
 
     Would NOT dump %hash to the $log object!
+
+  die_on_errors example:
+        use Log::Handler;
+        use Data::Dumper;
+
+        my $log = Log::Handler->new(
+           filename => 'file1.log',
+           mode => 'append',
+           die_on_errors => 0
+        ) or die Log::Handler->errstr();
+
+        if ($log->would_log_debug()) {
+           $log->debug("\n".Dumper(\%hash))
+              or die $log->errstr();
+        }
 
 EXPORTS
     No exports.

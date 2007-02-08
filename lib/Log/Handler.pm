@@ -15,7 +15,7 @@ Log::Handler - A simple log file handler.
 This module is just a simple log file handler. It's possible to define a log level
 for your programs and control the amount of informations that be logged to the log
 file. In addition it's possible to define how you wish to open the log file,
-transient or permanent and if you wish you can activate the handler to check the
+transient or permanent and if you wish you can assign the handler to check the
 inode of the log file. This could be very useful if a rotate mechanism moves
 and zip the log file.
 
@@ -28,32 +28,9 @@ Call C<new()> to create a new log file object.
 The C<new()> method expected the options for the log file. The only one mandatory
 option is C<filename>. All other options be set to a default value.
 
-=head2 errstr()
-
-Call C<errstr()> if you want to get the last error string. This is useful with the
-option C<die_on_errors>. If you set this option to 0 the handler don't execute C<die()>
-on errors.
-
-    $log->info("log information") or die $log->errstr;
-
-Or
-
-    $error_string = $log->errstr
-       unless $log->info("log informations");
-
-The error string contains C<$!> in parantheses at the end of the error string.
-
-The exeption is that C<die()> will be executed if the call of C<new()> fail.
-
-=head2 CLOSE()
-
-Call C<CLOSE()> if you want to close the log file.
-
-This option is only useful if you set option C<fileopen> to 1.
-
 =head2 Log levels
 
-There a eigth log level methods:
+There are eigth log level and twelve methods to handle this levels:
 
 =over 4
 
@@ -80,14 +57,20 @@ You can define the log level with the options C<maxlevel()> and C<minlevel()>.
 
 Example:
 
-If you set the option C<maxlevel> to C<warning> the levels emergency, alert,
-critical, error and warning are logged to the log file, because the default
-C<minlevel> is set to C<emergency>.
+If you set the option C<maxlevel> to C<warning> and C<minlevel> to C<emergency>
+then the levels emergency, alert, critical, error and warning will be logged.
 
-Further example:
+The call of all methods is very simple:
 
-If you set the option C<maxlevel> and C<minlevel> both to C<alert> then only this
-one level will be logged.
+    $log->info("Hello World! How are you?");
+
+Or maybe:
+
+    $log->info("Hello World!", "How are you?");
+
+Both calls would log (provided that the log level INFO would log)
+
+    Feb 01 12:56:31 [INFO] Hello World! How are you?
 
 =head2 would_log_* methods
 
@@ -111,22 +94,59 @@ one level will be logged.
 
 =back
 
-This eight methods can we very useful if you want to kwow if the current
-log level would log the message that you generate. All methods returns
-TRUE if the handler would log the message and FALSE if not. Example:
+This twelve methods could be very useful if you want to kwow if the current log level
+would log the message to the log file. All methods returns TRUE if the handler would
+log the message and FALSE if not. Example:
 
-You want to dump a big hash with Data::Dumper to the log file, but you don't
-want to generate the dump in any case, because it costs a lot of ressources.
+You want to dump a big hash with Data::Dumper to the log file, but you don't want to
+pass the dump in any case, because it would costs a lot of resources.
 
     $log->debug(Dumper($hash));
 
-This code would dump the $hash in any case and handoff it to the log object, 
+This example would dump the $hash in any case and handoff it to the log handler, 
 but this isn't what we really want!
 
     $log->debug(Dumper($hash))
        if $log->would_log_debug();
 
-We dump the $hash only if the current log level would dump it.
+Now we dump the $hash only if the current log level would really log it.
+
+=head2 errstr()
+
+Call C<errstr()> if you want to get the last error string. This is useful with the
+option C<die_on_errors>. If you set this option to 0 the handler wouldn't croak
+on errors. Set C<die_on_errors> to control it yourself.
+
+    $log->info("log information") or die $log->errstr;
+
+Or
+
+    $error_string = $log->errstr
+       unless $log->info("log some informations");
+
+The error string contains C<$!> in parantheses at the end of the error string.
+
+The exception is that the handler croaks in any case if the call of C<new()> failed
+because on missing params or on wrong settings!
+
+    my $log = Log::Handler->new(filename => 'file.log', mode => 'foo bar');
+
+This would croaks, because option C<mode> except C<append> or C<trunc> or C<excl>.
+
+If you set the option C<fileopen> to 1 to open the log file permanent and the call
+of C<new> failed then you can absorb the error.
+
+    my $log = Log::Handler->new(filename => 'file.log')
+       or warn Log::Handler->errstr;
+
+=head2 CLOSE()
+
+Call C<CLOSE()> if you want to close the log file.
+
+This option is only useful if you set option C<fileopen> to 1.
+
+Note the if you close the log file it's necessary to call C<new()> to open it
+again.
 
 =head1 OPTIONS
 
@@ -261,14 +281,14 @@ You can set both to 8 if you don't want to log any message.
 
 =head2 die_on_errors
 
-Set C<die_on_errors> to 0 if you don't want that the handler exexute C<die()>
-if some operations fail.
+Set C<die_on_errors> to 0 if you don't want that the handler croaks if normal
+operations failed.
 
     0 - will not die on errors
     1 - will die (e.g. croak) on errors
 
-The exception is that the handler will execute C<die()> in any case if the call
-of C<new()> fails!
+The exception is that the handler croaks in any case if the call of C<new()> failed
+because on missing params or wrong settings.
 
 =head1 USED MODULES
 
@@ -390,6 +410,22 @@ Would log:
 
 Would NOT dump %hash to the $log object!
 
+=head2 die_on_errors example:
+
+    use Log::Handler;
+    use Data::Dumper;
+
+    my $log = Log::Handler->new(
+       filename => 'file1.log',
+       mode => 'append',
+       die_on_errors => 0
+    ) or die Log::Handler->errstr();
+
+    if ($log->would_log_debug()) {
+       $log->debug("\n".Dumper(\%hash))
+          or die $log->errstr();
+    }
+
 =head1 EXPORTS
 
 No exports.
@@ -436,11 +472,11 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use strict;
 use warnings;
-use Fcntl qw(O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT :flock);
+use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
 use IO::Handle;
 use File::stat;
 use POSIX qw(strftime);
@@ -460,6 +496,9 @@ use constant ALERT     =>  6;
 use constant EMERGENCY =>  7;
 use constant EMERG     =>  7;
 use constant NOTHING   =>  8;
+
+# global place holder for error strings
+$__PACKAGE__::errstr = "";
 
 # the BEGIN block is used to generate the syslog methods
 # and the would_log_* methods to check if the handler would
@@ -560,18 +599,20 @@ sub new {
       $opts{mode} = O_WRONLY | O_TRUNC | O_CREAT,
    }
 
-   {
+   {  # start "no strict" block
       no strict 'refs';
       $opts{minlevel} = &{uc($opts{minlevel})}
          unless $opts{minlevel} =~ /^\d+$/;
       $opts{maxlevel} = &{uc($opts{maxlevel})}
          unless $opts{maxlevel} =~ /^\d+$/;
-   }
+   } # end "no strict" block
 
    $opts{permissions} = oct($opts{permissions});
 
+   # open the log file permanent
    if ($opts{fileopen} == 1) {
-      $self->_open();
+      $self->_open()
+         or return undef;
       $self->_setino()
          if $opts{reopen} == 1;
    }
@@ -590,7 +631,7 @@ sub CLOSE {
    return 1;
 }
 
-sub errstr { return $_[0]->{errstr} }
+sub errstr { return $__PACKAGE__::errstr }
 
 #
 # private stuff
@@ -680,7 +721,7 @@ sub _print {
    my $level = shift;
    my $class = ref($self);
 
-   {  # return if we don't want this log level
+   {  # return if we don't want log this level
       no strict 'refs';
       return 1
          unless &{$level} >= $self->{maxlevel}
@@ -708,16 +749,16 @@ sub _print {
       $message .= ' ';
    }
 
-   if (length($self->{prefix}) > 0) {
-      my $prefix = $self->{prefix};
-      $prefix =~ s/<--LEVEL-->/$level/;
-      $message .= $prefix;
+   if (length($self->{prefix}) > 10) {   # length(<--LEVEL-->) == 11
+      my $prefix = $self->{prefix};      # don't change the orignal
+      $prefix =~ s/<--LEVEL-->/$level/g; # we replace all hits
+      $message .= $prefix;               # adding the prefix
    }
 
    $message .= join(' ', @_)
       if @_;
 
-   $message .= "\n"
+   $message .= "\n" # I hope that this works on the most OSes
       if $self->{newline}
       && $message =~ /.*\z/m;
 
@@ -754,7 +795,7 @@ sub _raise_error {
    my $errstr = shift;
    croak "$class: $errstr"
       if $self->{die_on_errors} == 1;
-   $self->{errstr} = $errstr;
+   $__PACKAGE__::errstr = $errstr;
    return undef;
 }
 
