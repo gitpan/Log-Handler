@@ -145,8 +145,7 @@ Call C<CLOSE()> if you want to close the log file.
 
 This option is only useful if you set option C<fileopen> to 1.
 
-Note the if you close the log file it's necessary to call C<new()> to open it
-again.
+Note that if you close the log file it's necessary to call C<new()> to reopen it.
 
 =head1 OPTIONS
 
@@ -375,7 +374,7 @@ Would truncate /var/run/pid-file1 and write just the pid to the logfile.
        mode => 'append',
        maxlevel => 1,
        newline => 1,
-       prefix => "${hostname}[$pid] [<--LEVEL-->] $progname:"
+       prefix => "${hostname}[$pid] [<--LEVEL-->] $progname: "
     );
 
     $log->info("Hello World!");
@@ -472,7 +471,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use strict;
 use warnings;
@@ -592,11 +591,11 @@ sub new {
    });
 
    if ($opts{mode} eq 'append') {
-      $opts{mode} = O_WRONLY | O_APPEND | O_CREAT,
+      $opts{mode} = O_WRONLY | O_APPEND | O_CREAT;
    } elsif ($opts{mode} eq 'excl') {
-      $opts{mode} = O_WRONLY | O_EXCL | O_CREAT,
+      $opts{mode} = O_WRONLY | O_EXCL | O_CREAT;
    } elsif ($opts{mode} eq 'trunc') {
-      $opts{mode} = O_WRONLY | O_TRUNC | O_CREAT,
+      $opts{mode} = O_WRONLY | O_TRUNC | O_CREAT;
    }
 
    {  # start "no strict" block
@@ -749,16 +748,16 @@ sub _print {
       $message .= ' ';
    }
 
-   if (length($self->{prefix}) > 10) {   # length(<--LEVEL-->) == 11
-      my $prefix = $self->{prefix};      # don't change the orignal
-      $prefix =~ s/<--LEVEL-->/$level/g; # we replace all hits
-      $message .= $prefix;               # adding the prefix
+   if (length($self->{prefix}) > 0) {
+      my $prefix = $self->{prefix};
+      $prefix =~ s/<--LEVEL-->/$level/g;
+      $message .= $prefix;
    }
 
    $message .= join(' ', @_)
       if @_;
 
-   $message .= "\n" # I hope that this works on the most OSes
+   $message .= "\n" # I hope that this works on the most OSs
       if $self->{newline}
       && $message =~ /.*\z/m;
 

@@ -121,8 +121,8 @@ METHODS
 
     This option is only useful if you set option "fileopen" to 1.
 
-    Note the if you close the log file it's necessary to call "new()" to
-    open it again.
+    Note that if you close the log file it's necessary to call "new()" to
+    reopen it.
 
 OPTIONS
   filename
@@ -338,7 +338,7 @@ EXAMPLES
            mode => 'append',
            maxlevel => 1,
            newline => 1,
-           prefix => "${hostname}[$pid] [<--LEVEL-->] $progname:"
+           prefix => "${hostname}[$pid] [<--LEVEL-->] $progname: "
         );
 
         $log->info("Hello World!");
