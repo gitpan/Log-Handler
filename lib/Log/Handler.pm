@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler - A simple log file handler.
+Log::Handler - A simple handler to log messages to log files.
 
 =head1 SYNOPSIS
 
@@ -8,7 +8,7 @@ Log::Handler - A simple log file handler.
 
     my $log = Log::Handler->new( filename => $logfile, mode => 'append' );
 
-    $log->alert("foo bar") or die $log->errstr;
+    $log->alert("foo bar");
 
 =head1 DESCRIPTION
 
@@ -54,6 +54,8 @@ There are eigth log level and twelve methods to handle this levels:
 
 C<debug()> is the highest and C<emergency()> or C<emerg()> is the lowest log level.
 You can define the log level with the options C<maxlevel()> and C<minlevel()>.
+
+The methods C<note()>, C<err()>, C<crit()> and C<emerg()> are just shortcuts.
 
 Example:
 
@@ -110,6 +112,9 @@ but this isn't what we really want!
        if $log->would_log_debug();
 
 Now we dump the $hash only if the current log level would really log it.
+
+The methods C<would_log_note()>, C<would_log_err()>, C<would_log_crit()> and
+C<would_log_emerg()> are just shortcuts.
 
 =head2 errstr()
 
@@ -271,6 +276,8 @@ wish to log to your log file. The log levels are:
     6 - alert
     7 - emergency, emerg
 
+The levels C<note>, C<err>, C<crit> and C<emerg> are just shortcuts.
+
 It's possible to set the log level as a string or as number. The default
 C<maxlevel> is 3 and the default C<minlevel> is 7.
 
@@ -289,17 +296,6 @@ operations failed.
 
 The exception is that the handler croaks in any case if the call of C<new()> failed
 because on missing params or wrong settings.
-
-=head1 REQUIRE
-
-    strict            -  to restrict unsafe constructs
-    warnings          -  to control optional warnings
-    Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
-    IO::Handle        -  to set autoflush on the log file handle
-    File::stat        -  to get the inode from the log file
-    POSIX             -  to generate the time stamp with strftime()
-    Params::Validate  -  to validate all options
-    Carp              -  to croak() on errors if die_on_errors is active
 
 =head1 EXAMPLES
 
@@ -392,10 +388,9 @@ Would log:
     use Data::Dumper;
 
     my $log = Log::Handler->new(
-       filename   => '/var/run/pid-file1',
+       filename   => 'file1.log',
        mode       => 'trunc',
        maxlevel   => 3,
-       minlevel   => 7,
        prefix     => '',
        timeformat => ''
     );
@@ -425,6 +420,17 @@ Would NOT dump %hash to the $log object!
        $log->debug("\n".Dumper(\%hash))
           or die $log->errstr();
     }
+
+=head1 DEPENDENCIES
+
+    strict            -  to restrict unsafe constructs
+    warnings          -  to control optional warnings
+    Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
+    IO::Handle        -  to set autoflush on the log file handle
+    File::stat        -  to get the inode from the log file
+    POSIX             -  to generate the time stamp with strftime()
+    Params::Validate  -  to validate all options
+    Carp              -  to croak() on errors if die_on_errors is active
 
 =head1 EXPORTS
 
@@ -472,7 +478,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 use strict;
 use warnings;
@@ -500,9 +506,13 @@ use constant NOTHING   =>  8;
 # global place holder for error strings
 $__PACKAGE__::errstr = "";
 
-# the BEGIN block is used to generate the syslog methods
-# and the would_log_* methods to check if the handler would
-# log the current level to the log file
+# The BEGIN block is used to generate the syslog methods
+# and the would_log_* methods. The syslog methods calls
+# _print() with the syslog level as first argument. The
+# would_log_*() methods are only used to check if the
+# current set of max- and minlevel would log the message
+# to the log file. The levels NOTE, ERR, CRIT and EMERG
+# are just shortcuts.
 
 BEGIN {
    for my $level (qw(DEBUG INFO NOTICE NOTE WARNING ERROR ERR CRITICAL CRIT ALERT EMERGENCY EMERG)) {

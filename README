@@ -1,12 +1,12 @@
 NAME
-    Log::Handler - A simple log file handler.
+    Log::Handler - A simple handler to log messages to log files.
 
 SYNOPSIS
         use Log::Handler;
 
         my $log = Log::Handler->new( filename => $logfile, mode => 'append' );
 
-        $log->alert("foo bar") or die $log->errstr;
+        $log->alert("foo bar");
 
 DESCRIPTION
     This module is just a simple log file handler. It's possible to define a
@@ -39,6 +39,9 @@ METHODS
     "debug()" is the highest and "emergency()" or "emerg()" is the lowest
     log level. You can define the log level with the options "maxlevel()"
     and "minlevel()".
+
+    The methods "note()", "err()", "crit()" and "emerg()" are just
+    shortcuts.
 
     Example:
 
@@ -86,6 +89,9 @@ METHODS
            if $log->would_log_debug();
 
     Now we dump the $hash only if the current log level would really log it.
+
+    The methods "would_log_note()", "would_log_err()", "would_log_crit()"
+    and "would_log_emerg()" are just shortcuts.
 
   errstr()
     Call "errstr()" if you want to get the last error string. This is useful
@@ -240,6 +246,8 @@ OPTIONS
         6 - alert
         7 - emergency, emerg
 
+    The levels "note", "err", "crit" and "emerg" are just shortcuts.
+
     It's possible to set the log level as a string or as number. The default
     "maxlevel" is 3 and the default "minlevel" is 7.
 
@@ -258,16 +266,6 @@ OPTIONS
 
     The exception is that the handler croaks in any case if the call of
     "new()" failed because on missing params or wrong settings.
-
-REQUIRE
-        strict            -  to restrict unsafe constructs
-        warnings          -  to control optional warnings
-        Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
-        IO::Handle        -  to set autoflush on the log file handle
-        File::stat        -  to get the inode from the log file
-        POSIX             -  to generate the time stamp with strftime()
-        Params::Validate  -  to validate all options
-        Carp              -  to croak() on errors if die_on_errors is active
 
 EXAMPLES
   Simple example to log all level:
@@ -355,10 +353,9 @@ EXAMPLES
         use Data::Dumper;
 
         my $log = Log::Handler->new(
-           filename   => '/var/run/pid-file1',
+           filename   => 'file1.log',
            mode       => 'trunc',
            maxlevel   => 3,
-           minlevel   => 7,
            prefix     => '',
            timeformat => ''
         );
@@ -387,6 +384,16 @@ EXAMPLES
            $log->debug("\n".Dumper(\%hash))
               or die $log->errstr();
         }
+
+DEPENDENCIES
+        strict            -  to restrict unsafe constructs
+        warnings          -  to control optional warnings
+        Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
+        IO::Handle        -  to set autoflush on the log file handle
+        File::stat        -  to get the inode from the log file
+        POSIX             -  to generate the time stamp with strftime()
+        Params::Validate  -  to validate all options
+        Carp              -  to croak() on errors if die_on_errors is active
 
 EXPORTS
     No exports.
