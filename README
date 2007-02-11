@@ -177,21 +177,22 @@ OPTIONS
     set as a octal value. These permission values need to be in octal and
     are modified by your process's current "umask".
 
-    0640 is the default for this option. That means that the owner got write
-    and read permissions and the users in the same group got read
-    permissions. All other users got no access.
+    This means that you have to use the unix style permissions such as
+    "chmod". 0640 is the default permission for this option. That means that
+    the owner got read and write permissions and users in the same group got
+    only read permissions. All other users got no access.
 
     Take a look to the documentation of "sysopen()" to get more
     informations.
 
   timeformat
-    You can set with "timeformat" a date and time format that will be
+    You can set "timeformat" with a date and time format that will be
     coverted by POSIX::strftime(). The default format is "%b %d %H:%M:%S"
     and looks like
 
         Feb 01 12:56:31
 
-    As example "%Y/%m/%d %H:%M:%S" would looks like
+    As example the format "%Y/%m/%d %H:%M:%S" would looks like
 
         2007/02/01 12:56:31
 
@@ -240,7 +241,7 @@ OPTIONS
         7 - emergency, emerg
 
     It's possible to set the log level as a string or as number. The default
-    maxlevel is 0 and the default minlevel is 3.
+    "maxlevel" is 3 and the default "minlevel" is 7.
 
     Example: If "maxlevel" is set to 4 and "minlevel" to 7 then only
     emergency (emerg), alert, critical (crit) and error (err) messages will
@@ -258,26 +259,26 @@ OPTIONS
     The exception is that the handler croaks in any case if the call of
     "new()" failed because on missing params or wrong settings.
 
-USED MODULES
+REQUIRE
         strict            -  to restrict unsafe constructs
         warnings          -  to control optional warnings
-        Fcntl             -  for sysopen(), flock() and more
-        IO::Handle        -  to set autoflush on file handle
-        File::stat        -  to get the inode of the log file
+        Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
+        IO::Handle        -  to set autoflush on the log file handle
+        File::stat        -  to get the inode from the log file
         POSIX             -  to generate the time stamp with strftime()
         Params::Validate  -  to validate all options
         Carp              -  to croak() on errors if die_on_errors is active
 
 EXAMPLES
-  Simple example to log all level
+  Simple example to log all level:
         use Log::Handler;
 
         my $log = Log::Handler->new(
            filename => 'file1.log',
-           mode => 'append',
-           newline => 1,
+           mode     => 'append',
+           newline  => 1,
            maxlevel => 0,
-           minlevel => 7,
+           minlevel => 7
         );
 
         $log->debug("this is a debug message");
@@ -312,11 +313,11 @@ EXAMPLES
         use Log::Handler;
 
         my $log = Log::Handler->new(
-           filename => '/var/run/pid-file1',
-           mode => 'trunc',
-           maxlevel => 2,
-           minlevel => 2,
-           prefix => '',
+           filename   => '/var/run/pid-file1',
+           mode       => 'trunc',
+           maxlevel   => 2,
+           minlevel   => 2,
+           prefix     => '',
            timeformat => ''
         );
 
@@ -335,10 +336,10 @@ EXAMPLES
 
         my $log = Log::Handler->new(
            filename => "${progname}.log",
-           mode => 'append',
+           mode     => 'append',
            maxlevel => 1,
-           newline => 1,
-           prefix => "${hostname}[$pid] [<--LEVEL-->] $progname: "
+           newline  => 1,
+           prefix   => "${hostname}[$pid] [<--LEVEL-->] $progname: "
         );
 
         $log->info("Hello World!");
@@ -354,17 +355,17 @@ EXAMPLES
         use Data::Dumper;
 
         my $log = Log::Handler->new(
-           filename => '/var/run/pid-file1',
-           mode => 'trunc',
-           maxlevel => 3,
-           minlevel => 7,
-           prefix => '',
+           filename   => '/var/run/pid-file1',
+           mode       => 'trunc',
+           maxlevel   => 3,
+           minlevel   => 7,
+           prefix     => '',
            timeformat => ''
         );
 
         my %hash = (
             foo => 1,
-            bar => 2,
+            bar => 2
         );
 
         $log->debug("\n".Dumper(\%hash))
@@ -377,8 +378,8 @@ EXAMPLES
         use Data::Dumper;
 
         my $log = Log::Handler->new(
-           filename => 'file1.log',
-           mode => 'append',
+           filename      => 'file1.log',
+           mode          => 'append',
            die_on_errors => 0
         ) or die Log::Handler->errstr();
 
