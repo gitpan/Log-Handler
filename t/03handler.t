@@ -10,14 +10,14 @@ my $log = Log::Handler->new(
    permissions => '0664',
    mode => 'append',
    autoflush => 1,
-   timeformat => '%b %d %H:%M:%S',
+   timeformat => '',
    maxlevel => 0,
    minlevel => 7,
    fileopen => 1,
    filelock => 1,
    reopen => 1,
    newline => 1,
-   prefix => '[<--LEVEL-->] ',
+   prefix => 'test [<--LEVEL-->] ',
 );
 
 ok(1, "new");
@@ -69,7 +69,7 @@ ok(1, "open logfile");
 
 while (my $line = <$fh>) {
    chomp($line);
-   next unless $line =~ /^\w\w\w \d\d \d\d:\d\d:\d\d \[([A-Z]+)\] ([a-z]+)$/;
+   next unless $line =~ /^test \[([A-Z]+)\] ([a-z]+)$/;
    my ($x, $y) = ($1, $2);
    $x = lc($x);
    next unless $x eq $y;
@@ -79,9 +79,9 @@ while (my $line = <$fh>) {
 close $fh;
 
 if ($lines == 12) {
-   ok(1, "checking logfile $lines");
+   ok(1, "checking logfile ($lines)");
 } else {
-   ok(0, "checking logfile $lines");
+   ok(0, "checking logfile ($lines)");
 }
 
 ok(unlink($logfile), "unlink logfile");

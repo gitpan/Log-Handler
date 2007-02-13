@@ -1,19 +1,21 @@
-0.06    Released at 2007-03-11
+0.07    Released at 2007-03-13.
+        Fixed t/03handler.t.
+0.06    Released at 2007-03-11.
         Fixed a bad typo in SYNOPSIS of POD.
         Changed the description in NAME of POD.
-0.05    Released at 2007-03-11
+0.05    Released at 2007-03-11.
         Fixed some typos in the documentation.
-0.04    Released at 2007-03-09
+0.04    Released at 2007-03-09.
         Fixed code in new(). There was three typos.
-0.03    Released at 2007-03-09
-        Fixed t/03handler.t
+0.03    Released at 2007-03-09.
+        Fixed t/03handler.t.
         Added some points to the documentation.
         Add an example for die_on_errors.
         Add an example to call syslog methods.
         Different code changes.
         Fixed new(). Now it returns undef if open()
           fails.
-0.02    Released at 2007-02-05
+0.02    Released at 2007-02-05.
         Added eight new methods:
           would_log_debug()
           would_log_info()
