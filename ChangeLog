@@ -1,3 +1,9 @@
+0.08    Released at 2007-02-25.
+        Now it's possible to hand off GLOBREF to option filename.
+          There are some options that will be forced automatical:
+          - fileopen => 1
+          - filelock => 0
+          - reopen   => 0
 0.07    Released at 2007-03-13.
         Fixed t/03handler.t.
 0.06    Released at 2007-03-11.

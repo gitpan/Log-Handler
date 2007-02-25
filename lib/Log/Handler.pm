@@ -23,7 +23,7 @@ and zip the log file.
 
 =head2 new()
 
-Call C<new()> to create a new log file object.
+Call C<new()> to create a new log handler object.
 
 The C<new()> method expected the options for the log file. The only one mandatory
 option is C<filename>. All other options be set to a default value.
@@ -148,7 +148,7 @@ of C<new> failed then you can absorb the error.
 
 Call C<CLOSE()> if you want to close the log file.
 
-This option is only useful if you set option C<fileopen> to 1.
+NOTE: this option is only useful if you set option C<fileopen> to 1.
 
 Note that if you close the log file it's necessary to call C<new()> to reopen it.
 
@@ -156,7 +156,24 @@ Note that if you close the log file it's necessary to call C<new()> to reopen it
 
 =head2 filename
 
-The logfile name. This is the only one mandatory option and the script croak if it not set.
+The log file name. This is the only one mandatory option and the script croak if it not set.
+
+You can set a GLOBREF as well
+
+    my $log = Log::Handler->new( filename => \*STDOUT );
+
+Or
+
+    open $fh, '>>', $logfile or die $!;
+    my $log = Log::Handler->new( filename => $fh );
+
+But note that if you set a GLOBREF to C<filename>, then some options will be forced (overwritten);
+
+    fileopen => 1
+    filelock => 0
+    reopen   => 0
+
+You have also to handle the GLOBREF yourself.
 
 =head2 filelock
 
@@ -164,7 +181,7 @@ It's maybe desirable to lock the log file by each write operation. You can set t
 C<filelock> to activate or deactivate the locking.
 
     0 - no file lock
-    1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each log message
+    1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each log message (default)
 
 =head2 fileopen
 
@@ -183,7 +200,7 @@ This option works only if option C<fileopen> is set to 1.
 
 =head2 mode
 
-There are thress possible modes to open a log file.
+There are three possible modes to open a log file.
 
     append - O_WRONLY | O_APPEND | O_CREAT
     excl   - O_WRONLY | O_EXCL   | O_CREAT (default)
@@ -478,7 +495,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use strict;
 use warnings;
@@ -545,7 +562,7 @@ sub new {
 
    %opts = Params::Validate::validate(@_, {
       filename => {
-         type  => Params::Validate::SCALAR,
+         type => Params::Validate::SCALAR | Params::Validate::GLOBREF,
       },
       filelock => {
          type => Params::Validate::BOOLEAN,
@@ -601,14 +618,6 @@ sub new {
       },
    });
 
-   if ($opts{mode} eq 'append') {
-      $opts{mode} = O_WRONLY | O_APPEND | O_CREAT;
-   } elsif ($opts{mode} eq 'excl') {
-      $opts{mode} = O_WRONLY | O_EXCL | O_CREAT;
-   } elsif ($opts{mode} eq 'trunc') {
-      $opts{mode} = O_WRONLY | O_TRUNC | O_CREAT;
-   }
-
    {  # start "no strict" block
       no strict 'refs';
       $opts{minlevel} = &{uc($opts{minlevel})}
@@ -616,6 +625,23 @@ sub new {
       $opts{maxlevel} = &{uc($opts{maxlevel})}
          unless $opts{maxlevel} =~ /^\d+$/;
    } # end "no strict" block
+
+   # if option filename is a GLOB, then we force some options
+   if (ref($opts{filename}) eq 'GLOB') {
+      $opts{fh}       = $opts{filename};
+      $opts{fileopen} = 1;
+      $opts{reopen}   = 0;
+      $opts{filelock} = 0;
+      return $self;
+   }
+
+   if ($opts{mode} eq 'append') {
+      $opts{mode} = O_WRONLY | O_APPEND | O_CREAT;
+   } elsif ($opts{mode} eq 'excl') {
+      $opts{mode} = O_WRONLY | O_EXCL | O_CREAT;
+   } elsif ($opts{mode} eq 'trunc') {
+      $opts{mode} = O_WRONLY | O_TRUNC | O_CREAT;
+   }
 
    $opts{permissions} = oct($opts{permissions});
 
