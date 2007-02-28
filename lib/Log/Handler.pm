@@ -158,7 +158,7 @@ Note that if you close the log file it's necessary to call C<new()> to reopen it
 
 The log file name. This is the only one mandatory option and the script croak if it not set.
 
-You can set a GLOBREF as well
+Also you can set a GLOBREF
 
     my $log = Log::Handler->new( filename => \*STDOUT );
 
@@ -495,7 +495,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.09_01';
+our $VERSION = '0.09_02';
 
 use strict;
 use warnings;
@@ -678,8 +678,9 @@ sub _open {
    my $class = ref($self);
 
    return $self->_raise_error("unable to open logfile $self->{filename} ($!)")
-      unless sysopen($self->{fh}, $self->{filename}, $self->{mode}, $self->{permissions});
+      unless sysopen(my $fh, $self->{filename}, $self->{mode}, $self->{permissions});
 
+   $self->{fh} = $fh;
    $self->{fh}->autoflush($self->{autoflush});
 
    return 1;

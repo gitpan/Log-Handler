@@ -135,7 +135,7 @@ OPTIONS
     The log file name. This is the only one mandatory option and the script
     croak if it not set.
 
-    You can set a GLOBREF as well
+    Also you can set a GLOBREF
 
         my $log = Log::Handler->new( filename => \*STDOUT );
 
