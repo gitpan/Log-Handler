@@ -495,7 +495,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.08';
+our $VERSION = '0.09_01';
 
 use strict;
 use warnings;

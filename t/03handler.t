@@ -1,9 +1,10 @@
 use strict;
 use warnings;
-use Test::More qw(no_plan);
+use Test::More tests => 16;
+use File::Spec;
 use Log::Handler;
 
-my $logfile = './t/Log-Handler-Test-File.log';
+my $logfile = File::Spec->catfile('t', 'Log-Handler-Test-File.log');
 
 my $log = Log::Handler->new(
    filename => $logfile,
@@ -62,7 +63,7 @@ my $lines = 0;
 
 open(my $fh, '<', $logfile) or do {
    ok(0, "open logfile");
-   exit(0);
+   exit(1);
 };
 
 ok(1, "open logfile");
