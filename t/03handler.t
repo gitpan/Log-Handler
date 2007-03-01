@@ -59,6 +59,8 @@ ok($log->emergency("emergency"), "checking emergency")
 ok($log->emerg("emerg"), "checking emerg")
    if $log->would_log_emerg();
 
+$log->CLOSE();
+
 my $lines = 0;
 
 open(my $fh, '<', $logfile) or do {

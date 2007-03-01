@@ -1,7 +1,8 @@
-0.09_01 Released at 2007-02-28.
+0.09    Released at 2007-03-01.
         Fixed t/03handler.t. The test log file was in unix format
           t/Log-Handler-Test-File.log, now it use File::Spec catfile().
-        Testing for Windows...
+        Forget to CLOSE() the log file in t/03handler.t and test fails
+          on Windows.
 0.08    Released at 2007-02-25.
         Now it's possible to hand off GLOBREF to option filename.
           There are some options that will be forced automatical:
