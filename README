@@ -306,7 +306,7 @@ OPTIONS
     emergency (emerg), alert, critical (crit) and error (err) messages will
     be logged to the log file.
 
-    You can set both to 8 if you don't want to log any message.
+    You can set both to 8 or "nothing" if you don't want to log any message.
 
   die_on_errors
     Set "die_on_errors" to 0 if you don't want that the handler croaks if

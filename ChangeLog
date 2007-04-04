@@ -1,3 +1,6 @@
+0.11_02 Released at 2007-04-04
+        Add the alternative to set "nothing" as option for minlevel and
+          maxlevel.
 0.11_01 Released at 2007-04-04
         I changed the log levels because they wasn't in the right order.
           0 debug     is now 7
@@ -13,6 +16,7 @@
           you don't need to change your code, but if you used numbers
           than you must change it! BIG sorry to all users that have to
           re-write code in this case.
+        Thanks to betterworld for his tipps about the log levels! (thx pepe ;-))
 0.10    Released at 2007-04-04
         Add the alternative to set STDOUT and STDERR as a string
           with the option "filename".

@@ -332,7 +332,7 @@ C<maxlevel> is 4 and the default C<minlevel> is 0.
 Example: If C<maxlevel> is set to 4 and C<minlevel> to 0 then only emergency (emerg),
 alert, critical (crit) and error (err) messages will be logged to the log file.
 
-You can set both to 8 if you don't want to log any message.
+You can set both to 8 or "nothing" if you don't want to log any message.
 
 =head2 die_on_errors
 
@@ -526,7 +526,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.11_01';
+our $VERSION = '0.11_02';
 
 use strict;
 use warnings;
@@ -641,12 +641,12 @@ sub new {
       },
       minlevel => {
          type => Params::Validate::SCALAR,
-         regex => qr/^([0-8]|debug|info|notice|note|warning|error|err|critical|crit|alert|emergency|emerg)$/,
+         regex => qr/^([0-8]|nothing|debug|info|notice|note|warning|error|err|critical|crit|alert|emergency|emerg)$/,
          default => 0,
       },
       maxlevel => {
          type => Params::Validate::SCALAR,
-         regex => qr/^([0-8]|debug|info|notice|note|warning|error|err|critical|crit|alert|emergency|emerg)$/,
+         regex => qr/^([0-8]|nothing|debug|info|notice|note|warning|error|err|critical|crit|alert|emergency|emerg)$/,
          default => 4,
       },
       die_on_errors => {
