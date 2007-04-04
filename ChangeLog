@@ -1,3 +1,6 @@
+0.10    Released at 2007-??-??
+        Add the alternative to set STDOUT and STDERR as a string
+          with the option "filename".
 0.09    Released at 2007-03-01.
         Fixed t/03handler.t. The test log file was in unix format
           t/Log-Handler-Test-File.log, now it use File::Spec catfile().

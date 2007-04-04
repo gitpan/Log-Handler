@@ -14,15 +14,16 @@ DESCRIPTION
     be logged to the log file. In addition it's possible to define how you
     wish to open the log file, transient or permanent and if you wish you
     can assign the handler to check the inode of the log file. This could be
-    very useful if a rotate mechanism moves and zip the log file.
+    very useful if a rotate mechanism moves and zip the log file but you
+    shouldn't forget that inodes aren't available on windows.
 
 METHODS
   new()
     Call "new()" to create a new log handler object.
 
     The "new()" method expected the options for the log file. The only one
-    mandatory option is "filename". All other options be set to a default
-    value.
+    mandatory option is "filename". All other options will be set to a
+    default value.
 
   Log levels
     There are eigth log level and twelve methods to handle this levels:
@@ -125,33 +126,47 @@ METHODS
   CLOSE()
     Call "CLOSE()" if you want to close the log file.
 
-    NOTE: this option is only useful if you set option "fileopen" to 1.
+    This option is only useful if you set option "fileopen" to 1. If you
+    don't call "CLOSE()" the log file will be closed automatically before
+    exit().
 
     Note that if you close the log file it's necessary to call "new()" to
     reopen it.
 
 OPTIONS
   filename
-    The log file name. This is the only one mandatory option and the script
-    croak if it not set.
+    This is the only one mandatory option and the script croak if it not
+    set. You have to set a filename, a GLOBREF or you can set a string as an
+    alias for STDOUT and STDERR.
 
-    Also you can set a GLOBREF
+    Set a file name:
 
-        my $log = Log::Handler->new( filename => \*STDOUT );
+        $log = Log::Handler->new( filename => 'file.log'  );
 
-    Or
+    Set a file handle
 
-        open $fh, '>>', $logfile or die $!;
-        my $log = Log::Handler->new( filename => $fh );
+        open my $fh, '>', 'file.log' or die $!;
+        $log = Log::Handler->new( filename => $fh );
 
-    But note that if you set a GLOBREF to "filename", then some options will
-    be forced (overwritten);
+    Set a GLOBREF
+
+        open FH, '>', 'file.log' or die $!;
+        $log = Log::Handler->new( filename => \*FH );
+
+    Set STDOUT or STDERR
+
+        $log = Log::Handler->new( filename => \*STDOUT );
+        $log = Log::Handler->new( filename => \*STDERR );
+        $log = Log::Handler->new( filename => '*STDOUT' );
+        $log = Log::Handler->new( filename => '*STDERR' );
+
+    But note that if you set a GLOBREF to "filename" some options will be
+    forced (overwritten) and you have to control the handles yourself. The
+    forced options are
 
         fileopen => 1
         filelock => 0
         reopen   => 0
-
-    You have also to handle the GLOBREF yourself.
 
   filelock
     It's maybe desirable to lock the log file by each write operation. You

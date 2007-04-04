@@ -17,7 +17,8 @@ for your programs and control the amount of informations that be logged to the l
 file. In addition it's possible to define how you wish to open the log file,
 transient or permanent and if you wish you can assign the handler to check the
 inode of the log file. This could be very useful if a rotate mechanism moves
-and zip the log file.
+and zip the log file but you shouldn't forget that inodes aren't available on
+windows.
 
 =head1 METHODS
 
@@ -26,7 +27,7 @@ and zip the log file.
 Call C<new()> to create a new log handler object.
 
 The C<new()> method expected the options for the log file. The only one mandatory
-option is C<filename>. All other options be set to a default value.
+option is C<filename>. All other options will be set to a default value.
 
 =head2 Log levels
 
@@ -148,7 +149,8 @@ of C<new> failed then you can absorb the error.
 
 Call C<CLOSE()> if you want to close the log file.
 
-NOTE: this option is only useful if you set option C<fileopen> to 1.
+This option is only useful if you set option C<fileopen> to 1. If you don't
+call C<CLOSE()> the log file will be closed automatically before exit().
 
 Note that if you close the log file it's necessary to call C<new()> to reopen it.
 
@@ -156,24 +158,36 @@ Note that if you close the log file it's necessary to call C<new()> to reopen it
 
 =head2 filename
 
-The log file name. This is the only one mandatory option and the script croak if it not set.
+This is the only one mandatory option and the script croak if it not set. You have to
+set a filename, a GLOBREF or you can set a string as an alias for STDOUT and STDERR.
 
-Also you can set a GLOBREF
+Set a file name:
 
-    my $log = Log::Handler->new( filename => \*STDOUT );
+    $log = Log::Handler->new( filename => 'file.log'  );
 
-Or
+Set a file handle
 
-    open $fh, '>>', $logfile or die $!;
-    my $log = Log::Handler->new( filename => $fh );
+    open my $fh, '>', 'file.log' or die $!;
+    $log = Log::Handler->new( filename => $fh );
 
-But note that if you set a GLOBREF to C<filename>, then some options will be forced (overwritten);
+Set a GLOBREF
+
+    open FH, '>', 'file.log' or die $!;
+    $log = Log::Handler->new( filename => \*FH );
+
+Set STDOUT or STDERR
+
+    $log = Log::Handler->new( filename => \*STDOUT );
+    $log = Log::Handler->new( filename => \*STDERR );
+    $log = Log::Handler->new( filename => '*STDOUT' );
+    $log = Log::Handler->new( filename => '*STDERR' );
+
+But note that if you set a GLOBREF to C<filename> some options will be forced (overwritten)
+and you have to control the handles yourself. The forced options are
 
     fileopen => 1
     filelock => 0
     reopen   => 0
-
-You have also to handle the GLOBREF yourself.
 
 =head2 filelock
 
@@ -495,7 +509,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.09';
+our $VERSION = '0.10';
 
 use strict;
 use warnings;
@@ -587,7 +601,7 @@ sub new {
       },
       permissions => {
          type => Params::Validate::SCALAR,
-         regex => qr/^[0-7]{3}([0-7]*)$/,
+         regex => qr/^[0-7]{3,4}$/,
          default => '0640',
       },
       timeformat => {
@@ -627,8 +641,15 @@ sub new {
    } # end "no strict" block
 
    # if option filename is a GLOB, then we force some options
-   if (ref($opts{filename}) eq 'GLOB') {
-      $opts{fh}       = $opts{filename};
+   if (ref($opts{filename}) eq 'GLOB' || $opts{filename} =~ /^\*/) {
+      $opts{fh} = $opts{filename};
+   } elsif ($opts{filename} eq '*STDOUT') {
+      $opts{fh} = \*STDOUT;
+   } elsif ($opts{filename} eq '*STDERR') {
+      $opts{fh} = \*STDERR;
+   }
+
+   if (defined $opts{fh}) {
       $opts{fileopen} = 1;
       $opts{reopen}   = 0;
       $opts{filelock} = 0;
@@ -668,6 +689,13 @@ sub CLOSE {
 }
 
 sub errstr { return $__PACKAGE__::errstr }
+
+sub DESTROY {
+   my $self = shift;
+   return unless $self->{fh};
+   flock($self->{fh}, LOCK_UN);
+   close($self->{fh});
+}
 
 #
 # private stuff
