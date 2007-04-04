@@ -20,6 +20,23 @@ inode of the log file. This could be very useful if a rotate mechanism moves
 and zip the log file but you shouldn't forget that inodes aren't available on
 windows.
 
+=head1 CHANGES
+
+Urgent: the log level numbers changed because they wasn't in the right order.
+
+    8 nothing   is still the same
+    7 emergency is now 0
+    6 alert     is now 1
+    5 crit      is now 2
+    4 error     is now 3
+    3 warning   is now 4
+    2 notice    is now 5
+    1 info      is now 6
+    0 debug     is now 7
+
+If you set C<minlevel> and C<maxlevel> as strings in earlier versions than you don't need
+to change your code, but if you used numbers than you have to change it!
+
 =head1 METHODS
 
 =head2 new()
@@ -298,22 +315,22 @@ Take a look to the EXAMPLES to see more.
 With the options C<maxlevel> and C<minlevel> you can set the log levels you
 wish to log to your log file. The log levels are:
 
-    0 - debug
-    1 - info
-    2 - notice, note
-    3 - warning
-    4 - error, err
-    5 - critical, crit
-    6 - alert
-    7 - emergency, emerg
+    7 - debug
+    6 - info
+    5 - notice, note
+    4 - warning
+    3 - error, err
+    2 - critical, crit
+    1 - alert
+    0 - emergency, emerg
 
 The levels C<note>, C<err>, C<crit> and C<emerg> are just shortcuts.
 
 It's possible to set the log level as a string or as number. The default
-C<maxlevel> is 3 and the default C<minlevel> is 7.
+C<maxlevel> is 4 and the default C<minlevel> is 0.
 
-Example: If C<maxlevel> is set to 4 and C<minlevel> to 7 then only emergency (emerg),
-alert, critical (crit) and error (err) messages will be logged to the logfile.
+Example: If C<maxlevel> is set to 4 and C<minlevel> to 0 then only emergency (emerg),
+alert, critical (crit) and error (err) messages will be logged to the log file.
 
 You can set both to 8 if you don't want to log any message.
 
@@ -338,8 +355,8 @@ because on missing params or wrong settings.
        filename => 'file1.log',
        mode     => 'append',
        newline  => 1,
-       maxlevel => 0,
-       minlevel => 7
+       maxlevel => 7,
+       minlevel => 0
     );
 
     $log->debug("this is a debug message");
@@ -377,8 +394,8 @@ Would log this:
     my $log = Log::Handler->new(
        filename   => '/var/run/pid-file1',
        mode       => 'trunc',
-       maxlevel   => 2,
-       minlevel   => 2,
+       maxlevel   => 5,
+       minlevel   => 5,
        prefix     => '',
        timeformat => ''
     );
@@ -400,7 +417,7 @@ Would truncate /var/run/pid-file1 and write just the pid to the logfile.
     my $log = Log::Handler->new(
        filename => "${progname}.log",
        mode     => 'append',
-       maxlevel => 1,
+       maxlevel => 6,
        newline  => 1,
        prefix   => "${hostname}[$pid] [<--LEVEL-->] $progname: "
     );
@@ -421,7 +438,7 @@ Would log:
     my $log = Log::Handler->new(
        filename   => 'file1.log',
        mode       => 'trunc',
-       maxlevel   => 3,
+       maxlevel   => 4,
        prefix     => '',
        timeformat => ''
     );
@@ -509,7 +526,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.10';
+our $VERSION = '0.11_01';
 
 use strict;
 use warnings;
@@ -520,18 +537,18 @@ use POSIX qw(strftime);
 use Params::Validate;
 use Carp qw(croak);
 
-use constant DEBUG     =>  0;
-use constant INFO      =>  1;
-use constant NOTICE    =>  2;
-use constant NOTE      =>  2;
-use constant WARNING   =>  3;
-use constant ERROR     =>  4;
-use constant ERR       =>  4;
-use constant CRITICAL  =>  5;
-use constant CRIT      =>  5;
-use constant ALERT     =>  6;
-use constant EMERGENCY =>  7;
-use constant EMERG     =>  7;
+use constant EMERGENCY =>  0;
+use constant EMERG     =>  0;
+use constant ALERT     =>  1;
+use constant CRITICAL  =>  2;
+use constant CRIT      =>  2;
+use constant ERROR     =>  3;
+use constant ERR       =>  3;
+use constant WARNING   =>  4;
+use constant NOTICE    =>  5;
+use constant NOTE      =>  5;
+use constant INFO      =>  6;
+use constant DEBUG     =>  7;
 use constant NOTHING   =>  8;
 
 # global place holder for error strings
@@ -561,8 +578,8 @@ BEGIN {
          *{"would_log_$routine"} = sub {
             my $self = shift;
             return 1
-               if &{$level} >= $self->{maxlevel}
-               && &{$level} <= $self->{minlevel};
+               if &{$level} >= $self->{minlevel}
+               && &{$level} <= $self->{maxlevel};
             return undef;
          };
       } # end "no strict" block
@@ -573,21 +590,25 @@ sub new {
    my $class = shift;
    my %opts  = ();
    my $self  = bless \%opts, $class;
+   my $bool  = qr/^[10]$/;
 
    %opts = Params::Validate::validate(@_, {
       filename => {
          type => Params::Validate::SCALAR | Params::Validate::GLOBREF,
       },
       filelock => {
-         type => Params::Validate::BOOLEAN,
+         type => Params::Validate::SCALAR,
+         regex => $bool,
          default => 1,
       },
       fileopen => {
-         type => Params::Validate::BOOLEAN,
+         type => Params::Validate::SCALAR,
+         regex => $bool,
          default => 1,
       },
       reopen => {
-         type  => Params::Validate::BOOLEAN,
+         type  => Params::Validate::SCALAR,
+         regex => $bool,
          default => 1,
       },
       mode => {
@@ -596,7 +617,8 @@ sub new {
          default => 'excl',
       },
       autoflush => {
-         type => Params::Validate::BOOLEAN,
+         type => Params::Validate::SCALAR,
+         regex => $bool,
          default => 1,
       },
       permissions => {
@@ -609,25 +631,27 @@ sub new {
          default => '%b %d %H:%M:%S',
       },
       newline => {
-         type => Params::Validate::BOOLEAN,
+         type => Params::Validate::SCALAR,
+         regex => $bool,
          default => 0,
       },
       prefix => {
          type => Params::Validate::SCALAR,
          default => '[<--LEVEL-->] ',
       },
-      maxlevel => {
-         type => Params::Validate::SCALAR,
-         regex => qr/^([0-8]|debug|info|notice|note|warning|error|err|critical|crit|alert|emergency|emerg)$/,
-         default => 3,
-      },
       minlevel => {
          type => Params::Validate::SCALAR,
          regex => qr/^([0-8]|debug|info|notice|note|warning|error|err|critical|crit|alert|emergency|emerg)$/,
-         default => 7,
+         default => 0,
+      },
+      maxlevel => {
+         type => Params::Validate::SCALAR,
+         regex => qr/^([0-8]|debug|info|notice|note|warning|error|err|critical|crit|alert|emergency|emerg)$/,
+         default => 4,
       },
       die_on_errors => {
-         type => Params::Validate::BOOLEAN,
+         type => Params::Validate::SCALAR,
+         regex => $bool,
          default => 1,
       },
    });
@@ -789,8 +813,8 @@ sub _print {
    {  # return if we don't want log this level
       no strict 'refs';
       return 1
-         unless &{$level} >= $self->{maxlevel}
-             && &{$level} <= $self->{minlevel};
+         unless &{$level} >= $self->{minlevel}
+             && &{$level} <= $self->{maxlevel};
    }
 
    if ($self->{fileopen} == 0) {

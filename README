@@ -17,6 +17,24 @@ DESCRIPTION
     very useful if a rotate mechanism moves and zip the log file but you
     shouldn't forget that inodes aren't available on windows.
 
+CHANGES
+    Urgent: the log level numbers changed because they wasn't in the right
+    order.
+
+        8 nothing   is still the same
+        7 emergency is now 0
+        6 alert     is now 1
+        5 crit      is now 2
+        4 error     is now 3
+        3 warning   is now 4
+        2 notice    is now 5
+        1 info      is now 6
+        0 debug     is now 7
+
+    If you set "minlevel" and "maxlevel" as strings in earlier versions than
+    you don't need to change your code, but if you used numbers than you
+    have to change it!
+
 METHODS
   new()
     Call "new()" to create a new log handler object.
@@ -270,23 +288,23 @@ OPTIONS
     With the options "maxlevel" and "minlevel" you can set the log levels
     you wish to log to your log file. The log levels are:
 
-        0 - debug
-        1 - info
-        2 - notice, note
-        3 - warning
-        4 - error, err
-        5 - critical, crit
-        6 - alert
-        7 - emergency, emerg
+        7 - debug
+        6 - info
+        5 - notice, note
+        4 - warning
+        3 - error, err
+        2 - critical, crit
+        1 - alert
+        0 - emergency, emerg
 
     The levels "note", "err", "crit" and "emerg" are just shortcuts.
 
     It's possible to set the log level as a string or as number. The default
-    "maxlevel" is 3 and the default "minlevel" is 7.
+    "maxlevel" is 4 and the default "minlevel" is 0.
 
-    Example: If "maxlevel" is set to 4 and "minlevel" to 7 then only
+    Example: If "maxlevel" is set to 4 and "minlevel" to 0 then only
     emergency (emerg), alert, critical (crit) and error (err) messages will
-    be logged to the logfile.
+    be logged to the log file.
 
     You can set both to 8 if you don't want to log any message.
 
@@ -308,8 +326,8 @@ EXAMPLES
            filename => 'file1.log',
            mode     => 'append',
            newline  => 1,
-           maxlevel => 0,
-           minlevel => 7
+           maxlevel => 7,
+           minlevel => 0
         );
 
         $log->debug("this is a debug message");
@@ -346,8 +364,8 @@ EXAMPLES
         my $log = Log::Handler->new(
            filename   => '/var/run/pid-file1',
            mode       => 'trunc',
-           maxlevel   => 2,
-           minlevel   => 2,
+           maxlevel   => 5,
+           minlevel   => 5,
            prefix     => '',
            timeformat => ''
         );
@@ -368,7 +386,7 @@ EXAMPLES
         my $log = Log::Handler->new(
            filename => "${progname}.log",
            mode     => 'append',
-           maxlevel => 1,
+           maxlevel => 6,
            newline  => 1,
            prefix   => "${hostname}[$pid] [<--LEVEL-->] $progname: "
         );
@@ -388,7 +406,7 @@ EXAMPLES
         my $log = Log::Handler->new(
            filename   => 'file1.log',
            mode       => 'trunc',
-           maxlevel   => 3,
+           maxlevel   => 4,
            prefix     => '',
            timeformat => ''
         );

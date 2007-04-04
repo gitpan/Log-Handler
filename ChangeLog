@@ -1,4 +1,19 @@
-0.10    Released at 2007-??-??
+0.11_01 Released at 2007-04-04
+        I changed the log levels because they wasn't in the right order.
+          0 debug     is now 7
+          1 info      is now 6
+          2 notice    is now 5
+          3 warning   is now 4
+          4 error     is now 3
+          5 crit      is now 2
+          6 alert     is now 1
+          7 emergency is now 0
+          8 nothing is still the same
+          If you set maxlevel and minlevel as strings in your code than
+          you don't need to change your code, but if you used numbers
+          than you must change it! BIG sorry to all users that have to
+          re-write code in this case.
+0.10    Released at 2007-04-04
         Add the alternative to set STDOUT and STDERR as a string
           with the option "filename".
 0.09    Released at 2007-03-01.
