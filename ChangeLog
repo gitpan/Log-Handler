@@ -1,3 +1,5 @@
+0.11    Released at 2007-04-10
+        Add the methods set_prefix() and get_prefix(). Did some POD changes.
 0.11_02 Released at 2007-04-04
         Add the alternative to set "nothing" as option for minlevel and
           maxlevel.

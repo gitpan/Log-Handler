@@ -20,9 +20,9 @@ inode of the log file. This could be very useful if a rotate mechanism moves
 and zip the log file but you shouldn't forget that inodes aren't available on
 windows.
 
-=head1 CHANGES
+=head1 CHANGES FROM 0.11
 
-Urgent: the log level numbers changed because they wasn't in the right order.
+The log level numbers changed because they wasn't in the right order!
 
     8 nothing   is still the same
     7 emergency is now 0
@@ -46,27 +46,57 @@ Call C<new()> to create a new log handler object.
 The C<new()> method expected the options for the log file. The only one mandatory
 option is C<filename>. All other options will be set to a default value.
 
+=head2 set_prefix()
+
+Call C<set_prefix()> to modifier the option prefix after you called C<new()>.
+
+    my $log = Log::Handler->new(
+       filename => 'file.log',
+       mode => 'append',
+       prefix => "myhost:$$ [<--LEVEL-->] "
+    );
+
+    $log->set_prefix("[<--LEVEL-->] myhost:$$ ");
+
+=head2 get_prefix()
+
+Call C<get_prefix()> to get the current prefix if you just want to modifier the current
+prefix and re-set the old.
+
+    # safe the old prefix
+    my $old_prefix = $log->get_prefix();
+
+    # set a new one for a code part in your script
+    $log->set_prefix("my new prefix");
+
+    # now set the your old prefix again
+    $log->set_prefix($old_prefix);
+
+Or you want to add something to the current prefix:
+
+    $log->set_prefix($log->get_prefix."add something");
+
 =head2 Log levels
 
 There are eigth log level and twelve methods to handle this levels:
 
 =over 4
 
-=item debug()
-
-=item info()
-
-=item notice(), note()
-
-=item warning()
-
-=item error(), err()
-
-=item critical(), crit()
+=item emergency(), emerg()
 
 =item alert()
 
-=item emergency(), emerg()
+=item critical(), crit()
+
+=item error(), err()
+
+=item warning()
+
+=item notice(), note()
+
+=item info()
+
+=item debug()
 
 =back
 
@@ -96,21 +126,21 @@ Both calls would log (provided that the log level INFO would log)
 
 =over 4
 
-=item would_log_debug()
-
-=item would_log_info()
-
-=item would_log_notice(), would_log_note()
-
-=item would_log_warning()
-
-=item would_log_error(), would_log_err()
-
-=item would_log_critical(), would_log_crit()
+=item would_log_emergency(), would_log_emerg()
 
 =item would_log_alert()
 
-=item would_log_emergency(), would_log_emerg()
+=item would_log_critical(), would_log_crit()
+
+=item would_log_error(), would_log_err()
+
+=item would_log_warning()
+
+=item would_log_notice(), would_log_note()
+
+=item would_log_info()
+
+=item would_log_debug()
 
 =back
 
@@ -124,7 +154,7 @@ pass the dump in any case, because it would costs a lot of resources.
     $log->debug(Dumper($hash));
 
 This example would dump the $hash in any case and handoff it to the log handler, 
-but this isn't what we really want!
+but this isn't that what we really want!
 
     $log->debug(Dumper($hash))
        if $log->would_log_debug();
@@ -134,11 +164,14 @@ Now we dump the $hash only if the current log level would really log it.
 The methods C<would_log_note()>, C<would_log_err()>, C<would_log_crit()> and
 C<would_log_emerg()> are just shortcuts.
 
+All methods that would NOT log the message returns TRUE.
+
 =head2 errstr()
 
 Call C<errstr()> if you want to get the last error string. This is useful with the
 option C<die_on_errors>. If you set this option to 0 the handler wouldn't croak
-on errors. Set C<die_on_errors> to control it yourself.
+if simple write operations failed. Set C<die_on_errors> to control it yourself.
+C<errstr()> is only useful with C<new()>, C<CLOSE()> and the log level methods.
 
     $log->info("log information") or die $log->errstr;
 
@@ -156,8 +189,8 @@ because on missing params or on wrong settings!
 
 This would croaks, because option C<mode> except C<append> or C<trunc> or C<excl>.
 
-If you set the option C<fileopen> to 1 to open the log file permanent and the call
-of C<new> failed then you can absorb the error.
+If you set the option C<fileopen> to 1 - the default - to open the log file permanent
+and the call of C<new> failed then you can absorb the error.
 
     my $log = Log::Handler->new(filename => 'file.log')
        or warn Log::Handler->errstr;
@@ -228,6 +261,23 @@ This option works only if option C<fileopen> is set to 1.
 
     0 - deactivate
     1 - try to reopen logfile if the inode changed (default)
+
+=head2 filename and reopen
+
+Please note that it's better to set C<reopen> and C<filename> to 0 on Windows systems
+because Windows unfortunately haven't the faintest idea of inodes.
+
+To write your code independent you should control that:
+
+    my $os_is_win = $^O =~ /win/i ? 0 : 1;
+
+    my $log = Log::Handler->new(
+       filename => 'file.log',
+       mode => 'append',
+       fileopen => $os_is_win
+    );
+
+To set C<filename> to 0 implies that C<reopen> has no importance.
 
 =head2 mode
 
@@ -526,7 +576,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.11_02';
+our $VERSION = '0.11';
 
 use strict;
 use warnings;
@@ -550,9 +600,6 @@ use constant NOTE      =>  5;
 use constant INFO      =>  6;
 use constant DEBUG     =>  7;
 use constant NOTHING   =>  8;
-
-# global place holder for error strings
-$__PACKAGE__::errstr = "";
 
 # The BEGIN block is used to generate the syslog methods
 # and the would_log_* methods. The syslog methods calls
@@ -701,6 +748,16 @@ sub new {
    return $self;
 }
 
+sub get_prefix {
+   my $self = shift;
+   return $self->{prefix};
+}
+
+sub set_prefix {
+   my $self = shift;
+   $self->{prefix} = shift;
+}
+
 sub CLOSE {
    my $self = shift;
 
@@ -712,7 +769,10 @@ sub CLOSE {
    return 1;
 }
 
-sub errstr { return $__PACKAGE__::errstr }
+sub errstr {
+   my $self = shift;
+   return $self->{errstr};
+}
 
 sub DESTROY {
    my $self = shift;
@@ -879,12 +939,11 @@ sub _gettime {
 }
 
 sub _raise_error {
-   my $self   = shift;
-   my $class  = ref($self);
-   my $errstr = shift;
-   croak "$class: $errstr"
+   my $self  = shift;
+   my $class = ref($self);
+   $self->{errstr} = defined $_[0] ? $_[0] : '';
+   croak "$class: $self->{errstr}"
       if $self->{die_on_errors} == 1;
-   $__PACKAGE__::errstr = $errstr;
    return undef;
 }
 

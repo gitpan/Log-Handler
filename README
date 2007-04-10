@@ -17,9 +17,8 @@ DESCRIPTION
     very useful if a rotate mechanism moves and zip the log file but you
     shouldn't forget that inodes aren't available on windows.
 
-CHANGES
-    Urgent: the log level numbers changed because they wasn't in the right
-    order.
+CHANGES FROM 0.11
+    The log level numbers changed because they wasn't in the right order!
 
         8 nothing   is still the same
         7 emergency is now 0
@@ -43,17 +42,46 @@ METHODS
     mandatory option is "filename". All other options will be set to a
     default value.
 
+  set_prefix()
+    Call "set_prefix()" to modifier the option prefix after you called
+    "new()".
+
+        my $log = Log::Handler->new(
+           filename => 'file.log',
+           mode => 'append',
+           prefix => "myhost:$$ [<--LEVEL-->] "
+        );
+
+        $log->set_prefix("[<--LEVEL-->] myhost:$$ ");
+
+  get_prefix()
+    Call "get_prefix()" to get the current prefix if you just want to
+    modifier the current prefix and re-set the old.
+
+        # safe the old prefix
+        my $old_prefix = $log->get_prefix();
+
+        # set a new one for a code part in your script
+        $log->set_prefix("my new prefix");
+
+        # now set the your old prefix again
+        $log->set_prefix($old_prefix);
+
+    Or you want to add something to the current prefix:
+
+        $log->set_prefix($log->get_prefix."add something");
+
   Log levels
     There are eigth log level and twelve methods to handle this levels:
 
-    debug()
-    info()
-    notice(), note()
-    warning()
-    error(), err()
-    critical(), crit()
-    alert()
     emergency(), emerg()
+    alert()
+    critical(), crit()
+    error(), err()
+    warning()
+    notice(), note()
+    info()
+    debug()
 
     "debug()" is the highest and "emergency()" or "emerg()" is the lowest
     log level. You can define the log level with the options "maxlevel()"
@@ -81,14 +109,14 @@ METHODS
         Feb 01 12:56:31 [INFO] Hello World! How are you?
 
   would_log_* methods
-    would_log_debug()
-    would_log_info()
-    would_log_notice(), would_log_note()
-    would_log_warning()
-    would_log_error(), would_log_err()
-    would_log_critical(), would_log_crit()
-    would_log_alert()
     would_log_emergency(), would_log_emerg()
+    would_log_alert()
+    would_log_critical(), would_log_crit()
+    would_log_error(), would_log_err()
+    would_log_warning()
+    would_log_notice(), would_log_note()
+    would_log_info()
+    would_log_debug()
 
     This twelve methods could be very useful if you want to kwow if the
     current log level would log the message to the log file. All methods
@@ -102,7 +130,7 @@ METHODS
         $log->debug(Dumper($hash));
 
     This example would dump the $hash in any case and handoff it to the log
-    handler, but this isn't what we really want!
+    handler, but this isn't that what we really want!
 
         $log->debug(Dumper($hash))
            if $log->would_log_debug();
@@ -112,10 +140,14 @@ METHODS
     The methods "would_log_note()", "would_log_err()", "would_log_crit()"
     and "would_log_emerg()" are just shortcuts.
 
+    All methods that would NOT log the message returns TRUE.
+
   errstr()
     Call "errstr()" if you want to get the last error string. This is useful
     with the option "die_on_errors". If you set this option to 0 the handler
-    wouldn't croak on errors. Set "die_on_errors" to control it yourself.
+    wouldn't croak if simple write operations failed. Set "die_on_errors" to
+    control it yourself. "errstr()" is only useful with "new()", "CLOSE()"
+    and the log level methods.
 
         $log->info("log information") or die $log->errstr;
 
@@ -135,8 +167,9 @@ METHODS
     This would croaks, because option "mode" except "append" or "trunc" or
     "excl".
 
-    If you set the option "fileopen" to 1 to open the log file permanent and
-    the call of "new" failed then you can absorb the error.
+    If you set the option "fileopen" to 1 - the default - to open the log
+    file permanent and the call of "new" failed then you can absorb the
+    error.
 
         my $log = Log::Handler->new(filename => 'file.log')
            or warn Log::Handler->errstr;
@@ -205,6 +238,23 @@ OPTIONS
 
         0 - deactivate
         1 - try to reopen logfile if the inode changed (default)
+
+  filename and reopen
+    Please note that it's better to set "reopen" and "filename" to 0 on
+    Windows systems because Windows unfortunately haven't the faintest idea
+    of inodes.
+
+    To write your code independent you should control that:
+
+        my $os_is_win = $^O =~ /win/i ? 0 : 1;
+
+        my $log = Log::Handler->new(
+           filename => 'file.log',
+           mode => 'append',
+           fileopen => $os_is_win
+        );
+
+    To set "filename" to 0 implies that "reopen" has no importance.
 
   mode
     There are three possible modes to open a log file.
