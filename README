@@ -30,8 +30,8 @@ CHANGES FROM 0.11
         1 info      is now 6
         0 debug     is now 7
 
-    If you set "minlevel" and "maxlevel" as strings in earlier versions than
-    you don't need to change your code, but if you used numbers than you
+    If you set "minlevel" and "maxlevel" as strings in earlier versions then
+    you don't need to change your code, but if you used numbers then you
     have to change it!
 
 METHODS
@@ -208,12 +208,22 @@ OPTIONS
 
         $log = Log::Handler->new( filename => \*STDOUT );
         $log = Log::Handler->new( filename => \*STDERR );
+
+    If the option "filename" is set in a config file and you want to debug
+    to your screen then you can set *STDOUT or *STDERR as a string.
+
+        my $out = '*STDOUT';
+        $log = Log::Handler->new( filename => $out );
         $log = Log::Handler->new( filename => '*STDOUT' );
         $log = Log::Handler->new( filename => '*STDERR' );
 
-    But note that if you set a GLOBREF to "filename" some options will be
-    forced (overwritten) and you have to control the handles yourself. The
-    forced options are
+    That is not possible:
+
+        $log = Log::Handler->new( filename => '*FH' );
+
+    Note that if you set a GLOBREF to "filename" some options will be forced
+    (overwritten) and you have to control the handles yourself. The forced
+    options are
 
         fileopen => 1
         filelock => 0
@@ -328,7 +338,7 @@ OPTIONS
 
         $log->info("foobar");
 
-    than it would log
+    then it would log
 
         Feb 01 12:56:31 foo INFO bar: foobar
 

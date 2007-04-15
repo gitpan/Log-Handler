@@ -34,8 +34,8 @@ The log level numbers changed because they wasn't in the right order!
     1 info      is now 6
     0 debug     is now 7
 
-If you set C<minlevel> and C<maxlevel> as strings in earlier versions than you don't need
-to change your code, but if you used numbers than you have to change it!
+If you set C<minlevel> and C<maxlevel> as strings in earlier versions then you don't need
+to change your code, but if you used numbers then you have to change it!
 
 =head1 METHODS
 
@@ -229,10 +229,20 @@ Set STDOUT or STDERR
 
     $log = Log::Handler->new( filename => \*STDOUT );
     $log = Log::Handler->new( filename => \*STDERR );
+
+If the option C<filename> is set in a config file and you want to debug to your screen then
+you can set C<*STDOUT> or C<*STDERR> as a string.
+
+    my $out = '*STDOUT';
+    $log = Log::Handler->new( filename => $out );
     $log = Log::Handler->new( filename => '*STDOUT' );
     $log = Log::Handler->new( filename => '*STDERR' );
 
-But note that if you set a GLOBREF to C<filename> some options will be forced (overwritten)
+That is not possible:
+
+    $log = Log::Handler->new( filename => '*FH' );
+
+Note that if you set a GLOBREF to C<filename> some options will be forced (overwritten)
 and you have to control the handles yourself. The forced options are
 
     fileopen => 1
@@ -354,7 +364,7 @@ If you set C<prefix> to
 
     $log->info("foobar");
 
-than it would log
+then it would log
 
     Feb 01 12:56:31 foo INFO bar: foobar
 
@@ -576,7 +586,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 use strict;
 use warnings;
@@ -712,7 +722,7 @@ sub new {
    } # end "no strict" block
 
    # if option filename is a GLOB, then we force some options
-   if (ref($opts{filename}) eq 'GLOB' || $opts{filename} =~ /^\*/) {
+   if (ref($opts{filename}) eq 'GLOB') {
       $opts{fh} = $opts{filename};
    } elsif ($opts{filename} eq '*STDOUT') {
       $opts{fh} = \*STDOUT;
@@ -724,6 +734,7 @@ sub new {
       $opts{fileopen} = 1;
       $opts{reopen}   = 0;
       $opts{filelock} = 0;
+      $opts{fh}->autoflush($opts{autoflush});
       return $self;
    }
 
@@ -776,9 +787,10 @@ sub errstr {
 
 sub DESTROY {
    my $self = shift;
-   return unless $self->{fh};
-   flock($self->{fh}, LOCK_UN);
-   close($self->{fh});
+   close($self->{fh})
+      if $self->{fh}
+      && !ref($self->{filename})
+      && $self->{filename} !~ /^\*STDOUT$|^\*STDERR$/;
 }
 
 #
