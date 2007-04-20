@@ -5,6 +5,10 @@ Log::Handler - A simple handler to log messages to log files.
 =head1 SYNOPSIS
 
     use Log::Handler;
+    # or
+    use Log::Handler debug => 1;
+    # or
+    use Log::Handler debug => 2;
 
     my $log = Log::Handler->new( filename => $logfile, mode => 'append' );
 
@@ -405,6 +409,72 @@ operations failed.
 The exception is that the handler croaks in any case if the call of C<new()> failed
 because on missing params or wrong settings.
 
+=head1 DEBUG MODE
+
+You can activate a simple debugger to log C<caller()> informations by each log operation.
+There are two debug modes: block(1) and line(2) mode.
+
+The block mode looks like this:
+
+    use strict;
+    use warnings;
+    use Log::Handler debug => 1;
+
+    my $log = Log::Handler->new(
+       filename => \*STDOUT,
+       maxlevel => 'debug'
+    );
+
+    &test2;
+
+    sub test1 {
+       $log->debug();
+    }
+
+    sub test2 {
+       &test1;
+    }
+
+Output:
+
+    Apr 20 13:42:21 [DEBUG] 
+       CALL(0):
+          filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
+          hasargs     1
+          line        631
+          package     Log::Handler
+          subroutine  Log::Handler::_print
+       CALL(1):
+          filename    ./test.pl
+          hasargs     1
+          line        14
+          package     main
+          subroutine  Log::Handler::__ANON__
+       CALL(2):
+          filename    ./test.pl
+          hasargs     0
+          line        18
+          package     main
+          subroutine  main::test1
+       CALL(3):
+          filename    ./test.pl
+          hasargs     0
+          line        11
+          package     main
+          subroutine  main::test2
+
+The same code example but the debugger in line mode would looks like this:
+
+    use Log::Handler debug => 2;
+
+Output:
+
+    Apr 20 13:47:59 [DEBUG] 
+       CALL(0): filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) hasargs(1) line(631) package(Log::Handler) subroutine(Log::Handler::_print)
+       CALL(1): filename(./test.pl) hasargs(1) line(14) package(main) subroutine(Log::Handler::__ANON__)
+       CALL(2): filename(./test.pl) hasargs(0) line(18) package(main) subroutine(main::test1)
+       CALL(3): filename(./test.pl) hasargs(0) line(11) package(main) subroutine(main::test2)
+
 =head1 EXAMPLES
 
 =head2 Simple example to log all level:
@@ -586,7 +656,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 use strict;
 use warnings;
@@ -641,6 +711,14 @@ BEGIN {
          };
       } # end "no strict" block
    }
+}
+
+sub import {
+   my ($package, %args) = @_;
+   croak "$package: set debug to 1 or 2 to activate the debugger"
+      if $args{debug}
+      && $args{debug} !~ /^($: line|block)$/;
+   $Log::Handler::DEBUGGER = $args{debug};
 }
 
 sub new {
@@ -780,10 +858,8 @@ sub CLOSE {
    return 1;
 }
 
-sub errstr {
-   my $self = shift;
-   return $self->{errstr};
-}
+# to make it possible to call Log::Handler->errstr()
+sub errstr { $Log::Handler::ERRSTR }
 
 sub DESTROY {
    my $self = shift;
@@ -923,6 +999,27 @@ sub _print {
       if $self->{newline}
       && $message =~ /.*\z/m;
 
+   if ($Log::Handler::DEBUGGER) {
+      my $i = -1;
+      $message .= "\n" if $message =~ /.*\z/m;
+      for (;;) {
+         my %c;
+         @c{qw/package filename line subroutine hasargs
+               wantarray evaltext is_require/} = (caller(++$i))[0..7];
+         last unless $c{package};
+         $message .= ' ' x 3 . "CALL($i):";
+         foreach my $k (sort keys %c) {
+            next unless defined $c{$k};
+            if ($Log::Handler::DEBUGGER == 1) {
+               $message .= "\n" . ' ' x 6 . sprintf('%-12s', $k) . "$c{$k}";
+            } elsif ($Log::Handler::DEBUGGER == 2) {
+               $message .= " $k($c{$k})";
+            }
+         }
+         $message .= "\n";
+      }
+   }
+
    my $length  = length($message);
    my $written = syswrite($self->{fh}, $message, $length)
       or return $self->_raise_error("unable to write to logfile ($!)");
@@ -951,11 +1048,11 @@ sub _gettime {
 }
 
 sub _raise_error {
-   my $self  = shift;
-   my $class = ref($self);
-   $self->{errstr} = defined $_[0] ? $_[0] : '';
-   croak "$class: $self->{errstr}"
-      if $self->{die_on_errors} == 1;
+   my $self   = shift;
+   my $class  = ref($self);
+   my $errstr = defined $_[0] ? $_[0] : '';
+   $Log::Handler::ERRSTR = $errstr;
+   croak "$class: $errstr" if $self->{die_on_errors} == 1;
    return undef;
 }
 

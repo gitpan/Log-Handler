@@ -1,3 +1,5 @@
+0.13    Released at 2007-04-20.
+        Added the availability to activate debugging with "Log::Handler debug => 1".
 0.12    Released at 2007-04-15.
         Fixed DESTROY(). DESTROY() tries to unlock $self->{fh} in any case.
         Autoflush wasn't set if the option "filename" was set to STDOUT or
