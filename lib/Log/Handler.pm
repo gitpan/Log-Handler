@@ -656,7 +656,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.13';
+our $VERSION = '0.14';
 
 use strict;
 use warnings;
@@ -717,7 +717,7 @@ sub import {
    my ($package, %args) = @_;
    croak "$package: set debug to 1 or 2 to activate the debugger"
       if $args{debug}
-      && $args{debug} !~ /^($: line|block)$/;
+      && $args{debug} !~ /^[12]$/;
    $Log::Handler::DEBUGGER = $args{debug};
 }
 
