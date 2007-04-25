@@ -5,10 +5,6 @@ Log::Handler - A simple handler to log messages to log files.
 =head1 SYNOPSIS
 
     use Log::Handler;
-    # or
-    use Log::Handler debug => 1;
-    # or
-    use Log::Handler debug => 2;
 
     my $log = Log::Handler->new( filename => $logfile, mode => 'append' );
 
@@ -18,28 +14,10 @@ Log::Handler - A simple handler to log messages to log files.
 
 This module is just a simple log file handler. It's possible to define a log level
 for your programs and control the amount of informations that be logged to the log
-file. In addition it's possible to define how you wish to open the log file,
-transient or permanent and if you wish you can assign the handler to check the
-inode of the log file. This could be very useful if a rotate mechanism moves
-and zip the log file but you shouldn't forget that inodes aren't available on
-windows.
-
-=head1 CHANGES FROM 0.11
-
-The log level numbers changed because they wasn't in the right order!
-
-    8 nothing   is still the same
-    7 emergency is now 0
-    6 alert     is now 1
-    5 crit      is now 2
-    4 error     is now 3
-    3 warning   is now 4
-    2 notice    is now 5
-    1 info      is now 6
-    0 debug     is now 7
-
-If you set C<minlevel> and C<maxlevel> as strings in earlier versions then you don't need
-to change your code, but if you used numbers then you have to change it!
+file. In addition it's possible to say how you wish to open the log file - transient
+or permanent - and LOCK and UNLOCK the log file by each log operation and if you wish
+you can assign the handler to check the inode of the log file (not on windows).
+This could be very useful if a rotate mechanism moves and zip the log file.
 
 =head1 METHODS
 
@@ -276,9 +254,9 @@ This option works only if option C<fileopen> is set to 1.
     0 - deactivate
     1 - try to reopen logfile if the inode changed (default)
 
-=head2 filename and reopen
+=head2 fileopen and reopen
 
-Please note that it's better to set C<reopen> and C<filename> to 0 on Windows systems
+Please note that it's better to set C<reopen> and C<fileopen> to 0 on Windows systems
 because Windows unfortunately haven't the faintest idea of inodes.
 
 To write your code independent you should control that:
@@ -291,7 +269,7 @@ To write your code independent you should control that:
        fileopen => $os_is_win
     );
 
-To set C<filename> to 0 implies that C<reopen> has no importance.
+If you set C<fileopen> to  0 then it implies that C<reopen> has no importance.
 
 =head2 mode
 
@@ -304,8 +282,8 @@ There are three possible modes to open a log file.
 C<append> would open the log file in any case and appends the messages at
 the end of the log file.
 
-C<excl> would fail to open the log file if the log file already exists.
-If the log file doesn't exist it will be created.
+C<excl> would fail by open the log file if the log file already exists.
+This is the default option because some security reasons.
 
 C<trunc> would truncate the complete log file if it exist. Please take care
 to use this option!
@@ -409,20 +387,22 @@ operations failed.
 The exception is that the handler croaks in any case if the call of C<new()> failed
 because on missing params or wrong settings.
 
-=head1 DEBUG MODE
+=head2 debugger
 
 You can activate a simple debugger to log C<caller()> informations by each log operation.
-There are two debug modes: block(1) and line(2) mode.
+There are two debug modes: block(1) and line(2) mode. The debugger is logging all defined
+values except C<hints> and C<bitmask>.
 
 The block mode looks like this:
 
     use strict;
     use warnings;
-    use Log::Handler debug => 1;
+    use Log::Handler;
 
     my $log = Log::Handler->new(
        filename => \*STDOUT,
-       maxlevel => 'debug'
+       maxlevel => 'debug',
+       debugger => 1
     );
 
     &test2;
@@ -465,7 +445,11 @@ Output:
 
 The same code example but the debugger in line mode would looks like this:
 
-    use Log::Handler debug => 2;
+    my $log = Log::Handler->new(
+       filename => \*STDOUT,
+       maxlevel => 'debug',
+       debugger => 2
+    );
 
 Output:
 
@@ -601,8 +585,6 @@ Would NOT dump %hash to the $log object!
 
 =head1 DEPENDENCIES
 
-    strict            -  to restrict unsafe constructs
-    warnings          -  to control optional warnings
     Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
     IO::Handle        -  to set autoflush on the log file handle
     File::stat        -  to get the inode from the log file
@@ -656,7 +638,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.14';
+our $VERSION = '0.15';
 
 use strict;
 use warnings;
@@ -711,14 +693,6 @@ BEGIN {
          };
       } # end "no strict" block
    }
-}
-
-sub import {
-   my ($package, %args) = @_;
-   croak "$package: set debug to 1 or 2 to activate the debugger"
-      if $args{debug}
-      && $args{debug} !~ /^[12]$/;
-   $Log::Handler::DEBUGGER = $args{debug};
 }
 
 sub new {
@@ -789,6 +763,11 @@ sub new {
          regex => $bool,
          default => 1,
       },
+      debugger => {
+         type => Params::Validate::SCALAR,
+         regex => qr/^[012]$/,
+         default => 0,
+      }
    });
 
    {  # start "no strict" block
@@ -999,7 +978,7 @@ sub _print {
       if $self->{newline}
       && $message =~ /.*\z/m;
 
-   if ($Log::Handler::DEBUGGER) {
+   if ($self->{debugger}) {
       my $i = -1;
       $message .= "\n" if $message =~ /.*\z/m;
       for (;;) {
@@ -1010,9 +989,9 @@ sub _print {
          $message .= ' ' x 3 . "CALL($i):";
          foreach my $k (sort keys %c) {
             next unless defined $c{$k};
-            if ($Log::Handler::DEBUGGER == 1) {
+            if ($self->{debugger} == 1) {
                $message .= "\n" . ' ' x 6 . sprintf('%-12s', $k) . "$c{$k}";
-            } elsif ($Log::Handler::DEBUGGER == 2) {
+            } elsif ($self->{debugger} == 2) {
                $message .= " $k($c{$k})";
             }
          }

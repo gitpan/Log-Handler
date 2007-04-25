@@ -3,10 +3,6 @@ NAME
 
 SYNOPSIS
         use Log::Handler;
-        # or
-        use Log::Handler debug => 1;
-        # or
-        use Log::Handler debug => 2;
 
         my $log = Log::Handler->new( filename => $logfile, mode => 'append' );
 
@@ -15,28 +11,11 @@ SYNOPSIS
 DESCRIPTION
     This module is just a simple log file handler. It's possible to define a
     log level for your programs and control the amount of informations that
-    be logged to the log file. In addition it's possible to define how you
-    wish to open the log file, transient or permanent and if you wish you
-    can assign the handler to check the inode of the log file. This could be
-    very useful if a rotate mechanism moves and zip the log file but you
-    shouldn't forget that inodes aren't available on windows.
-
-CHANGES FROM 0.11
-    The log level numbers changed because they wasn't in the right order!
-
-        8 nothing   is still the same
-        7 emergency is now 0
-        6 alert     is now 1
-        5 crit      is now 2
-        4 error     is now 3
-        3 warning   is now 4
-        2 notice    is now 5
-        1 info      is now 6
-        0 debug     is now 7
-
-    If you set "minlevel" and "maxlevel" as strings in earlier versions then
-    you don't need to change your code, but if you used numbers then you
-    have to change it!
+    be logged to the log file. In addition it's possible to say how you wish
+    to open the log file - transient or permanent - and LOCK and UNLOCK the
+    log file by each log operation and if you wish you can assign the
+    handler to check the inode of the log file (not on windows). This could
+    be very useful if a rotate mechanism moves and zip the log file.
 
 METHODS
   new()
@@ -253,8 +232,8 @@ OPTIONS
         0 - deactivate
         1 - try to reopen logfile if the inode changed (default)
 
-  filename and reopen
-    Please note that it's better to set "reopen" and "filename" to 0 on
+  fileopen and reopen
+    Please note that it's better to set "reopen" and "fileopen" to 0 on
     Windows systems because Windows unfortunately haven't the faintest idea
     of inodes.
 
@@ -268,7 +247,8 @@ OPTIONS
            fileopen => $os_is_win
         );
 
-    To set "filename" to 0 implies that "reopen" has no importance.
+    If you set "fileopen" to 0 then it implies that "reopen" has no
+    importance.
 
   mode
     There are three possible modes to open a log file.
@@ -280,8 +260,8 @@ OPTIONS
     "append" would open the log file in any case and appends the messages at
     the end of the log file.
 
-    "excl" would fail to open the log file if the log file already exists.
-    If the log file doesn't exist it will be created.
+    "excl" would fail by open the log file if the log file already exists.
+    This is the default option because some security reasons.
 
     "trunc" would truncate the complete log file if it exist. Please take
     care to use this option!
@@ -382,20 +362,22 @@ OPTIONS
     The exception is that the handler croaks in any case if the call of
     "new()" failed because on missing params or wrong settings.
 
-DEBUG MODE
+  debugger
     You can activate a simple debugger to log "caller()" informations by
     each log operation. There are two debug modes: block(1) and line(2)
-    mode.
+    mode. The debugger is logging all defined values except "hints" and
+    "bitmask".
 
     The block mode looks like this:
 
         use strict;
         use warnings;
-        use Log::Handler debug => 1;
+        use Log::Handler;
 
         my $log = Log::Handler->new(
            filename => \*STDOUT,
-           maxlevel => 'debug'
+           maxlevel => 'debug',
+           debugger => 1
         );
 
         &test2;
@@ -439,7 +421,11 @@ DEBUG MODE
     The same code example but the debugger in line mode would looks like
     this:
 
-        use Log::Handler debug => 2;
+        my $log = Log::Handler->new(
+           filename => \*STDOUT,
+           maxlevel => 'debug',
+           debugger => 2
+        );
 
     Output:
 
@@ -568,8 +554,6 @@ EXAMPLES
         }
 
 DEPENDENCIES
-        strict            -  to restrict unsafe constructs
-        warnings          -  to control optional warnings
         Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
         IO::Handle        -  to set autoflush on the log file handle
         File::stat        -  to get the inode from the log file

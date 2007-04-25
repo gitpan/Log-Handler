@@ -1,5 +1,9 @@
+0.15	Released at 2007-04-25.
+        Fixed typos in POD.
+        Changed the way to activate the debugger. Now the debugger is activated
+          over the call of new().
 0.14	Released at 2007-04-24.
-	Fixed "use Log::Handler debug => ...".
+        Fixed "use Log::Handler debug => ...".
 0.13    Released at 2007-04-20.
         Added the availability to activate debugging with "Log::Handler debug => 1".
 0.12    Released at 2007-04-15.
