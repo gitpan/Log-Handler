@@ -12,6 +12,7 @@ WriteMakefile
                            'Params::Validate' => 0,
                            'IO::Handle' => 0,
                            'File::Spec' => 0,
+                           'Devel::Backtrace' => 0,
                            'File::stat' => 0,
                            'Carp' => 0
                          }

@@ -1,3 +1,7 @@
+0.32	Released at 2007-04-26.
+	I jumped from 0.15 to 0.32 because there exists brownfields on backpan.
+	Replaced my own routine to get caller() informations with Devel::Backtrace.
+	Added the option debugger_skip.
 0.15	Released at 2007-04-25.
         Fixed typos in POD.
         Changed the way to activate the debugger. Now the debugger is activated

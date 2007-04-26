@@ -1,6 +1,7 @@
 Build.PL
 ChangeLog
-examples/Example.pl
+examples/logger.pl
+examples/trace.pl
 INSTALL
 lib/Log/Handler.pm
 Makefile.PL

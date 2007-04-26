@@ -380,60 +380,69 @@ OPTIONS
            debugger => 1
         );
 
+        sub test1 { $log->debug() }
+        sub test2 { &test1; }
+
         &test2;
-
-        sub test1 {
-           $log->debug();
-        }
-
-        sub test2 {
-           &test1;
-        }
 
     Output:
 
-        Apr 20 13:42:21 [DEBUG] 
-           CALL(0):
-              filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
-              hasargs     1
-              line        631
-              package     Log::Handler
-              subroutine  Log::Handler::_print
-           CALL(1):
-              filename    ./test.pl
-              hasargs     1
-              line        14
-              package     main
-              subroutine  Log::Handler::__ANON__
-           CALL(2):
-              filename    ./test.pl
-              hasargs     0
-              line        18
-              package     main
-              subroutine  main::test1
-           CALL(3):
-              filename    ./test.pl
-              hasargs     0
-              line        11
-              package     main
-              subroutine  main::test2
+       Apr 26 12:52:17 [DEBUG] 
+          CALL(4):
+             package     main
+             filename    ./trace.pl
+             line        15
+             subroutine  main::test2
+             hasargs     0
+          CALL(3):
+             package     main
+             filename    ./trace.pl
+             line        13
+             subroutine  main::test1
+             hasargs     0
+          CALL(2):
+             package     main
+             filename    ./trace.pl
+             line        12
+             subroutine  Log::Handler::__ANON__
+             hasargs     1
+          CALL(1):
+             package     Log::Handler
+             filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
+             line        681
+             subroutine  Log::Handler::_print
+             hasargs     1
+          CALL(0):
+             package     Log::Handler
+             filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
+             line        990
+             subroutine  Devel::Backtrace::new
+             hasargs     1
+             wantarray   0
 
     The same code example but the debugger in line mode would looks like
     this:
 
-        my $log = Log::Handler->new(
-           filename => \*STDOUT,
-           maxlevel => 'debug',
            debugger => 2
-        );
 
     Output:
 
-        Apr 20 13:47:59 [DEBUG] 
-           CALL(0): filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) hasargs(1) line(631) package(Log::Handler) subroutine(Log::Handler::_print)
-           CALL(1): filename(./test.pl) hasargs(1) line(14) package(main) subroutine(Log::Handler::__ANON__)
-           CALL(2): filename(./test.pl) hasargs(0) line(18) package(main) subroutine(main::test1)
-           CALL(3): filename(./test.pl) hasargs(0) line(11) package(main) subroutine(main::test2)
+        Apr 26 12:54:11 [DEBUG] 
+           CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
+           CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
+           CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
+           CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_print) hasargs(1)
+           CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1022) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
+
+  debugger_skip
+    This option let skip the debugger the count of "debugger_skip".
+
+        debugger_skip => 2
+
+        Apr 26 12:55:07 [DEBUG] 
+           CALL(2): package(main) filename(./trace.pl) line(16) subroutine(main::test2) hasargs(0)
+           CALL(1): package(main) filename(./trace.pl) line(14) subroutine(main::test1) hasargs(0)
+           CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
 
 EXAMPLES
   Simple example to log all level:
@@ -559,6 +568,7 @@ DEPENDENCIES
         File::stat        -  to get the inode from the log file
         POSIX             -  to generate the time stamp with strftime()
         Params::Validate  -  to validate all options
+        Devel::Backtrace  -  to backtrace caller()
         Carp              -  to croak() on errors if die_on_errors is active
 
 EXPORTS

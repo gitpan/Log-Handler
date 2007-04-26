@@ -405,59 +405,69 @@ The block mode looks like this:
        debugger => 1
     );
 
+    sub test1 { $log->debug() }
+    sub test2 { &test1; }
+
     &test2;
-
-    sub test1 {
-       $log->debug();
-    }
-
-    sub test2 {
-       &test1;
-    }
 
 Output:
 
-    Apr 20 13:42:21 [DEBUG] 
-       CALL(0):
-          filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
-          hasargs     1
-          line        631
-          package     Log::Handler
-          subroutine  Log::Handler::_print
-       CALL(1):
-          filename    ./test.pl
-          hasargs     1
-          line        14
-          package     main
-          subroutine  Log::Handler::__ANON__
-       CALL(2):
-          filename    ./test.pl
-          hasargs     0
-          line        18
-          package     main
-          subroutine  main::test1
-       CALL(3):
-          filename    ./test.pl
-          hasargs     0
-          line        11
-          package     main
-          subroutine  main::test2
+   Apr 26 12:52:17 [DEBUG] 
+      CALL(4):
+         package     main
+         filename    ./trace.pl
+         line        15
+         subroutine  main::test2
+         hasargs     0
+      CALL(3):
+         package     main
+         filename    ./trace.pl
+         line        13
+         subroutine  main::test1
+         hasargs     0
+      CALL(2):
+         package     main
+         filename    ./trace.pl
+         line        12
+         subroutine  Log::Handler::__ANON__
+         hasargs     1
+      CALL(1):
+         package     Log::Handler
+         filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
+         line        681
+         subroutine  Log::Handler::_print
+         hasargs     1
+      CALL(0):
+         package     Log::Handler
+         filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
+         line        990
+         subroutine  Devel::Backtrace::new
+         hasargs     1
+         wantarray   0
 
 The same code example but the debugger in line mode would looks like this:
 
-    my $log = Log::Handler->new(
-       filename => \*STDOUT,
-       maxlevel => 'debug',
        debugger => 2
-    );
 
 Output:
 
-    Apr 20 13:47:59 [DEBUG] 
-       CALL(0): filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) hasargs(1) line(631) package(Log::Handler) subroutine(Log::Handler::_print)
-       CALL(1): filename(./test.pl) hasargs(1) line(14) package(main) subroutine(Log::Handler::__ANON__)
-       CALL(2): filename(./test.pl) hasargs(0) line(18) package(main) subroutine(main::test1)
-       CALL(3): filename(./test.pl) hasargs(0) line(11) package(main) subroutine(main::test2)
+    Apr 26 12:54:11 [DEBUG] 
+       CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
+       CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
+       CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
+       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_print) hasargs(1)
+       CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1022) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
+
+=head2 debugger_skip
+
+This option let skip the debugger the count of C<debugger_skip>.
+
+    debugger_skip => 2
+
+    Apr 26 12:55:07 [DEBUG] 
+       CALL(2): package(main) filename(./trace.pl) line(16) subroutine(main::test2) hasargs(0)
+       CALL(1): package(main) filename(./trace.pl) line(14) subroutine(main::test1) hasargs(0)
+       CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
 
 =head1 EXAMPLES
 
@@ -590,6 +600,7 @@ Would NOT dump %hash to the $log object!
     File::stat        -  to get the inode from the log file
     POSIX             -  to generate the time stamp with strftime()
     Params::Validate  -  to validate all options
+    Devel::Backtrace  -  to backtrace caller()
     Carp              -  to croak() on errors if die_on_errors is active
 
 =head1 EXPORTS
@@ -638,7 +649,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.15';
+our $VERSION = '0.32';
 
 use strict;
 use warnings;
@@ -767,8 +778,17 @@ sub new {
          type => Params::Validate::SCALAR,
          regex => qr/^[012]$/,
          default => 0,
-      }
+      },
+      debugger_skip => {
+         type => Params::Validate::SCALAR,
+         regex => qr/^\d+$/,
+         default => 0,
+      },
    });
+
+   # loading Devel::Backtrace only if the debugger is wanted
+   require Devel::Backtrace
+      if $opts{debugger};
 
    {  # start "no strict" block
       no strict 'refs';
@@ -979,20 +999,19 @@ sub _print {
       && $message =~ /.*\z/m;
 
    if ($self->{debugger}) {
-      my $i = -1;
       $message .= "\n" if $message =~ /.*\z/m;
-      for (;;) {
-         my %c;
-         @c{qw/package filename line subroutine hasargs
-               wantarray evaltext is_require/} = (caller(++$i))[0..7];
-         last unless $c{package};
-         $message .= ' ' x 3 . "CALL($i):";
-         foreach my $k (sort keys %c) {
-            next unless defined $c{$k};
+      my $bt = Devel::Backtrace->new($self->{debugger_skip});
+      my $pt = $bt->points - 1;
+
+      for my $p (reverse 0..$pt) {
+         $message .= ' ' x 3 . "CALL($p):";
+         my $c = $bt->point($p);
+         for my $k ('package', 'filename', 'line', 'subroutine', 'hasargs', 'wantarray', 'evaltext', 'is_require') {
+            next unless defined $c->{$k};
             if ($self->{debugger} == 1) {
-               $message .= "\n" . ' ' x 6 . sprintf('%-12s', $k) . "$c{$k}";
+               $message .= "\n" . ' ' x 6 . sprintf('%-12s', $k) . $c->{$k};
             } elsif ($self->{debugger} == 2) {
-               $message .= " $k($c{$k})";
+               $message .= " $k($c->{$k})";
             }
          }
          $message .= "\n";
