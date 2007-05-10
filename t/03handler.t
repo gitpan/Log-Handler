@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 16;
+use Test::More tests => 17;
 use File::Spec;
 use Log::Handler;
 
@@ -10,7 +10,7 @@ my $log = Log::Handler->new(
    filename => $logfile,
    permissions => '0664',
    mode => 'append',
-   autoflush => 1,
+   autoflush => 0,
    timeformat => '',
    maxlevel => 7,
    minlevel => 0,
@@ -36,6 +36,9 @@ ok($log->note("note"), "checking note")
    if $log->would_log_note();
 
 ok($log->warning("warning"), "checking warning")
+   if $log->would_log_warning();
+
+ok($log->warn("warn"), "checking warn")
    if $log->would_log_warning();
 
 ok($log->error("error"), "checking error")
@@ -81,7 +84,7 @@ while (my $line = <$fh>) {
 
 close $fh;
 
-if ($lines == 12) {
+if ($lines == 13) {
    ok(1, "checking logfile ($lines)");
 } else {
    ok(0, "checking logfile ($lines)");

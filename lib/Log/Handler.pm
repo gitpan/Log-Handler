@@ -12,12 +12,13 @@ Log::Handler - A simple handler to log messages to log files.
 
 =head1 DESCRIPTION
 
-This module is just a simple log file handler. It's possible to define a log level
-for your programs and control the amount of informations that be logged to the log
-file. In addition it's possible to say how you wish to open the log file - transient
-or permanent - and LOCK and UNLOCK the log file by each log operation and if you wish
-you can assign the handler to check the inode of the log file (not on windows).
-This could be very useful if a rotate mechanism moves and zip the log file.
+This module is just a simple object oriented log file handler and very easy to use.
+It's possible to define a log level for your programs and control the amount of
+informations that be logged to the log file. In addition it's possible to say how
+you wish to open the log file - transient or permanent - and LOCK and UNLOCK the
+log file by each write operation and if you wish you can assign the handler to
+check the inode of the log file (not on windows). This could be very useful if
+a rotate mechanism moves and zip the log file.
 
 =head1 METHODS
 
@@ -27,6 +28,117 @@ Call C<new()> to create a new log handler object.
 
 The C<new()> method expected the options for the log file. The only one mandatory
 option is C<filename>. All other options will be set to a default value.
+
+=head2 Log levels
+
+There are eigth log level and thirteen methods to handle this levels:
+
+=over 4
+
+=item emergency(), emerg()
+
+=item alert()
+
+=item critical(), crit()
+
+=item error(), err()
+
+=item warning(), warn
+
+=item notice(), note()
+
+=item info()
+
+=item debug()
+
+=back
+
+C<debug()> is the highest and C<emergency()> or C<emerg()> is the lowest log level.
+You can define the log level with the options C<maxlevel> and C<minlevel>.
+
+The methods C<note()>, C<warn()>, C<err()>, C<crit()> and C<emerg()> are just shortcuts.
+
+Example:
+
+If you set the option C<maxlevel> to C<warning> and C<minlevel> to C<emergency>
+then the levels emergency, alert, critical, error and warning will be logged.
+
+The call of all methods is very simple:
+
+    $log->info("Hello World! How are you?");
+
+Or maybe:
+
+    $log->info("Hello World!", "How are you?");
+
+Both calls would log (provided that the log level INFO would log)
+
+    Feb 01 12:56:31 [INFO] Hello World! How are you?
+
+=head2 is_* methods
+
+=over 4
+
+=item is_emergency(), is_emerg()
+
+=item is_alert()
+
+=item is_critical(), is_crit()
+
+=item is_error(), is_err()
+
+=item is_warning(), is_warn
+
+=item is_notice(), is_note()
+
+=item is_info()
+
+=item is_debug()
+
+=back
+
+This thirteen methods could be very useful if you want to kwow if the current log level
+would write the message to the log file. All methods returns TRUE if the handler would
+log the message and FALSE if not. Example:
+
+You want to dump a big hash with Data::Dumper to the log file, but you don't want to
+pass the dump in any case, because it would costs a lot of resources.
+
+    $log->debug(Dumper($hash));
+
+This example would dump the $hash in any case and handoff it to the log handler, 
+but this isn't that what we really want!
+
+    $log->debug(Dumper($hash))
+       if $log->is_debug();
+
+Now we dump the $hash only if the current log level would really log it.
+
+The methods C<is_note()>, C<is_warn()>, C<is_err()>, C<is_crit()> and C<is_emerg()> are just shortcuts.
+
+=head2 would_log_* methods
+
+The old would_log_* (now is_*) methods still exists for compabilities.
+
+=over 4
+
+=item would_log_emergency(), would_log_emerg()
+
+=item would_log_alert()
+
+=item would_log_critical(), would_log_crit()
+
+=item would_log_error(), would_log_err()
+
+=item would_log_warning(), would_log_warn
+
+=item would_log_notice(), would_log_note()
+
+=item would_log_info()
+
+=item would_log_debug()
+
+=back
 
 =head2 set_prefix()
 
@@ -58,102 +170,12 @@ Or you want to add something to the current prefix:
 
     $log->set_prefix($log->get_prefix."add something");
 
-=head2 Log levels
-
-There are eigth log level and twelve methods to handle this levels:
-
-=over 4
-
-=item emergency(), emerg()
-
-=item alert()
-
-=item critical(), crit()
-
-=item error(), err()
-
-=item warning()
-
-=item notice(), note()
-
-=item info()
-
-=item debug()
-
-=back
-
-C<debug()> is the highest and C<emergency()> or C<emerg()> is the lowest log level.
-You can define the log level with the options C<maxlevel()> and C<minlevel()>.
-
-The methods C<note()>, C<err()>, C<crit()> and C<emerg()> are just shortcuts.
-
-Example:
-
-If you set the option C<maxlevel> to C<warning> and C<minlevel> to C<emergency>
-then the levels emergency, alert, critical, error and warning will be logged.
-
-The call of all methods is very simple:
-
-    $log->info("Hello World! How are you?");
-
-Or maybe:
-
-    $log->info("Hello World!", "How are you?");
-
-Both calls would log (provided that the log level INFO would log)
-
-    Feb 01 12:56:31 [INFO] Hello World! How are you?
-
-=head2 would_log_* methods
-
-=over 4
-
-=item would_log_emergency(), would_log_emerg()
-
-=item would_log_alert()
-
-=item would_log_critical(), would_log_crit()
-
-=item would_log_error(), would_log_err()
-
-=item would_log_warning()
-
-=item would_log_notice(), would_log_note()
-
-=item would_log_info()
-
-=item would_log_debug()
-
-=back
-
-This twelve methods could be very useful if you want to kwow if the current log level
-would log the message to the log file. All methods returns TRUE if the handler would
-log the message and FALSE if not. Example:
-
-You want to dump a big hash with Data::Dumper to the log file, but you don't want to
-pass the dump in any case, because it would costs a lot of resources.
-
-    $log->debug(Dumper($hash));
-
-This example would dump the $hash in any case and handoff it to the log handler, 
-but this isn't that what we really want!
-
-    $log->debug(Dumper($hash))
-       if $log->would_log_debug();
-
-Now we dump the $hash only if the current log level would really log it.
-
-The methods C<would_log_note()>, C<would_log_err()>, C<would_log_crit()> and
-C<would_log_emerg()> are just shortcuts.
-
-All methods that would NOT log the message returns TRUE.
-
 =head2 errstr()
 
 Call C<errstr()> if you want to get the last error string. This is useful with the
 option C<die_on_errors>. If you set this option to 0 the handler wouldn't croak
 if simple write operations failed. Set C<die_on_errors> to control it yourself.
-C<errstr()> is only useful with C<new()>, C<CLOSE()> and the log level methods.
+C<errstr()> is only useful with C<new()>, C<close()> and the log level methods.
 
     $log->info("log information") or die $log->errstr;
 
@@ -177,21 +199,22 @@ and the call of C<new> failed then you can absorb the error.
     my $log = Log::Handler->new(filename => 'file.log')
        or warn Log::Handler->errstr;
 
-=head2 CLOSE()
+=head2 close()
 
-Call C<CLOSE()> if you want to close the log file.
+Call C<close()> if you want to close the log file.
 
-This option is only useful if you set option C<fileopen> to 1. If you don't
-call C<CLOSE()> the log file will be closed automatically before exit().
+This option is ONLY useful if you set option C<fileopen> to 1 and if you want to
+close the log file yourself. If you don't call C<close()> the log file will be
+closed automatically before exit.
 
-Note that if you close the log file it's necessary to call C<new()> to reopen it.
+The old but deprecated method C<CLOSE()> exists for compabilities.
 
 =head1 OPTIONS
 
 =head2 filename
 
-This is the only one mandatory option and the script croak if it not set. You have to
-set a filename, a GLOBREF or you can set a string as an alias for STDOUT and STDERR.
+This is the only one mandatory option and the script croak if it is not set. You have to
+set a filename, a GLOBREF or you can set a string as an alias for STDOUT or STDERR.
 
 Set a file name:
 
@@ -237,7 +260,7 @@ It's maybe desirable to lock the log file by each write operation. You can set t
 C<filelock> to activate or deactivate the locking.
 
     0 - no file lock
-    1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each log message (default)
+    1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each write operation (default)
 
 =head2 fileopen
 
@@ -252,7 +275,7 @@ Open a log file transient or permanent.
 This option works only if option C<fileopen> is set to 1.
 
     0 - deactivate
-    1 - try to reopen logfile if the inode changed (default)
+    1 - try to reopen the log file if the inode changed (default)
 
 =head2 fileopen and reopen
 
@@ -360,7 +383,7 @@ wish to log to your log file. The log levels are:
     7 - debug
     6 - info
     5 - notice, note
-    4 - warning
+    4 - warning, warn
     3 - error, err
     2 - critical, crit
     1 - alert
@@ -488,6 +511,7 @@ This option let skip the debugger the count of C<debugger_skip>.
     $log->notice("this is a notice");
     $log->note("this is a notice as well");
     $log->warning("this is a warning");
+    $log->warn("this is a warning as well");
     $log->error("this is a error message");
     $log->err("this is a error message as well");
     $log->critical("this is a critical message");
@@ -503,6 +527,7 @@ Would log this:
     Feb 01 12:56:31 [NOTICE] this is a notice
     Feb 01 12:56:31 [NOTE] this is a notice as well
     Feb 01 12:56:31 [WARNING] this is a warning
+    Feb 01 12:56:31 [WARN] this is a warning
     Feb 01 12:56:31 [ERROR] this is a error message
     Feb 01 12:56:31 [ERR] this is a error message as well
     Feb 01 12:56:31 [CRITICAL] this is a critical message
@@ -554,7 +579,7 @@ Would log:
     Feb 01 12:56:31 hostname[8923] [INFO] progname: Hello world
     Feb 01 12:56:31 hostname[8923] [WARNING] progname: There is something wrong!
 
-=head2 would_log_* example:
+=head2 is_* example:
 
     use Log::Handler;
     use Data::Dumper;
@@ -573,7 +598,7 @@ Would log:
     );
 
     $log->debug("\n".Dumper(\%hash))
-        if $log->would_log_debug();
+        if $log->is_debug();
 
 Would NOT dump %hash to the $log object!
 
@@ -588,7 +613,7 @@ Would NOT dump %hash to the $log object!
        die_on_errors => 0
     ) or die Log::Handler->errstr();
 
-    if ($log->would_log_debug()) {
+    if ($log->is_debug()) {
        $log->debug("\n".Dumper(\%hash))
           or die $log->errstr();
     }
@@ -596,7 +621,6 @@ Would NOT dump %hash to the $log object!
 =head1 DEPENDENCIES
 
     Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
-    IO::Handle        -  to set autoflush on the log file handle
     File::stat        -  to get the inode from the log file
     POSIX             -  to generate the time stamp with strftime()
     Params::Validate  -  to validate all options
@@ -649,16 +673,16 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.32';
+our $VERSION = '0.33';
 
 use strict;
 use warnings;
 use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
-use IO::Handle;
 use File::stat;
 use POSIX qw(strftime);
 use Params::Validate;
 use Carp qw(croak);
+use Exporter;
 
 use constant EMERGENCY =>  0;
 use constant EMERG     =>  0;
@@ -668,33 +692,84 @@ use constant CRIT      =>  2;
 use constant ERROR     =>  3;
 use constant ERR       =>  3;
 use constant WARNING   =>  4;
+use constant WARN      =>  4;
 use constant NOTICE    =>  5;
 use constant NOTE      =>  5;
 use constant INFO      =>  6;
 use constant DEBUG     =>  7;
 use constant NOTHING   =>  8;
 
-# The BEGIN block is used to generate the syslog methods
-# and the would_log_* methods. The syslog methods calls
-# _print() with the syslog level as first argument. The
-# would_log_*() methods are only used to check if the
-# current set of max- and minlevel would log the message
-# to the log file. The levels NOTE, ERR, CRIT and EMERG
-# are just shortcuts.
+# -------------------------------------------------------------------
+# The BEGIN block is used to generate the syslog methods and the is_*
+# methods. The syslog methods calls _print() with the syslog level
+# as first argument. The is_* methods are only used to check if the
+# current set of max- and minlevel would log the message to the log
+# file. The levels NOTE, ERR, CRIT and EMERG are just shortcuts.
+# -------------------------------------------------------------------
 
 BEGIN {
-   for my $level (qw(DEBUG INFO NOTICE NOTE WARNING ERROR ERR CRITICAL CRIT ALERT EMERGENCY EMERG)) {
+   for my $level (qw/DEBUG INFO NOTICE NOTE WARNING WARN ERROR ERR CRITICAL CRIT ALERT EMERGENCY EMERG/) {
+
       my $routine = lc($level);
-      {  # start "no strict" block
+
+      {  # start "no strict 'refs'" block
          no strict 'refs';
 
-         # syslog level methods
+         # --------------------------------------------------------------
+         # Creating the 8 syslog level methods - total 13 with shortcuts:
+         #      emergency(), emerg()
+         #      alert()
+         #      critical(), crit()
+         #      error(), err()
+         #      warning(), warn()
+         #      notice(), note()
+         #      info()
+         #      debug()
+         # --------------------------------------------------------------
+
          *{"$routine"} = sub {
             my $self = shift;
+            # we handoff the log level as upper case string as first argument to _print()
             return $self->_print($level, @_);
          };
 
-         # would log syslog methods
+         # -----------------------------------------------------------
+         # Creating the 8 is_ level methods - total 13 with shortcuts:
+         #      is_emergency(), is_emerg()
+         #      is_alert()
+         #      is_critical(), is_crit()
+         #      is_error(), is_err()
+         #      is_warning(), is_warn()
+         #      is_notice(), is_note()
+         #      is_info()
+         #      is_debug()
+         # -----------------------------------------------------------
+
+         *{"is_$routine"} = sub {
+            my $self = shift;
+            return 1
+               if &{$level} >= $self->{minlevel}
+               && &{$level} <= $self->{maxlevel};
+            return undef;
+         };
+
+         # ------------------------------------------------------------------
+         # Creating the 8 would_log_ level methods - total 13 with shortcuts:
+         #      would_log_emergency(), would_log_emerg()
+         #      would_log_alert()
+         #      would_log_critical(), would_log_crit()
+         #      would_log_error()
+         #      would_log_err()
+         #      would_log_warning(), would_log_warn
+         #      would_log_notice(), would_log_note()
+         #      would_log_info()
+         #      would_log_debug()
+         #
+         # This methods do the same as the is_* methods and are deprecated
+         # but necessary for compabilities because the is_* methods are
+         # new since version 0.33.
+         # ------------------------------------------------------------------
+
          *{"would_log_$routine"} = sub {
             my $self = shift;
             return 1
@@ -702,7 +777,7 @@ BEGIN {
                && &{$level} <= $self->{maxlevel};
             return undef;
          };
-      } # end "no strict" block
+      } # end "no strict 'refs'" block
    }
 }
 
@@ -761,12 +836,12 @@ sub new {
       },
       minlevel => {
          type => Params::Validate::SCALAR,
-         regex => qr/^([0-8]|nothing|debug|info|notice|note|warning|error|err|critical|crit|alert|emergency|emerg)$/,
+         regex => qr/^([0-8]|nothing|debug|info|notice|note|warning|warn|error|err|critical|crit|alert|emergency|emerg)$/,
          default => 0,
       },
       maxlevel => {
          type => Params::Validate::SCALAR,
-         regex => qr/^([0-8]|nothing|debug|info|notice|note|warning|error|err|critical|crit|alert|emergency|emerg)$/,
+         regex => qr/^([0-8]|nothing|debug|info|notice|note|warning|warn|error|err|critical|crit|alert|emergency|emerg)$/,
          default => 4,
       },
       die_on_errors => {
@@ -793,9 +868,9 @@ sub new {
    {  # start "no strict" block
       no strict 'refs';
       $opts{minlevel} = &{uc($opts{minlevel})}
-         unless $opts{minlevel} =~ /^\d+$/;
+         unless $opts{minlevel} =~ /^\d$/;
       $opts{maxlevel} = &{uc($opts{maxlevel})}
-         unless $opts{maxlevel} =~ /^\d+$/;
+         unless $opts{maxlevel} =~ /^\d$/;
    } # end "no strict" block
 
    # if option filename is a GLOB, then we force some options
@@ -811,7 +886,9 @@ sub new {
       $opts{fileopen} = 1;
       $opts{reopen}   = 0;
       $opts{filelock} = 0;
-      $opts{fh}->autoflush($opts{autoflush});
+      my $oldfh = select $opts{fh}; 
+      $| = $opts{autoflush}; 
+      select $oldfh;
       return $self;
    }
 
@@ -836,17 +913,14 @@ sub new {
    return $self;
 }
 
-sub get_prefix {
-   my $self = shift;
-   return $self->{prefix};
-}
+sub get_prefix { $_[0]->{prefix} }
 
 sub set_prefix {
    my $self = shift;
    $self->{prefix} = shift;
 }
 
-sub CLOSE {
+sub close {
    my $self = shift;
 
    if ($self->{fileopen} == 1) {
@@ -857,12 +931,14 @@ sub CLOSE {
    return 1;
 }
 
+sub CLOSE { &Log::Handler::close(@_) }
+
 # to make it possible to call Log::Handler->errstr()
 sub errstr { $Log::Handler::ERRSTR }
 
 sub DESTROY {
    my $self = shift;
-   close($self->{fh})
+   CORE::close($self->{fh})
       if $self->{fh}
       && !ref($self->{filename})
       && $self->{filename} !~ /^\*STDOUT$|^\*STDERR$/;
@@ -874,23 +950,24 @@ sub DESTROY {
 
 sub _open {
    my $self  = shift;
-   my $class = ref($self);
 
    return $self->_raise_error("unable to open logfile $self->{filename} ($!)")
       unless sysopen(my $fh, $self->{filename}, $self->{mode}, $self->{permissions});
 
+   my $oldfh = select $fh;    
+   $| = $self->{autoflush};
+   select $oldfh;
+
    $self->{fh} = $fh;
-   $self->{fh}->autoflush($self->{autoflush});
 
    return 1;
 }
 
 sub _close {
    my $self  = shift;
-   my $class = ref($self);
 
    return $self->_raise_error("unable to close logfile $self->{filename} ($!)")
-      unless close $self->{fh};
+      unless CORE::close($self->{fh});
 
    delete $self->{fh};
 
@@ -899,7 +976,6 @@ sub _close {
 
 sub _setino {
    my $self  = shift;
-   my $class = ref($self);
    my $stat  = stat($self->{filename});
    $self->{inode} = $stat->ino;
    return 1;
@@ -907,12 +983,10 @@ sub _setino {
 
 sub _checkino {
    my $self  = shift;
-   my $class = ref($self);
 
    if (-e "$self->{filename}") {
       my $stat    = stat($self->{filename});
       my $new_ino = $stat->ino;
-
       unless ($self->{inode} == $new_ino) {
          $self->_close()
             or return undef;
@@ -934,7 +1008,6 @@ sub _checkino {
 
 sub _lock {
    my $self  = shift;
-   my $class = ref($self);
 
    return $self->_raise_error("unable to lock logfile $self->{filename} ($!)")
       unless flock($self->{fh}, LOCK_EX);
@@ -944,7 +1017,6 @@ sub _lock {
 
 sub _unlock {
    my $self  = shift;
-   my $class = ref($self);
 
    return $self->_raise_error("unable to unlock logfile $self->{filename} ($!)")
       unless flock($self->{fh}, LOCK_UN);
@@ -955,7 +1027,6 @@ sub _unlock {
 sub _print {
    my $self  = shift;
    my $level = shift;
-   my $class = ref($self);
 
    {  # return if we don't want log this level
       no strict 'refs';
@@ -1047,10 +1118,10 @@ sub _gettime {
 
 sub _raise_error {
    my $self   = shift;
+   my $errstr = shift;
    my $class  = ref($self);
-   my $errstr = defined $_[0] ? $_[0] : '';
+   croak "$class: $errstr" if $self->{die_on_errors};
    $Log::Handler::ERRSTR = $errstr;
-   croak "$class: $errstr" if $self->{die_on_errors} == 1;
    return undef;
 }
 

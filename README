@@ -9,13 +9,14 @@ SYNOPSIS
         $log->alert("foo bar");
 
 DESCRIPTION
-    This module is just a simple log file handler. It's possible to define a
-    log level for your programs and control the amount of informations that
-    be logged to the log file. In addition it's possible to say how you wish
-    to open the log file - transient or permanent - and LOCK and UNLOCK the
-    log file by each log operation and if you wish you can assign the
-    handler to check the inode of the log file (not on windows). This could
-    be very useful if a rotate mechanism moves and zip the log file.
+    This module is just a simple object oriented log file handler and very
+    easy to use. It's possible to define a log level for your programs and
+    control the amount of informations that be logged to the log file. In
+    addition it's possible to say how you wish to open the log file -
+    transient or permanent - and LOCK and UNLOCK the log file by each write
+    operation and if you wish you can assign the handler to check the inode
+    of the log file (not on windows). This could be very useful if a rotate
+    mechanism moves and zip the log file.
 
 METHODS
   new()
@@ -24,6 +25,87 @@ METHODS
     The "new()" method expected the options for the log file. The only one
     mandatory option is "filename". All other options will be set to a
     default value.
+
+  Log levels
+    There are eigth log level and thirteen methods to handle this levels:
+
+    emergency(), emerg()
+    alert()
+    critical(), crit()
+    error(), err()
+    warning(), warn
+    notice(), note()
+    info()
+    debug()
+
+    "debug()" is the highest and "emergency()" or "emerg()" is the lowest
+    log level. You can define the log level with the options "maxlevel" and
+    "minlevel".
+
+    The methods "note()", "warn()", "err()", "crit()" and "emerg()" are just
+    shortcuts.
+
+    Example:
+
+    If you set the option "maxlevel" to "warning" and "minlevel" to
+    "emergency" then the levels emergency, alert, critical, error and
+    warning will be logged.
+
+    The call of all methods is very simple:
+
+        $log->info("Hello World! How are you?");
+
+    Or maybe:
+
+        $log->info("Hello World!", "How are you?");
+
+    Both calls would log (provided that the log level INFO would log)
+
+        Feb 01 12:56:31 [INFO] Hello World! How are you?
+
+  is_* methods
+    is_emergency(), is_emerg()
+    is_alert()
+    is_critical(), is_crit()
+    is_error(), is_err()
+    is_warning(), is_warn
+    is_notice(), is_note()
+    is_info()
+    is_debug()
+
+    This thirteen methods could be very useful if you want to kwow if the
+    current log level would write the message to the log file. All methods
+    returns TRUE if the handler would log the message and FALSE if not.
+    Example:
+
+    You want to dump a big hash with Data::Dumper to the log file, but you
+    don't want to pass the dump in any case, because it would costs a lot of
+    resources.
+
+        $log->debug(Dumper($hash));
+
+    This example would dump the $hash in any case and handoff it to the log
+    handler, but this isn't that what we really want!
+
+        $log->debug(Dumper($hash))
+           if $log->is_debug();
+
+    Now we dump the $hash only if the current log level would really log it.
+
+    The methods "is_note()", "is_warn()", "is_err()", "is_crit()" and
+    "is_emerg()" are just shortcuts.
+
+  would_log_* methods
+    The old would_log_* (now is_*) methods still exists for compabilities.
+
+    would_log_emergency(), would_log_emerg()
+    would_log_alert()
+    would_log_critical(), would_log_crit()
+    would_log_error(), would_log_err()
+    would_log_warning(), would_log_warn
+    would_log_notice(), would_log_note()
+    would_log_info()
+    would_log_debug()
 
   set_prefix()
     Call "set_prefix()" to modifier the option prefix after you called
@@ -54,82 +136,11 @@ METHODS
 
         $log->set_prefix($log->get_prefix."add something");
 
-  Log levels
-    There are eigth log level and twelve methods to handle this levels:
-
-    emergency(), emerg()
-    alert()
-    critical(), crit()
-    error(), err()
-    warning()
-    notice(), note()
-    info()
-    debug()
-
-    "debug()" is the highest and "emergency()" or "emerg()" is the lowest
-    log level. You can define the log level with the options "maxlevel()"
-    and "minlevel()".
-
-    The methods "note()", "err()", "crit()" and "emerg()" are just
-    shortcuts.
-
-    Example:
-
-    If you set the option "maxlevel" to "warning" and "minlevel" to
-    "emergency" then the levels emergency, alert, critical, error and
-    warning will be logged.
-
-    The call of all methods is very simple:
-
-        $log->info("Hello World! How are you?");
-
-    Or maybe:
-
-        $log->info("Hello World!", "How are you?");
-
-    Both calls would log (provided that the log level INFO would log)
-
-        Feb 01 12:56:31 [INFO] Hello World! How are you?
-
-  would_log_* methods
-    would_log_emergency(), would_log_emerg()
-    would_log_alert()
-    would_log_critical(), would_log_crit()
-    would_log_error(), would_log_err()
-    would_log_warning()
-    would_log_notice(), would_log_note()
-    would_log_info()
-    would_log_debug()
-
-    This twelve methods could be very useful if you want to kwow if the
-    current log level would log the message to the log file. All methods
-    returns TRUE if the handler would log the message and FALSE if not.
-    Example:
-
-    You want to dump a big hash with Data::Dumper to the log file, but you
-    don't want to pass the dump in any case, because it would costs a lot of
-    resources.
-
-        $log->debug(Dumper($hash));
-
-    This example would dump the $hash in any case and handoff it to the log
-    handler, but this isn't that what we really want!
-
-        $log->debug(Dumper($hash))
-           if $log->would_log_debug();
-
-    Now we dump the $hash only if the current log level would really log it.
-
-    The methods "would_log_note()", "would_log_err()", "would_log_crit()"
-    and "would_log_emerg()" are just shortcuts.
-
-    All methods that would NOT log the message returns TRUE.
-
   errstr()
     Call "errstr()" if you want to get the last error string. This is useful
     with the option "die_on_errors". If you set this option to 0 the handler
     wouldn't croak if simple write operations failed. Set "die_on_errors" to
-    control it yourself. "errstr()" is only useful with "new()", "CLOSE()"
+    control it yourself. "errstr()" is only useful with "new()", "close()"
     and the log level methods.
 
         $log->info("log information") or die $log->errstr;
@@ -157,21 +168,20 @@ METHODS
         my $log = Log::Handler->new(filename => 'file.log')
            or warn Log::Handler->errstr;
 
-  CLOSE()
-    Call "CLOSE()" if you want to close the log file.
+  close()
+    Call "close()" if you want to close the log file.
 
-    This option is only useful if you set option "fileopen" to 1. If you
-    don't call "CLOSE()" the log file will be closed automatically before
-    exit().
+    This option is ONLY useful if you set option "fileopen" to 1 and if you
+    want to close the log file yourself. If you don't call "close()" the log
+    file will be closed automatically before exit.
 
-    Note that if you close the log file it's necessary to call "new()" to
-    reopen it.
+    The old but deprecated method "CLOSE()" exists for compabilities.
 
 OPTIONS
   filename
-    This is the only one mandatory option and the script croak if it not
+    This is the only one mandatory option and the script croak if it is not
     set. You have to set a filename, a GLOBREF or you can set a string as an
-    alias for STDOUT and STDERR.
+    alias for STDOUT or STDERR.
 
     Set a file name:
 
@@ -217,7 +227,7 @@ OPTIONS
     can set the option "filelock" to activate or deactivate the locking.
 
         0 - no file lock
-        1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each log message (default)
+        1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each write operation (default)
 
   fileopen
     Open a log file transient or permanent.
@@ -230,7 +240,7 @@ OPTIONS
     This option works only if option "fileopen" is set to 1.
 
         0 - deactivate
-        1 - try to reopen logfile if the inode changed (default)
+        1 - try to reopen the log file if the inode changed (default)
 
   fileopen and reopen
     Please note that it's better to set "reopen" and "fileopen" to 0 on
@@ -335,7 +345,7 @@ OPTIONS
         7 - debug
         6 - info
         5 - notice, note
-        4 - warning
+        4 - warning, warn
         3 - error, err
         2 - critical, crit
         1 - alert
@@ -461,6 +471,7 @@ EXAMPLES
         $log->notice("this is a notice");
         $log->note("this is a notice as well");
         $log->warning("this is a warning");
+        $log->warn("this is a warning as well");
         $log->error("this is a error message");
         $log->err("this is a error message as well");
         $log->critical("this is a critical message");
@@ -476,6 +487,7 @@ EXAMPLES
         Feb 01 12:56:31 [NOTICE] this is a notice
         Feb 01 12:56:31 [NOTE] this is a notice as well
         Feb 01 12:56:31 [WARNING] this is a warning
+        Feb 01 12:56:31 [WARN] this is a warning
         Feb 01 12:56:31 [ERROR] this is a error message
         Feb 01 12:56:31 [ERR] this is a error message as well
         Feb 01 12:56:31 [CRITICAL] this is a critical message
@@ -525,7 +537,7 @@ EXAMPLES
         Feb 01 12:56:31 hostname[8923] [INFO] progname: Hello world
         Feb 01 12:56:31 hostname[8923] [WARNING] progname: There is something wrong!
 
-  would_log_* example:
+  is_* example:
         use Log::Handler;
         use Data::Dumper;
 
@@ -543,7 +555,7 @@ EXAMPLES
         );
 
         $log->debug("\n".Dumper(\%hash))
-            if $log->would_log_debug();
+            if $log->is_debug();
 
     Would NOT dump %hash to the $log object!
 
@@ -557,14 +569,13 @@ EXAMPLES
            die_on_errors => 0
         ) or die Log::Handler->errstr();
 
-        if ($log->would_log_debug()) {
+        if ($log->is_debug()) {
            $log->debug("\n".Dumper(\%hash))
               or die $log->errstr();
         }
 
 DEPENDENCIES
         Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
-        IO::Handle        -  to set autoflush on the log file handle
         File::stat        -  to get the inode from the log file
         POSIX             -  to generate the time stamp with strftime()
         Params::Validate  -  to validate all options

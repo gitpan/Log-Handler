@@ -1,3 +1,9 @@
+0.33	Released at 2007-05-09.
+        Added 13 is_* methods. They do the same as the would_log_* methods.
+        Added close() as replacement for CLOSE(). CLOSE() exists in further
+          releases but is deprecated.
+        Did some code improvements and fix some POD typos.
+        Kicked IO::Handle from PREREQS and autoflush myself on the file handle.
 0.32	Released at 2007-04-26.
 	I jumped from 0.15 to 0.32 because there exists brownfields on backpan.
 	Replaced my own routine to get caller() informations with Devel::Backtrace.

@@ -10,7 +10,6 @@ WriteMakefile
           'PREREQ_PM' => {
                            'Test::More' => 0,
                            'Params::Validate' => 0,
-                           'IO::Handle' => 0,
                            'File::Spec' => 0,
                            'Devel::Backtrace' => 0,
                            'File::stat' => 0,
