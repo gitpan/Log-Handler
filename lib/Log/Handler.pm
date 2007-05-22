@@ -673,7 +673,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.33';
+our $VERSION = '0.34';
 
 use strict;
 use warnings;
@@ -1067,10 +1067,10 @@ sub _print {
 
    $message .= "\n" # I hope that this works on the most OSs
       if $self->{newline}
-      && $message =~ /.*\z/m;
+      && $message =~ /.\z|^\z/;
 
    if ($self->{debugger}) {
-      $message .= "\n" if $message =~ /.*\z/m;
+      $message .= "\n" if $message =~ /.\z|^\z/;
       my $bt = Devel::Backtrace->new($self->{debugger_skip});
       my $pt = $bt->points - 1;
 

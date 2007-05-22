@@ -1,3 +1,6 @@
+0.34    Released at 2007-05-22.
+        Changed the regex /.*\z/ to /.\z|^\z/ to append a newline if not
+          exists because /.*\z/ seems to be a regex bug.
 0.33	Released at 2007-05-09.
         Added 13 is_* methods. They do the same as the would_log_* methods.
         Added close() as replacement for CLOSE(). CLOSE() exists in further

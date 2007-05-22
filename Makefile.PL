@@ -11,7 +11,7 @@ WriteMakefile
                            'Test::More' => 0,
                            'Params::Validate' => 0,
                            'File::Spec' => 0,
-                           'Devel::Backtrace' => 0,
+                           'Devel::Backtrace' => '0.03',
                            'File::stat' => 0,
                            'Carp' => 0
                          }
