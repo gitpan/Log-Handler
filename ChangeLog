@@ -1,3 +1,6 @@
+0.35    Released at 2007-06-05.
+        Added method trace() to prints caller() to the log file.
+        Did some code improvements and fixed POD typos.
 0.34    Released at 2007-05-22.
         Changed the regex /.*\z/ to /.\z|^\z/ to append a newline if not
           exists because /.*\z/ seems to be a regex bug.

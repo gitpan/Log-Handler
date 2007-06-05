@@ -7,10 +7,7 @@ use Log::Handler;
 
 my $log = Log::Handler->new(
    filename => \*STDOUT,
-   maxlevel => 'info',
-   newline  => 1,
-   debugger => 1,
-   debugger_skip => 0
+   newline  => 1
 );
 
-$log->info("CALLER INFORMATIONS:");
+$log->trace("CALLER INFORMATIONS:");

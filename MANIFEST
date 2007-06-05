@@ -1,6 +1,7 @@
 Build.PL
 ChangeLog
-examples/logger.pl
+examples/simple.cfg
+examples/simple.pl
 examples/trace.pl
 INSTALL
 lib/Log/Handler.pm

@@ -11,11 +11,11 @@ SYNOPSIS
 DESCRIPTION
     This module is just a simple object oriented log file handler and very
     easy to use. It's possible to define a log level for your programs and
-    control the amount of informations that be logged to the log file. In
-    addition it's possible to say how you wish to open the log file -
-    transient or permanent - and LOCK and UNLOCK the log file by each write
-    operation and if you wish you can assign the handler to check the inode
-    of the log file (not on windows). This could be very useful if a rotate
+    control the amount of informations that will be logged to the log file.
+    In addition it's possible to say how you wish to open the log file -
+    transient or permanent - and lock and unlock the log file by each write
+    operation. If you wish you can assign the handler to check the inode of
+    the log file (not on windows). That could be very useful if a rotate
     mechanism moves and zip the log file.
 
 METHODS
@@ -27,13 +27,13 @@ METHODS
     default value.
 
   Log levels
-    There are eigth log level and thirteen methods to handle this levels:
+    There are eigth log levels and thirteen methods to handle this levels:
 
     emergency(), emerg()
     alert()
     critical(), crit()
     error(), err()
-    warning(), warn
+    warning(), warn()
     notice(), note()
     info()
     debug()
@@ -59,7 +59,8 @@ METHODS
 
         $log->info("Hello World!", "How are you?");
 
-    Both calls would log (provided that the log level INFO would log)
+    Both calls write to the log file (provided that the log level INFO would
+    log)
 
         Feb 01 12:56:31 [INFO] Hello World! How are you?
 
@@ -68,41 +69,38 @@ METHODS
     is_alert()
     is_critical(), is_crit()
     is_error(), is_err()
-    is_warning(), is_warn
+    is_warning(), is_warn()
     is_notice(), is_note()
     is_info()
     is_debug()
 
-    This thirteen methods could be very useful if you want to kwow if the
+    These thirteen methods could be very useful if you want to kwow if the
     current log level would write the message to the log file. All methods
-    returns TRUE if the handler would log the message and FALSE if not.
-    Example:
-
-    You want to dump a big hash with Data::Dumper to the log file, but you
-    don't want to pass the dump in any case, because it would costs a lot of
-    resources.
+    returns TRUE if the handler would log it and FALSE if not. Example:
 
         $log->debug(Dumper($hash));
 
     This example would dump the $hash in any case and handoff it to the log
-    handler, but this isn't that what we really want!
+    handler, but this isn't that what we really want because it could costs
+    a lot of resources.
 
         $log->debug(Dumper($hash))
            if $log->is_debug();
 
-    Now we dump the $hash only if the current log level would really log it.
+    Now we dump the $hash only if the current log level would log it.
 
     The methods "is_note()", "is_warn()", "is_err()", "is_crit()" and
     "is_emerg()" are just shortcuts.
 
   would_log_* methods
-    The old would_log_* (now is_*) methods still exists for compabilities.
+    The old and deprecated would_log_* (is_* since 0.33) methods still
+    exists for compabilities.
 
     would_log_emergency(), would_log_emerg()
     would_log_alert()
     would_log_critical(), would_log_crit()
     would_log_error(), would_log_err()
-    would_log_warning(), would_log_warn
+    would_log_warning(), would_log_warn()
     would_log_notice(), would_log_note()
     would_log_info()
     would_log_debug()
@@ -120,8 +118,8 @@ METHODS
         $log->set_prefix("[<--LEVEL-->] myhost:$$ ");
 
   get_prefix()
-    Call "get_prefix()" to get the current prefix if you just want to
-    modifier the current prefix and re-set the old.
+    Call "get_prefix()" to get the current prefix if you want to modifier
+    it.
 
         # safe the old prefix
         my $old_prefix = $log->get_prefix();
@@ -137,32 +135,32 @@ METHODS
         $log->set_prefix($log->get_prefix."add something");
 
   errstr()
-    Call "errstr()" if you want to get the last error string. This is useful
-    with the option "die_on_errors". If you set this option to 0 the handler
-    wouldn't croak if simple write operations failed. Set "die_on_errors" to
-    control it yourself. "errstr()" is only useful with "new()", "close()"
-    and the log level methods.
+    Call "errstr()" if you want to get the last error message. That is
+    useful with "die_on_errors". If you set this option to 0 then the
+    handler wouldn't croak if a simple write operation fails. Set
+    "die_on_errors" to control it yourself. "errstr()" is only useful with
+    "new()", "close()" and the log level methods.
 
-        $log->info("log information") or die $log->errstr;
+        $log->info("Hello World!") or die $log->errstr;
 
     Or
 
         $error_string = $log->errstr
-           unless $log->info("log some informations");
+           unless $log->info("Hello World!");
 
     The error string contains $! in parantheses at the end of the error
     string.
 
     The exception is that the handler croaks in any case if the call of
-    "new()" failed because on missing params or on wrong settings!
+    "new()" fails because on missing params or wrong settings!
 
         my $log = Log::Handler->new(filename => 'file.log', mode => 'foo bar');
 
-    This would croaks, because option "mode" except "append" or "trunc" or
-    "excl".
+    That would croak, because the option "mode" except "append" or "trunc"
+    or "excl".
 
     If you set the option "fileopen" to 1 - the default - to open the log
-    file permanent and the call of "new" failed then you can absorb the
+    file permanent and the call of "new" fails then you can absorb the
     error.
 
         my $log = Log::Handler->new(filename => 'file.log')
@@ -171,48 +169,73 @@ METHODS
   close()
     Call "close()" if you want to close the log file.
 
-    This option is ONLY useful if you set option "fileopen" to 1 and if you
-    want to close the log file yourself. If you don't call "close()" the log
-    file will be closed automatically before exit.
+    This option is only useful if you set the option "fileopen" to 1 and if
+    you want to close the log file yourself. If you don't call "close()" the
+    log file will be closed automatically before exit.
 
     The old but deprecated method "CLOSE()" exists for compabilities.
 
+  trace()
+    This method is very useful if you want to print "caller()" informations
+    to the log file. In contrast to the log level methods this method prints
+    "caller()" informations to the log file in any case and you don't need
+    to activate the debugger with the option "debug". Example:
+
+        my $log = Log::Handler->new( filename => \*STDOUT );
+        $log->trace("caller informations:");
+
+        Jun 05 21:20:32 [TRACE] caller informations
+           CALL(2): package(main) filename(./log-handler-test.pl) line(22) subroutine(Log::Handler::trace) hasargs(1)
+           CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_print) hasargs(1)
+           CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1097) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
+
+    Maybe you like to print caller informations to the log file if an
+    unexpected error occurs.
+
+        $SIG{__DIE__} = sub { $log->trace(@_) && exit(9) };
+
+    Take a look at the examples of the options "debug", "debug_mode" and
+    "debug_skip" for more informations.
+
 OPTIONS
   filename
-    This is the only one mandatory option and the script croak if it is not
-    set. You have to set a filename, a GLOBREF or you can set a string as an
+    This is the only mandatory option and the script croaks if it isn't set.
+    You have to set a file name, a GLOBREF or you can set a string as an
     alias for STDOUT or STDERR.
 
     Set a file name:
 
-        $log = Log::Handler->new( filename => 'file.log'  );
-
-    Set a file handle
-
-        open my $fh, '>', 'file.log' or die $!;
-        $log = Log::Handler->new( filename => $fh );
+        my $log = Log::Handler->new( filename => 'file.log'  );
 
     Set a GLOBREF
 
         open FH, '>', 'file.log' or die $!;
-        $log = Log::Handler->new( filename => \*FH );
+        my $log = Log::Handler->new( filename => \*FH );
+
+    Or with
+
+        open my $fh, '>', 'file.log' or die $!;
+        my $log = Log::Handler->new( filename => $fh );
 
     Set STDOUT or STDERR
 
-        $log = Log::Handler->new( filename => \*STDOUT );
-        $log = Log::Handler->new( filename => \*STDERR );
+        my $log = Log::Handler->new( filename => \*STDOUT );
+        # or
+        my $log = Log::Handler->new( filename => \*STDERR );
 
     If the option "filename" is set in a config file and you want to debug
     to your screen then you can set *STDOUT or *STDERR as a string.
 
         my $out = '*STDOUT';
-        $log = Log::Handler->new( filename => $out );
-        $log = Log::Handler->new( filename => '*STDOUT' );
-        $log = Log::Handler->new( filename => '*STDERR' );
+        my $log = Log::Handler->new( filename => $out );
+        # or
+        my $log = Log::Handler->new( filename => '*STDOUT' );
+        # or
+        my $log = Log::Handler->new( filename => '*STDERR' );
 
     That is not possible:
 
-        $log = Log::Handler->new( filename => '*FH' );
+        my $log = Log::Handler->new( filename => '*FH' );
 
     Note that if you set a GLOBREF to "filename" some options will be forced
     (overwritten) and you have to control the handles yourself. The forced
@@ -223,7 +246,8 @@ OPTIONS
         reopen   => 0
 
   filelock
-    It's maybe desirable to lock the log file by each write operation. You
+    Maybe it's desirable to lock the log file by each write operation
+    because a lot of processes write at the same time to the log file. You
     can set the option "filelock" to activate or deactivate the locking.
 
         0 - no file lock
@@ -234,7 +258,7 @@ OPTIONS
 
         0 - open and close the logfile by each write operation (default)
         1 - open the logfile if C<new()> called and try to reopen the
-            file if reopen is set to 1 and the inode of the file has changed
+            file if C<reopen> is set to 1 and the inode of the file has changed
 
   reopen
     This option works only if option "fileopen" is set to 1.
@@ -244,16 +268,16 @@ OPTIONS
 
   fileopen and reopen
     Please note that it's better to set "reopen" and "fileopen" to 0 on
-    Windows systems because Windows unfortunately haven't the faintest idea
-    of inodes.
+    Windows because Windows unfortunately haven't the faintest idea of
+    inodes.
 
-    To write your code independent you should control that:
+    To write your code independent you should control it:
 
         my $os_is_win = $^O =~ /win/i ? 0 : 1;
 
         my $log = Log::Handler->new(
            filename => 'file.log',
-           mode => 'append',
+           mode     => 'append',
            fileopen => $os_is_win
         );
 
@@ -273,22 +297,22 @@ OPTIONS
     "excl" would fail by open the log file if the log file already exists.
     This is the default option because some security reasons.
 
-    "trunc" would truncate the complete log file if it exist. Please take
-    care to use this option!
+    "trunc" would truncate the complete log file if it exists. Please take
+    care to use this option.
 
-    Take a look to the documentation of "sysopen()" to get more informations
-    and take care to use "append" or "trunc"!
+    Take a look to the documentation of "sysopen()" to get more
+    informations.
 
   autoflush
         0 - autoflush off
         1 - autoflush on (default)
 
   permissions
-    "permissions" sets the permission of the file if it creates and must be
-    set as a octal value. These permission values need to be in octal and
+    The option "permissions" sets the permission of the file if it creates
+    and must be set as a octal value. The permission need to be in octal and
     are modified by your process's current "umask".
 
-    This means that you have to use the unix style permissions such as
+    That means that you have to use the unix style permissions such as
     "chmod". 0640 is the default permission for this option. That means that
     the owner got read and write permissions and users in the same group got
     only read permissions. All other users got no access.
@@ -298,8 +322,8 @@ OPTIONS
 
   timeformat
     You can set "timeformat" with a date and time format that will be
-    coverted by POSIX::strftime(). The default format is "%b %d %H:%M:%S"
-    and looks like
+    coverted by POSIX::strftime. The default format is "%b %d %H:%M:%S" and
+    looks like
 
         Feb 01 12:56:31
 
@@ -308,10 +332,11 @@ OPTIONS
         2007/02/01 12:56:31
 
   newline
-    This helpful option appends a newline to the log message if not exist.
+    This helpful option appends a newline to the log message if it not
+    exist.
 
-        0 - deactivated (default)
-        1 - appends a newline to the log message if not exist
+        0 - inactive (default)
+        1 - active - appends a newline to the log message if not exist
 
   prefix
     Set "prefix" to define your own prefix for each message. The default
@@ -339,8 +364,8 @@ OPTIONS
     Take a look to the EXAMPLES to see more.
 
   maxlevel and minlevel
-    With the options "maxlevel" and "minlevel" you can set the log levels
-    you wish to log to your log file. The log levels are:
+    With these options it's possible to set the log levels for your program.
+    The log levels are:
 
         7 - debug
         6 - info
@@ -356,27 +381,31 @@ OPTIONS
     It's possible to set the log level as a string or as number. The default
     "maxlevel" is 4 and the default "minlevel" is 0.
 
-    Example: If "maxlevel" is set to 4 and "minlevel" to 0 then only
-    emergency (emerg), alert, critical (crit) and error (err) messages will
-    be logged to the log file.
+    Example: If "maxlevel" is set to 4 and "minlevel" to 0 then the levels
+    emergency (emerg), alert, critical (crit) and error (err) are active and
+    would be logged to the log file.
 
     You can set both to 8 or "nothing" if you don't want to log any message.
 
   die_on_errors
     Set "die_on_errors" to 0 if you don't want that the handler croaks if
-    normal operations failed.
+    normal operations fail.
 
         0 - will not die on errors
         1 - will die (e.g. croak) on errors
 
     The exception is that the handler croaks in any case if the call of
-    "new()" failed because on missing params or wrong settings.
+    "new()" fails because on missing params or wrong settings.
 
-  debugger
-    You can activate a simple debugger to log "caller()" informations by
-    each log operation. There are two debug modes: block(1) and line(2)
-    mode. The debugger is logging all defined values except "hints" and
-    "bitmask".
+  debug
+    You can activate a simple debugger that writes "caller()" informations
+    for each log level that would log to the log file. The debugger is
+    logging all defined values except "hints" and "bitmask". Set "debug" to
+    1 to activate the debugger. The debugger is set to 0 by default.
+
+  debug_mode
+    There are two debug modes: line(1) and block(2) mode. The default mode
+    is 1.
 
     The block mode looks like this:
 
@@ -385,15 +414,30 @@ OPTIONS
         use Log::Handler;
 
         my $log = Log::Handler->new(
-           filename => \*STDOUT,
-           maxlevel => 'debug',
-           debugger => 1
+           filename   => \*STDOUT,
+           maxlevel   => 'debug',
+           debug      => 1,
+           debug_mode => 1
         );
 
         sub test1 { $log->debug() }
         sub test2 { &test1; }
 
         &test2;
+
+    Output:
+
+        Apr 26 12:54:11 [DEBUG] 
+           CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
+           CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
+           CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
+           CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_print) hasargs(1)
+           CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1022) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
+
+    The same code example but the debugger in block mode would looks like
+    this:
+
+           debug_mode => 2
 
     Output:
 
@@ -430,24 +474,10 @@ OPTIONS
              hasargs     1
              wantarray   0
 
-    The same code example but the debugger in line mode would looks like
-    this:
+  debug_skip
+    This option let skip the caller informations the count of "debug_skip".
 
-           debugger => 2
-
-    Output:
-
-        Apr 26 12:54:11 [DEBUG] 
-           CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
-           CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
-           CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
-           CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_print) hasargs(1)
-           CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1022) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
-
-  debugger_skip
-    This option let skip the debugger the count of "debugger_skip".
-
-        debugger_skip => 2
+        debug_skip => 2
 
         Apr 26 12:55:07 [DEBUG] 
            CALL(2): package(main) filename(./trace.pl) line(16) subroutine(main::test2) hasargs(0)
@@ -480,7 +510,7 @@ EXAMPLES
         $log->emergency("this is a emergency message");
         $log->emerg("this is a emergency message as well");
 
-    Would log this:
+    Would log
 
         Feb 01 12:56:31 [DEBUG] this is a debug message
         Feb 01 12:56:31 [INFO] this is a info message
@@ -574,7 +604,7 @@ EXAMPLES
               or die $log->errstr();
         }
 
-DEPENDENCIES
+PREREQUISITES
         Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
         File::stat        -  to get the inode from the log file
         POSIX             -  to generate the time stamp with strftime()
@@ -590,6 +620,13 @@ REPORT BUGS
 
 AUTHOR
     Jonny Schulz <jschulz.cpan(at)bloonix.de>.
+
+QUESTIONS
+    Do you have any questions or ideas?
+
+    MAIL: <jschulz.cpan(at)bloonix.de>
+
+    IRC: irc.perl.org#perlde
 
 COPYRIGHT
     Copyright (C) 2007 by Jonny Schulz. All rights reserved.

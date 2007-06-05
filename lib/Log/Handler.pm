@@ -14,10 +14,10 @@ Log::Handler - A simple handler to log messages to log files.
 
 This module is just a simple object oriented log file handler and very easy to use.
 It's possible to define a log level for your programs and control the amount of
-informations that be logged to the log file. In addition it's possible to say how
-you wish to open the log file - transient or permanent - and LOCK and UNLOCK the
-log file by each write operation and if you wish you can assign the handler to
-check the inode of the log file (not on windows). This could be very useful if
+informations that will be logged to the log file. In addition it's possible to say
+how you wish to open the log file - transient or permanent - and lock and unlock the
+log file by each write operation. If you wish you can assign the handler to
+check the inode of the log file (not on windows). That could be very useful if
 a rotate mechanism moves and zip the log file.
 
 =head1 METHODS
@@ -31,7 +31,7 @@ option is C<filename>. All other options will be set to a default value.
 
 =head2 Log levels
 
-There are eigth log level and thirteen methods to handle this levels:
+There are eigth log levels and thirteen methods to handle this levels:
 
 =over 4
 
@@ -43,7 +43,7 @@ There are eigth log level and thirteen methods to handle this levels:
 
 =item error(), err()
 
-=item warning(), warn
+=item warning(), warn()
 
 =item notice(), note()
 
@@ -71,7 +71,7 @@ Or maybe:
 
     $log->info("Hello World!", "How are you?");
 
-Both calls would log (provided that the log level INFO would log)
+Both calls write to the log file (provided that the log level INFO would log)
 
     Feb 01 12:56:31 [INFO] Hello World! How are you?
 
@@ -87,7 +87,7 @@ Both calls would log (provided that the log level INFO would log)
 
 =item is_error(), is_err()
 
-=item is_warning(), is_warn
+=item is_warning(), is_warn()
 
 =item is_notice(), is_note()
 
@@ -97,28 +97,25 @@ Both calls would log (provided that the log level INFO would log)
 
 =back
 
-This thirteen methods could be very useful if you want to kwow if the current log level
+These thirteen methods could be very useful if you want to kwow if the current log level
 would write the message to the log file. All methods returns TRUE if the handler would
-log the message and FALSE if not. Example:
-
-You want to dump a big hash with Data::Dumper to the log file, but you don't want to
-pass the dump in any case, because it would costs a lot of resources.
+log it and FALSE if not. Example:
 
     $log->debug(Dumper($hash));
 
 This example would dump the $hash in any case and handoff it to the log handler, 
-but this isn't that what we really want!
+but this isn't that what we really want because it could costs a lot of resources.
 
     $log->debug(Dumper($hash))
        if $log->is_debug();
 
-Now we dump the $hash only if the current log level would really log it.
+Now we dump the $hash only if the current log level would log it.
 
 The methods C<is_note()>, C<is_warn()>, C<is_err()>, C<is_crit()> and C<is_emerg()> are just shortcuts.
 
 =head2 would_log_* methods
 
-The old would_log_* (now is_*) methods still exists for compabilities.
+The old and deprecated would_log_* (is_* since 0.33) methods still exists for compabilities.
 
 =over 4
 
@@ -130,7 +127,7 @@ The old would_log_* (now is_*) methods still exists for compabilities.
 
 =item would_log_error(), would_log_err()
 
-=item would_log_warning(), would_log_warn
+=item would_log_warning(), would_log_warn()
 
 =item would_log_notice(), would_log_note()
 
@@ -154,8 +151,7 @@ Call C<set_prefix()> to modifier the option prefix after you called C<new()>.
 
 =head2 get_prefix()
 
-Call C<get_prefix()> to get the current prefix if you just want to modifier the current
-prefix and re-set the old.
+Call C<get_prefix()> to get the current prefix if you want to modifier it.
 
     # safe the old prefix
     my $old_prefix = $log->get_prefix();
@@ -172,29 +168,29 @@ Or you want to add something to the current prefix:
 
 =head2 errstr()
 
-Call C<errstr()> if you want to get the last error string. This is useful with the
-option C<die_on_errors>. If you set this option to 0 the handler wouldn't croak
-if simple write operations failed. Set C<die_on_errors> to control it yourself.
+Call C<errstr()> if you want to get the last error message. That is useful with
+C<die_on_errors>. If you set this option to C<0> then the handler wouldn't croak
+if a simple write operation fails. Set C<die_on_errors> to control it yourself.
 C<errstr()> is only useful with C<new()>, C<close()> and the log level methods.
 
-    $log->info("log information") or die $log->errstr;
+    $log->info("Hello World!") or die $log->errstr;
 
 Or
 
     $error_string = $log->errstr
-       unless $log->info("log some informations");
+       unless $log->info("Hello World!");
 
 The error string contains C<$!> in parantheses at the end of the error string.
 
-The exception is that the handler croaks in any case if the call of C<new()> failed
-because on missing params or on wrong settings!
+The exception is that the handler croaks in any case if the call of C<new()> fails
+because on missing params or wrong settings!
 
     my $log = Log::Handler->new(filename => 'file.log', mode => 'foo bar');
 
-This would croaks, because option C<mode> except C<append> or C<trunc> or C<excl>.
+That would croak, because the option C<mode> except C<append> or C<trunc> or C<excl>.
 
 If you set the option C<fileopen> to 1 - the default - to open the log file permanent
-and the call of C<new> failed then you can absorb the error.
+and the call of C<new> fails then you can absorb the error.
 
     my $log = Log::Handler->new(filename => 'file.log')
        or warn Log::Handler->errstr;
@@ -203,49 +199,74 @@ and the call of C<new> failed then you can absorb the error.
 
 Call C<close()> if you want to close the log file.
 
-This option is ONLY useful if you set option C<fileopen> to 1 and if you want to
+This option is only useful if you set the option C<fileopen> to 1 and if you want to
 close the log file yourself. If you don't call C<close()> the log file will be
 closed automatically before exit.
 
 The old but deprecated method C<CLOSE()> exists for compabilities.
 
+=head2 trace()
+
+This method is very useful if you want to print C<caller()> informations to the
+log file. In contrast to the log level methods this method prints C<caller()> informations
+to the log file in any case and you don't need to activate the debugger with the
+option C<debug>. Example:
+
+    my $log = Log::Handler->new( filename => \*STDOUT );
+    $log->trace("caller informations:");
+
+    Jun 05 21:20:32 [TRACE] caller informations
+       CALL(2): package(main) filename(./log-handler-test.pl) line(22) subroutine(Log::Handler::trace) hasargs(1)
+       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_print) hasargs(1)
+       CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1097) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
+
+Maybe you like to print caller informations to the log file if an unexpected error occurs.
+
+    $SIG{__DIE__} = sub { $log->trace(@_) && exit(9) };
+
+Take a look at the examples of the options C<debug>, C<debug_mode> and C<debug_skip>
+for more informations.
+
 =head1 OPTIONS
 
 =head2 filename
 
-This is the only one mandatory option and the script croak if it is not set. You have to
-set a filename, a GLOBREF or you can set a string as an alias for STDOUT or STDERR.
+This is the only mandatory option and the script croaks if it isn't set. You have to
+set a file name, a GLOBREF or you can set a string as an alias for STDOUT or STDERR.
 
 Set a file name:
 
-    $log = Log::Handler->new( filename => 'file.log'  );
-
-Set a file handle
-
-    open my $fh, '>', 'file.log' or die $!;
-    $log = Log::Handler->new( filename => $fh );
+    my $log = Log::Handler->new( filename => 'file.log'  );
 
 Set a GLOBREF
 
     open FH, '>', 'file.log' or die $!;
-    $log = Log::Handler->new( filename => \*FH );
+    my $log = Log::Handler->new( filename => \*FH );
+
+Or with
+
+    open my $fh, '>', 'file.log' or die $!;
+    my $log = Log::Handler->new( filename => $fh );
 
 Set STDOUT or STDERR
 
-    $log = Log::Handler->new( filename => \*STDOUT );
-    $log = Log::Handler->new( filename => \*STDERR );
+    my $log = Log::Handler->new( filename => \*STDOUT );
+    # or
+    my $log = Log::Handler->new( filename => \*STDERR );
 
 If the option C<filename> is set in a config file and you want to debug to your screen then
 you can set C<*STDOUT> or C<*STDERR> as a string.
 
     my $out = '*STDOUT';
-    $log = Log::Handler->new( filename => $out );
-    $log = Log::Handler->new( filename => '*STDOUT' );
-    $log = Log::Handler->new( filename => '*STDERR' );
+    my $log = Log::Handler->new( filename => $out );
+    # or
+    my $log = Log::Handler->new( filename => '*STDOUT' );
+    # or
+    my $log = Log::Handler->new( filename => '*STDERR' );
 
 That is not possible:
 
-    $log = Log::Handler->new( filename => '*FH' );
+    my $log = Log::Handler->new( filename => '*FH' );
 
 Note that if you set a GLOBREF to C<filename> some options will be forced (overwritten)
 and you have to control the handles yourself. The forced options are
@@ -256,8 +277,9 @@ and you have to control the handles yourself. The forced options are
 
 =head2 filelock
 
-It's maybe desirable to lock the log file by each write operation. You can set the option
-C<filelock> to activate or deactivate the locking.
+Maybe it's desirable to lock the log file by each write operation because a lot of processes
+write at the same time to the log file. You can set the option C<filelock> to activate or deactivate
+the locking.
 
     0 - no file lock
     1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each write operation (default)
@@ -268,7 +290,7 @@ Open a log file transient or permanent.
 
     0 - open and close the logfile by each write operation (default)
     1 - open the logfile if C<new()> called and try to reopen the
-        file if reopen is set to 1 and the inode of the file has changed
+        file if C<reopen> is set to 1 and the inode of the file has changed
 
 =head2 reopen
 
@@ -279,20 +301,20 @@ This option works only if option C<fileopen> is set to 1.
 
 =head2 fileopen and reopen
 
-Please note that it's better to set C<reopen> and C<fileopen> to 0 on Windows systems
+Please note that it's better to set C<reopen> and C<fileopen> to 0 on Windows
 because Windows unfortunately haven't the faintest idea of inodes.
 
-To write your code independent you should control that:
+To write your code independent you should control it:
 
     my $os_is_win = $^O =~ /win/i ? 0 : 1;
 
     my $log = Log::Handler->new(
        filename => 'file.log',
-       mode => 'append',
+       mode     => 'append',
        fileopen => $os_is_win
     );
 
-If you set C<fileopen> to  0 then it implies that C<reopen> has no importance.
+If you set C<fileopen> to 0 then it implies that C<reopen> has no importance.
 
 =head2 mode
 
@@ -308,11 +330,10 @@ the end of the log file.
 C<excl> would fail by open the log file if the log file already exists.
 This is the default option because some security reasons.
 
-C<trunc> would truncate the complete log file if it exist. Please take care
-to use this option!
+C<trunc> would truncate the complete log file if it exists. Please take care
+to use this option.
 
-Take a look to the documentation of C<sysopen()> to get more informations
-and take care to use C<append> or C<trunc>!
+Take a look to the documentation of C<sysopen()> to get more informations.
 
 =head2 autoflush
 
@@ -321,11 +342,11 @@ and take care to use C<append> or C<trunc>!
 
 =head2 permissions
 
-C<permissions> sets the permission of the file if it creates and must be set
-as a octal value. These permission values need to be in octal and are modified
+The option C<permissions> sets the permission of the file if it creates and must
+be set as a octal value. The permission need to be in octal and are modified
 by your process's current "umask".
 
-This means that you have to use the unix style permissions such as C<chmod>.
+That means that you have to use the unix style permissions such as C<chmod>.
 C<0640> is the default permission for this option. That means that the owner got
 read and write permissions and users in the same group got only read permissions.
 All other users got no access.
@@ -335,7 +356,7 @@ Take a look to the documentation of C<sysopen()> to get more informations.
 =head2 timeformat
 
 You can set C<timeformat> with a date and time format that will be coverted
-by POSIX::strftime(). The default format is "%b %d %H:%M:%S" and looks like
+by POSIX::strftime. The default format is "%b %d %H:%M:%S" and looks like
 
     Feb 01 12:56:31
 
@@ -345,10 +366,10 @@ As example the format "%Y/%m/%d %H:%M:%S" would looks like
 
 =head2 newline
 
-This helpful option appends a newline to the log message if not exist.
+This helpful option appends a newline to the log message if it not exist.
 
-    0 - deactivated (default)
-    1 - appends a newline to the log message if not exist
+    0 - inactive (default)
+    1 - active - appends a newline to the log message if not exist
 
 =head2 prefix
 
@@ -377,8 +398,8 @@ Take a look to the EXAMPLES to see more.
 
 =head2 maxlevel and minlevel
 
-With the options C<maxlevel> and C<minlevel> you can set the log levels you
-wish to log to your log file. The log levels are:
+With these options it's possible to set the log levels for your program.
+The log levels are:
 
     7 - debug
     6 - info
@@ -394,27 +415,30 @@ The levels C<note>, C<err>, C<crit> and C<emerg> are just shortcuts.
 It's possible to set the log level as a string or as number. The default
 C<maxlevel> is 4 and the default C<minlevel> is 0.
 
-Example: If C<maxlevel> is set to 4 and C<minlevel> to 0 then only emergency (emerg),
-alert, critical (crit) and error (err) messages will be logged to the log file.
+Example: If C<maxlevel> is set to 4 and C<minlevel> to 0 then the levels emergency (emerg),
+alert, critical (crit) and error (err) are active and would be logged to the log file.
 
-You can set both to 8 or "nothing" if you don't want to log any message.
+You can set both to 8 or C<nothing> if you don't want to log any message.
 
 =head2 die_on_errors
 
-Set C<die_on_errors> to 0 if you don't want that the handler croaks if normal
-operations failed.
+Set C<die_on_errors> to 0 if you don't want that the handler croaks if normal operations fail.
 
     0 - will not die on errors
     1 - will die (e.g. croak) on errors
 
-The exception is that the handler croaks in any case if the call of C<new()> failed
-because on missing params or wrong settings.
+The exception is that the handler croaks in any case if the call of C<new()> fails because
+on missing params or wrong settings.
 
-=head2 debugger
+=head2 debug
 
-You can activate a simple debugger to log C<caller()> informations by each log operation.
-There are two debug modes: block(1) and line(2) mode. The debugger is logging all defined
-values except C<hints> and C<bitmask>.
+You can activate a simple debugger that writes C<caller()> informations for each log level
+that would log to the log file. The debugger is logging all defined values except C<hints>
+and C<bitmask>. Set C<debug> to 1 to activate the debugger. The debugger is set to 0 by default.
+
+=head2 debug_mode
+
+There are two debug modes: line(1) and block(2) mode. The default mode is 1.
 
 The block mode looks like this:
 
@@ -423,15 +447,29 @@ The block mode looks like this:
     use Log::Handler;
 
     my $log = Log::Handler->new(
-       filename => \*STDOUT,
-       maxlevel => 'debug',
-       debugger => 1
+       filename   => \*STDOUT,
+       maxlevel   => 'debug',
+       debug      => 1,
+       debug_mode => 1
     );
 
     sub test1 { $log->debug() }
     sub test2 { &test1; }
 
     &test2;
+
+Output:
+
+    Apr 26 12:54:11 [DEBUG] 
+       CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
+       CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
+       CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
+       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_print) hasargs(1)
+       CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1022) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
+
+The same code example but the debugger in block mode would looks like this:
+
+       debug_mode => 2
 
 Output:
 
@@ -468,24 +506,11 @@ Output:
          hasargs     1
          wantarray   0
 
-The same code example but the debugger in line mode would looks like this:
+=head2 debug_skip
 
-       debugger => 2
+This option let skip the caller informations the count of C<debug_skip>.
 
-Output:
-
-    Apr 26 12:54:11 [DEBUG] 
-       CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
-       CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
-       CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
-       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_print) hasargs(1)
-       CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1022) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
-
-=head2 debugger_skip
-
-This option let skip the debugger the count of C<debugger_skip>.
-
-    debugger_skip => 2
+    debug_skip => 2
 
     Apr 26 12:55:07 [DEBUG] 
        CALL(2): package(main) filename(./trace.pl) line(16) subroutine(main::test2) hasargs(0)
@@ -520,7 +545,7 @@ This option let skip the debugger the count of C<debugger_skip>.
     $log->emergency("this is a emergency message");
     $log->emerg("this is a emergency message as well");
 
-Would log this:
+Would log
 
     Feb 01 12:56:31 [DEBUG] this is a debug message
     Feb 01 12:56:31 [INFO] this is a info message
@@ -618,7 +643,7 @@ Would NOT dump %hash to the $log object!
           or die $log->errstr();
     }
 
-=head1 DEPENDENCIES
+=head1 PREREQUISITES
 
     Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
     File::stat        -  to get the inode from the log file
@@ -638,6 +663,14 @@ Please report all bugs to <jschulz.cpan(at)bloonix.de>.
 =head1 AUTHOR
 
 Jonny Schulz <jschulz.cpan(at)bloonix.de>.
+
+=head1 QUESTIONS
+
+Do you have any questions or ideas?
+
+MAIL: <jschulz.cpan(at)bloonix.de>
+
+IRC: irc.perl.org#perlde
 
 =head1 COPYRIGHT
 
@@ -673,7 +706,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.34';
+our $VERSION = '0.35';
 
 use strict;
 use warnings;
@@ -682,7 +715,7 @@ use File::stat;
 use POSIX qw(strftime);
 use Params::Validate;
 use Carp qw(croak);
-use Exporter;
+use Devel::Backtrace;
 
 use constant EMERGENCY =>  0;
 use constant EMERG     =>  0;
@@ -699,13 +732,13 @@ use constant INFO      =>  6;
 use constant DEBUG     =>  7;
 use constant NOTHING   =>  8;
 
-# -------------------------------------------------------------------
+# --------------------------------------------------------------------
 # The BEGIN block is used to generate the syslog methods and the is_*
-# methods. The syslog methods calls _print() with the syslog level
-# as first argument. The is_* methods are only used to check if the
-# current set of max- and minlevel would log the message to the log
-# file. The levels NOTE, ERR, CRIT and EMERG are just shortcuts.
-# -------------------------------------------------------------------
+# methods. The syslog methods calling _print() with the syslog level
+# as first uppercase argument. The is_* methods are only used to check
+# if the current set of max- and minlevel would log the message to the
+# log file. The levels NOTE, ERR, CRIT and EMERG are just shortcuts.
+# --------------------------------------------------------------------
 
 BEGIN {
    for my $level (qw/DEBUG INFO NOTICE NOTE WARNING WARN ERROR ERR CRITICAL CRIT ALERT EMERGENCY EMERG/) {
@@ -785,7 +818,7 @@ sub new {
    my $class = shift;
    my %opts  = ();
    my $self  = bless \%opts, $class;
-   my $bool  = qr/^[10]$/;
+   my $bool  = qr/^[10]\z/;
 
    %opts = Params::Validate::validate(@_, {
       filename => {
@@ -808,7 +841,7 @@ sub new {
       },
       mode => {
          type => Params::Validate::SCALAR,
-         regex => qr/^(append|excl|trunc)$/,
+         regex => qr/^(append|excl|trunc)\z/,
          default => 'excl',
       },
       autoflush => {
@@ -818,7 +851,7 @@ sub new {
       },
       permissions => {
          type => Params::Validate::SCALAR,
-         regex => qr/^[0-7]{3,4}$/,
+         regex => qr/^[0-7]{3,4}\z/,
          default => '0640',
       },
       timeformat => {
@@ -836,12 +869,12 @@ sub new {
       },
       minlevel => {
          type => Params::Validate::SCALAR,
-         regex => qr/^([0-8]|nothing|debug|info|notice|note|warning|warn|error|err|critical|crit|alert|emergency|emerg)$/,
+         regex => qr/^([0-8]|nothing|debug|info|notice|note|warning|warn|error|err|critical|crit|alert|emergency|emerg)\z/,
          default => 0,
       },
       maxlevel => {
          type => Params::Validate::SCALAR,
-         regex => qr/^([0-8]|nothing|debug|info|notice|note|warning|warn|error|err|critical|crit|alert|emergency|emerg)$/,
+         regex => qr/^([0-8]|nothing|debug|info|notice|note|warning|warn|error|err|critical|crit|alert|emergency|emerg)\z/,
          default => 4,
       },
       die_on_errors => {
@@ -849,31 +882,31 @@ sub new {
          regex => $bool,
          default => 1,
       },
-      debugger => {
+      debug => {
          type => Params::Validate::SCALAR,
-         regex => qr/^[012]$/,
+         regex => $bool,
          default => 0,
       },
-      debugger_skip => {
+      debug_mode => {
          type => Params::Validate::SCALAR,
-         regex => qr/^\d+$/,
+         regex => qr/^[12]\z/,
+         default => 1,
+      },
+      debug_skip => {
+         type => Params::Validate::SCALAR,
+         regex => qr/^\d+\z/,
          default => 0,
       },
    });
 
-   # loading Devel::Backtrace only if the debugger is wanted
-   require Devel::Backtrace
-      if $opts{debugger};
-
    {  # start "no strict" block
       no strict 'refs';
       $opts{minlevel} = &{uc($opts{minlevel})}
-         unless $opts{minlevel} =~ /^\d$/;
+         unless $opts{minlevel} =~ /^\d\z/;
       $opts{maxlevel} = &{uc($opts{maxlevel})}
-         unless $opts{maxlevel} =~ /^\d$/;
+         unless $opts{maxlevel} =~ /^\d\z/;
    } # end "no strict" block
 
-   # if option filename is a GLOB, then we force some options
    if (ref($opts{filename}) eq 'GLOB') {
       $opts{fh} = $opts{filename};
    } elsif ($opts{filename} eq '*STDOUT') {
@@ -882,6 +915,7 @@ sub new {
       $opts{fh} = \*STDERR;
    }
 
+   # if option filename is a GLOB, then we force some options and return
    if (defined $opts{fh}) {
       $opts{fileopen} = 1;
       $opts{reopen}   = 0;
@@ -920,6 +954,11 @@ sub set_prefix {
    $self->{prefix} = shift;
 }
 
+sub trace {
+   my $self = shift;
+   return $self->_print('TRACE', @_);
+}
+
 sub close {
    my $self = shift;
 
@@ -941,7 +980,7 @@ sub DESTROY {
    CORE::close($self->{fh})
       if $self->{fh}
       && !ref($self->{filename})
-      && $self->{filename} !~ /^\*STDOUT$|^\*STDERR$/;
+      && $self->{filename} !~ /^\*STDOUT\z|^\*STDERR\z/;
 }
 
 #
@@ -949,7 +988,7 @@ sub DESTROY {
 #
 
 sub _open {
-   my $self  = shift;
+   my $self = shift;
 
    return $self->_raise_error("unable to open logfile $self->{filename} ($!)")
       unless sysopen(my $fh, $self->{filename}, $self->{mode}, $self->{permissions});
@@ -964,7 +1003,7 @@ sub _open {
 }
 
 sub _close {
-   my $self  = shift;
+   my $self = shift;
 
    return $self->_raise_error("unable to close logfile $self->{filename} ($!)")
       unless CORE::close($self->{fh});
@@ -975,8 +1014,8 @@ sub _close {
 }
 
 sub _setino {
-   my $self  = shift;
-   my $stat  = stat($self->{filename});
+   my $self = shift;
+   my $stat = stat($self->{filename});
    $self->{inode} = $stat->ino;
    return 1;
 }
@@ -988,26 +1027,21 @@ sub _checkino {
       my $stat    = stat($self->{filename});
       my $new_ino = $stat->ino;
       unless ($self->{inode} == $new_ino) {
-         $self->_close()
-            or return undef;
-         $self->_open()
-            or return undef;
+         $self->_close() or return undef;
+         $self->_open()  or return undef;
          $self->{inode} = $new_ino;
       }
    } else {
-      $self->_close()
-         or return undef;
-      $self->_open()
-         or return undef;
-      $self->_setino()
-         if $self->{reopen} == 1;
+      $self->_close()  or return undef;
+      $self->_open()   or return undef;
+      $self->_setino() if $self->{reopen} == 1;
    }
 
    return 1;
 }
 
 sub _lock {
-   my $self  = shift;
+   my $self = shift;
 
    return $self->_raise_error("unable to lock logfile $self->{filename} ($!)")
       unless flock($self->{fh}, LOCK_EX);
@@ -1016,7 +1050,7 @@ sub _lock {
 }
 
 sub _unlock {
-   my $self  = shift;
+   my $self = shift;
 
    return $self->_raise_error("unable to unlock logfile $self->{filename} ($!)")
       unless flock($self->{fh}, LOCK_UN);
@@ -1028,8 +1062,10 @@ sub _print {
    my $self  = shift;
    my $level = shift;
 
-   {  # return if we don't want log this level
+   # TRACE will be logged in any case
+   if ($level ne 'TRACE') {
       no strict 'refs';
+      # return if we don't want log this level
       return 1
          unless &{$level} >= $self->{minlevel}
              && &{$level} <= $self->{maxlevel};
@@ -1069,9 +1105,9 @@ sub _print {
       if $self->{newline}
       && $message =~ /.\z|^\z/;
 
-   if ($self->{debugger}) {
+   if ($self->{debug} || $level eq 'TRACE') {
       $message .= "\n" if $message =~ /.\z|^\z/;
-      my $bt = Devel::Backtrace->new($self->{debugger_skip});
+      my $bt = Devel::Backtrace->new($self->{debug_skip});
       my $pt = $bt->points - 1;
 
       for my $p (reverse 0..$pt) {
@@ -1079,10 +1115,10 @@ sub _print {
          my $c = $bt->point($p);
          for my $k ('package', 'filename', 'line', 'subroutine', 'hasargs', 'wantarray', 'evaltext', 'is_require') {
             next unless defined $c->{$k};
-            if ($self->{debugger} == 1) {
-               $message .= "\n" . ' ' x 6 . sprintf('%-12s', $k) . $c->{$k};
-            } elsif ($self->{debugger} == 2) {
+            if ($self->{debug_mode} == 1) {
                $message .= " $k($c->{$k})";
+            } elsif ($self->{debug_mode} == 2) {
+               $message .= "\n" . ' ' x 6 . sprintf('%-12s', $k) . $c->{$k};
             }
          }
          $message .= "\n";
