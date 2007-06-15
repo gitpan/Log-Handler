@@ -1,6 +1,4 @@
 #!/usr/bin/perl
-#or maybe
-#!perl.exe
 use strict;
 use warnings;
 use Log::Handler;

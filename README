@@ -173,8 +173,6 @@ METHODS
     you want to close the log file yourself. If you don't call "close()" the
     log file will be closed automatically before exit.
 
-    The old but deprecated method "CLOSE()" exists for compabilities.
-
   trace()
     This method is very useful if you want to print "caller()" informations
     to the log file. In contrast to the log level methods this method prints
@@ -397,6 +395,10 @@ OPTIONS
     The exception is that the handler croaks in any case if the call of
     "new()" fails because on missing params or wrong settings.
 
+  utf8
+    If this option is set to 1 then UTF-8 will be set with "binmode()" on
+    the output filehandle.
+
   debug
     You can activate a simple debugger that writes "caller()" informations
     for each log level that would log to the log file. The debugger is
@@ -606,7 +608,6 @@ EXAMPLES
 
 PREREQUISITES
         Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
-        File::stat        -  to get the inode from the log file
         POSIX             -  to generate the time stamp with strftime()
         Params::Validate  -  to validate all options
         Devel::Backtrace  -  to backtrace caller()

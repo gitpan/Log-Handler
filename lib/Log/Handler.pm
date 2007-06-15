@@ -203,8 +203,6 @@ This option is only useful if you set the option C<fileopen> to 1 and if you wan
 close the log file yourself. If you don't call C<close()> the log file will be
 closed automatically before exit.
 
-The old but deprecated method C<CLOSE()> exists for compabilities.
-
 =head2 trace()
 
 This method is very useful if you want to print C<caller()> informations to the
@@ -430,6 +428,10 @@ Set C<die_on_errors> to 0 if you don't want that the handler croaks if normal op
 The exception is that the handler croaks in any case if the call of C<new()> fails because
 on missing params or wrong settings.
 
+=head2 utf8
+
+If this option is set to 1 then UTF-8 will be set with C<binmode()> on the output filehandle.
+
 =head2 debug
 
 You can activate a simple debugger that writes C<caller()> informations for each log level
@@ -646,7 +648,6 @@ Would NOT dump %hash to the $log object!
 =head1 PREREQUISITES
 
     Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
-    File::stat        -  to get the inode from the log file
     POSIX             -  to generate the time stamp with strftime()
     Params::Validate  -  to validate all options
     Devel::Backtrace  -  to backtrace caller()
@@ -706,12 +707,11 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.35';
+our $VERSION = '0.36';
 
 use strict;
 use warnings;
 use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
-use File::stat;
 use POSIX qw(strftime);
 use Params::Validate;
 use Carp qw(croak);
@@ -897,7 +897,15 @@ sub new {
          regex => qr/^\d+\z/,
          default => 0,
       },
+      utf8 => {
+         type => Params::Validate::SCALAR,
+         regex => $bool,
+         default => 0,
+      },
    });
+
+   # build the prefix
+   $self->_build_prefix;
 
    {  # start "no strict" block
       no strict 'refs';
@@ -923,6 +931,7 @@ sub new {
       my $oldfh = select $opts{fh}; 
       $| = $opts{autoflush}; 
       select $oldfh;
+      binmode $opts{fh}, ':utf8' if $self->{utf8};
       return $self;
    }
 
@@ -938,10 +947,8 @@ sub new {
 
    # open the log file permanent
    if ($opts{fileopen} == 1) {
-      $self->_open()
-         or return undef;
-      $self->_setino()
-         if $opts{reopen} == 1;
+      $self->_open or return undef;
+      $self->_setino if $opts{reopen} == 1;
    }
 
    return $self;
@@ -952,6 +959,7 @@ sub get_prefix { $_[0]->{prefix} }
 sub set_prefix {
    my $self = shift;
    $self->{prefix} = shift;
+   $self->_build_prefix;
 }
 
 sub trace {
@@ -963,16 +971,13 @@ sub close {
    my $self = shift;
 
    if ($self->{fileopen} == 1) {
-      $self->_close()
-         or return undef;
+      $self->_close or return undef;
    }
 
    return 1;
 }
 
-sub CLOSE { &Log::Handler::close(@_) }
-
-# to make it possible to call Log::Handler->errstr()
+# to make it possible to call Log::Handler->errstr
 sub errstr { $Log::Handler::ERRSTR }
 
 sub DESTROY {
@@ -990,13 +995,14 @@ sub DESTROY {
 sub _open {
    my $self = shift;
 
-   return $self->_raise_error("unable to open logfile $self->{filename} ($!)")
-      unless sysopen(my $fh, $self->{filename}, $self->{mode}, $self->{permissions});
+   sysopen(my $fh, $self->{filename}, $self->{mode}, $self->{permissions})
+      or return $self->_raise_error("unable to open logfile $self->{filename} ($!)");
 
    my $oldfh = select $fh;    
    $| = $self->{autoflush};
    select $oldfh;
 
+   binmode $fh, ':utf8' if $self->{utf8};
    $self->{fh} = $fh;
 
    return 1;
@@ -1005,8 +1011,8 @@ sub _open {
 sub _close {
    my $self = shift;
 
-   return $self->_raise_error("unable to close logfile $self->{filename} ($!)")
-      unless CORE::close($self->{fh});
+   CORE::close($self->{fh})
+      or return $self->_raise_error("unable to close logfile $self->{filename} ($!)");
 
    delete $self->{fh};
 
@@ -1015,26 +1021,24 @@ sub _close {
 
 sub _setino {
    my $self = shift;
-   my $stat = stat($self->{filename});
-   $self->{inode} = $stat->ino;
+   $self->{inode} = (stat($self->{filename}))[1];
    return 1;
 }
 
 sub _checkino {
    my $self  = shift;
 
-   if (-e "$self->{filename}") {
-      my $stat    = stat($self->{filename});
-      my $new_ino = $stat->ino;
-      unless ($self->{inode} == $new_ino) {
-         $self->_close() or return undef;
-         $self->_open()  or return undef;
-         $self->{inode} = $new_ino;
+   if (-e $self->{filename}) {
+      my $ino = (stat($self->{filename}))[1];
+      unless ($self->{inode} == $ino) {
+         $self->_close or return undef;
+         $self->_open or return undef;
+         $self->{inode} = $ino;
       }
    } else {
-      $self->_close()  or return undef;
-      $self->_open()   or return undef;
-      $self->_setino() if $self->{reopen} == 1;
+      $self->_close or return undef;
+      $self->_open or return undef;
+      $self->_setino if $self->{reopen} == 1;
    }
 
    return 1;
@@ -1043,8 +1047,8 @@ sub _checkino {
 sub _lock {
    my $self = shift;
 
-   return $self->_raise_error("unable to lock logfile $self->{filename} ($!)")
-      unless flock($self->{fh}, LOCK_EX);
+   flock($self->{fh}, LOCK_EX)
+      or return $self->_raise_error("unable to lock logfile $self->{filename} ($!)");
 
    return 1;
 }
@@ -1052,8 +1056,8 @@ sub _lock {
 sub _unlock {
    my $self = shift;
 
-   return $self->_raise_error("unable to unlock logfile $self->{filename} ($!)")
-      unless flock($self->{fh}, LOCK_UN);
+   flock($self->{fh}, LOCK_UN)
+      or return $self->_raise_error("unable to unlock logfile $self->{filename} ($!)");
 
    return 1;
 }
@@ -1071,39 +1075,31 @@ sub _print {
              && &{$level} <= $self->{maxlevel};
    }
 
-   if ($self->{fileopen} == 0) {
-      $self->_open()
-         or return undef;
-   } elsif ($self->{reopen} == 1) {
-      $self->_checkino()
-         or return undef;
+   if (!$self->{fileopen}) {
+      $self->_open or return undef;
+   } elsif ($self->{reopen}) {
+      $self->_checkino or return undef;
    }
 
-   if ($self->{filelock} == 1) {
-      $self->_lock()
-         or return undef;
+   if ($self->{filelock}) {
+      $self->_lock or return undef;
    }
 
-   my $message = ();
+   # now we build the message:
+   # timestamp . prefix . message . caller . newline
+   my $message = '';
 
    if ($self->{timeformat}) {
-      $message .= $self->_gettime()
-         or return undef;
-      $message .= ' ';
+      $message .= $self->_set_time.' ';
    }
 
-   if (length($self->{prefix}) > 0) {
-      my $prefix = $self->{prefix};
-      $prefix =~ s/<--LEVEL-->/$level/g;
-      $message .= $prefix;
+   if (length($self->{prefix})) {
+      $message .= join($level, @{$self->{prefixes}});
    }
 
-   $message .= join(' ', @_)
-      if @_;
-
-   $message .= "\n" # I hope that this works on the most OSs
-      if $self->{newline}
-      && $message =~ /.\z|^\z/;
+   if (@_) {
+      $message .= join(' ', @_);
+   }
 
    if ($self->{debug} || $level eq 'TRACE') {
       $message .= "\n" if $message =~ /.\z|^\z/;
@@ -1123,42 +1119,46 @@ sub _print {
          }
          $message .= "\n";
       }
+   } elsif ($self->{newline} && $message =~ /.\z|^\z/) {
+      $message .= "\n"; # I hope that this works on the most OSs
    }
 
    my $length  = length($message);
    my $written = syswrite($self->{fh}, $message, $length)
       or return $self->_raise_error("unable to write to logfile ($!)");
 
-   return $self->_raise_error("$written/$length bytes written to logfile $self->{filename} ($!)")
-      unless $length == $written;
+   if ($length != $written) {
+      return $self->_raise_error("only $written/$length bytes written to logfile ($!)");
+   };
 
-   if ($self->{filelock} == 1) {
-      $self->_unlock()
-         or return undef;
+   if ($self->{filelock}) {
+      $self->_unlock or return undef;
    }
 
-   if ($self->{fileopen} == 0) {
-      $self->_close()
-         or return undef;
+   if (!$self->{fileopen}) {
+      $self->_close or return undef;
    }
 
    return 1;
 }
 
-sub _gettime {
+sub _set_time {
    my $self = shift;
-   my $time = strftime($self->{timeformat}, localtime)
-      or return $self->_raise_error("unable to set time stamp ($!)");
+   my $time = strftime($self->{timeformat}, localtime);
    return $time;
 }
 
+sub _build_prefix {
+   my $self = shift;
+   $self->{prefixes} = [ split(/<--LEVEL-->/, $self->{prefix})];
+}
+
 sub _raise_error {
-   my $self   = shift;
-   my $errstr = shift;
-   my $class  = ref($self);
-   croak "$class: $errstr" if $self->{die_on_errors};
-   $Log::Handler::ERRSTR = $errstr;
-   return undef;
+   my $self = shift;
+   $Log::Handler::ERRSTR = shift;
+   return undef unless $self->{die_on_errors};
+   my $class = ref($self);
+   croak "$class: ".$Log::Handler::ERRSTR;
 }
 
 1;

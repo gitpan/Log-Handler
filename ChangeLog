@@ -1,3 +1,8 @@
+0.36    Released at 2007-06-15.
+        Now it's possible to set utf8 on the filehandle.
+        Kicked CLOSE().
+        Kicked File::Stat because CORE::stat() is much faster and I did some
+          other improvements. Now _print() is ~50% faster if reopen is used.
 0.35    Released at 2007-06-05.
         Added method trace() to prints caller() to the log file.
         Did some code improvements and fixed POD typos.

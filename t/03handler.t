@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 17;
+use Test::More tests => 18;
 use File::Spec;
 use Log::Handler;
 
@@ -12,8 +12,8 @@ my $log = Log::Handler->new(
    mode => 'append',
    autoflush => 0,
    timeformat => '',
-   maxlevel => 7,
-   minlevel => 0,
+   maxlevel => 'debug',
+   minlevel => 'emergency',
    fileopen => 1,
    filelock => 1,
    reopen => 1,
@@ -23,46 +23,20 @@ my $log = Log::Handler->new(
 
 ok(1, "new");
 
-ok($log->debug("debug"), "checking debug")
-   if $log->would_log_debug();
-
-ok($log->info("info"), "checking info")
-   if $log->would_log_info();
-
-ok($log->notice("notice"), "checking notice")
-   if $log->would_log_notice();
-
-ok($log->note("note"), "checking note")
-   if $log->would_log_note();
-
-ok($log->warning("warning"), "checking warning")
-   if $log->would_log_warning();
-
-ok($log->warn("warn"), "checking warn")
-   if $log->would_log_warning();
-
-ok($log->error("error"), "checking error")
-   if $log->would_log_error();
-
-ok($log->err("err"), "checking err")
-   if $log->would_log_err();
-
-ok($log->critical("critical"), "checking critical")
-   if $log->would_log_critical();
-
-ok($log->crit("crit"), "checking crit")
-   if $log->would_log_crit();
-
-ok($log->alert("alert"), "checking alert")
-   if $log->would_log_alert();
-
-ok($log->emergency("emergency"), "checking emergency")
-   if $log->would_log_emergency();
-
-ok($log->emerg("emerg"), "checking emerg")
-   if $log->would_log_emerg();
-
-$log->CLOSE();
+ok($log->debug("debug"), "checking debug") if $log->is_debug;
+ok($log->info("info"), "checking info") if $log->is_info;
+ok($log->notice("notice"), "checking notice") if $log->is_notice;
+ok($log->note("note"), "checking note") if $log->is_note;
+ok($log->warning("warning"), "checking warning") if $log->is_warning;
+ok($log->warn("warn"), "checking warn") if $log->is_warning;
+ok($log->error("error"), "checking error") if $log->is_error;
+ok($log->err("err"), "checking err") if $log->is_err;
+ok($log->critical("critical"), "checking critical") if $log->is_critical;
+ok($log->crit("crit"), "checking crit") if $log->is_crit;
+ok($log->alert("alert"), "checking alert") if $log->is_alert;
+ok($log->emergency("emergency"), "checking emergency") if $log->is_emergency;
+ok($log->emerg("emerg"), "checking emerg") if $log->is_emerg;
+ok($log->close, "checking close");
 
 my $lines = 0;
 
