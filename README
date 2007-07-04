@@ -148,9 +148,6 @@ METHODS
         $error_string = $log->errstr
            unless $log->info("Hello World!");
 
-    The error string contains $! in parantheses at the end of the error
-    string.
-
     The exception is that the handler croaks in any case if the call of
     "new()" fails because on missing params or wrong settings!
 
@@ -384,6 +381,10 @@ OPTIONS
     would be logged to the log file.
 
     You can set both to 8 or "nothing" if you don't want to log any message.
+
+  rewrite_to_stderr
+    Set this option to 1 if you want that Log::Handler prints messages to
+    STDERR if the message couldn't print to the log file. The default is 0.
 
   die_on_errors
     Set "die_on_errors" to 0 if you don't want that the handler croaks if

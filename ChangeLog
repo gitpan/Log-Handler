@@ -1,3 +1,6 @@
+0.37    Released at 2007-07-04.
+        Added option rewrite_to_stderr.
+        Replaced syswrite to print in _print().
 0.36    Released at 2007-06-15.
         Now it's possible to set utf8 on the filehandle.
         Kicked CLOSE().

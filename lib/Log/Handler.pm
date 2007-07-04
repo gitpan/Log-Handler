@@ -180,8 +180,6 @@ Or
     $error_string = $log->errstr
        unless $log->info("Hello World!");
 
-The error string contains C<$!> in parantheses at the end of the error string.
-
 The exception is that the handler croaks in any case if the call of C<new()> fails
 because on missing params or wrong settings!
 
@@ -417,6 +415,11 @@ Example: If C<maxlevel> is set to 4 and C<minlevel> to 0 then the levels emergen
 alert, critical (crit) and error (err) are active and would be logged to the log file.
 
 You can set both to 8 or C<nothing> if you don't want to log any message.
+
+=head2 rewrite_to_stderr
+
+Set this option to 1 if you want that Log::Handler prints messages to STDERR if the message
+couldn't print to the log file. The default is 0.
 
 =head2 die_on_errors
 
@@ -707,7 +710,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.36';
+our $VERSION = '0.37';
 
 use strict;
 use warnings;
@@ -877,6 +880,11 @@ sub new {
          regex => qr/^([0-8]|nothing|debug|info|notice|note|warning|warn|error|err|critical|crit|alert|emergency|emerg)\z/,
          default => 4,
       },
+      rewrite_to_stderr => {
+         type => Params::Validate::SCALAR,
+         regex => $bool,
+         default => 0,
+      },
       die_on_errors => {
          type => Params::Validate::SCALAR,
          regex => $bool,
@@ -996,7 +1004,7 @@ sub _open {
    my $self = shift;
 
    sysopen(my $fh, $self->{filename}, $self->{mode}, $self->{permissions})
-      or return $self->_raise_error("unable to open logfile $self->{filename} ($!)");
+      or return $self->_raise_error("unable to open logfile $self->{filename}: $!");
 
    my $oldfh = select $fh;    
    $| = $self->{autoflush};
@@ -1012,7 +1020,7 @@ sub _close {
    my $self = shift;
 
    CORE::close($self->{fh})
-      or return $self->_raise_error("unable to close logfile $self->{filename} ($!)");
+      or return $self->_raise_error("unable to close logfile $self->{filename}: $!");
 
    delete $self->{fh};
 
@@ -1048,7 +1056,7 @@ sub _lock {
    my $self = shift;
 
    flock($self->{fh}, LOCK_EX)
-      or return $self->_raise_error("unable to lock logfile $self->{filename} ($!)");
+      or return $self->_raise_error("unable to lock logfile $self->{filename}: $!");
 
    return 1;
 }
@@ -1057,7 +1065,7 @@ sub _unlock {
    my $self = shift;
 
    flock($self->{fh}, LOCK_UN)
-      or return $self->_raise_error("unable to unlock logfile $self->{filename} ($!)");
+      or return $self->_raise_error("unable to unlock logfile $self->{filename}: $!");
 
    return 1;
 }
@@ -1119,16 +1127,15 @@ sub _print {
          }
          $message .= "\n";
       }
-   } elsif ($self->{newline} && $message =~ /.\z|^\z/) {
-      $message .= "\n"; # I hope that this works on the most OSs
+   } elsif ($self->{newline} && $message =~ /.\z|^\z/) { # I hope that this works on the most OSs
+      $message .= "\n";
    }
 
-   my $length  = length($message);
-   my $written = syswrite($self->{fh}, $message, $length)
-      or return $self->_raise_error("unable to write to logfile ($!)");
+   my $fh = $self->{fh};
 
-   if ($length != $written) {
-      return $self->_raise_error("only $written/$length bytes written to logfile ($!)");
+   print $fh $message or do {
+      print STDERR $message if $self->{rewrite_to_stderr};
+      return $self->_raise_error("unable to print to logfile: $!");
    };
 
    if ($self->{filelock}) {
