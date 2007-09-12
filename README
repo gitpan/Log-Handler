@@ -29,14 +29,14 @@ METHODS
   Log levels
     There are eigth log levels and thirteen methods to handle this levels:
 
-    emergency(), emerg()
-    alert()
-    critical(), crit()
-    error(), err()
-    warning(), warn()
-    notice(), note()
-    info()
     debug()
+    info()
+    notice(), note()
+    warning(), warn()
+    error(), err()
+    critical(), crit()
+    alert()
+    emergency(), emerg()
 
     "debug()" is the highest and "emergency()" or "emerg()" is the lowest
     log level. You can define the log level with the options "maxlevel" and
@@ -65,14 +65,14 @@ METHODS
         Feb 01 12:56:31 [INFO] Hello World! How are you?
 
   is_* methods
-    is_emergency(), is_emerg()
-    is_alert()
-    is_critical(), is_crit()
-    is_error(), is_err()
-    is_warning(), is_warn()
-    is_notice(), is_note()
-    is_info()
     is_debug()
+    is_info()
+    is_notice(), is_note()
+    is_warning(), is_warn()
+    is_error(), is_err()
+    is_critical(), is_crit()
+    is_alert()
+    is_emergency(), is_emerg()
 
     These thirteen methods could be very useful if you want to kwow if the
     current log level would write the message to the log file. All methods
@@ -91,19 +91,6 @@ METHODS
 
     The methods "is_note()", "is_warn()", "is_err()", "is_crit()" and
     "is_emerg()" are just shortcuts.
-
-  would_log_* methods
-    The old and deprecated would_log_* (is_* since 0.33) methods still
-    exists for compabilities.
-
-    would_log_emergency(), would_log_emerg()
-    would_log_alert()
-    would_log_critical(), would_log_crit()
-    would_log_error(), would_log_err()
-    would_log_warning(), would_log_warn()
-    would_log_notice(), would_log_note()
-    would_log_info()
-    would_log_debug()
 
   set_prefix()
     Call "set_prefix()" to modifier the option prefix after you called
@@ -486,6 +473,37 @@ OPTIONS
            CALL(2): package(main) filename(./trace.pl) line(16) subroutine(main::test2) hasargs(0)
            CALL(1): package(main) filename(./trace.pl) line(14) subroutine(main::test1) hasargs(0)
            CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
+
+  set_buffer_log() and get_buffer_log()
+    This two methods let the handler buffer messages.
+
+        $log->set_buffer_log(1);   # to turn the buffer on
+        $log->set_buffer_log(0);   # to turn the buffer off
+        $log->set_buffer_log(0,1); # to clear the buffer
+        $log->get_buffer_log();    # to get the buffer
+
+    Maybe you want to do something like:
+
+        my $log = Log::Handler->new(filename => 'file.log', mode => 'append');
+        $log->set_buffer_log(1);
+        $log->error('this error would go to file.log');
+        $log->warning('and this warning would go to file.log as well');
+
+    Both messages would be buffered as well. If you want to print this
+    messages to STDOUT you could do the following:
+
+        print STDOUT $log->get_buffer_log;
+
+    and then clear the buffer with
+
+        $log->set_buffer_log(0,1);
+
+    But you could to this in one step as well and turn the buffer on or off
+    or clear the buffer:
+
+        print STDOUT $log->get_buffer_log(0);
+        print STDOUT $log->get_buffer_log(1);
+        print STDOUT $log->get_buffer_log(0,1);
 
 EXAMPLES
   Simple example to log all level:

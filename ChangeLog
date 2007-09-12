@@ -1,3 +1,8 @@
+0.37_01 Released at 2007-07-20.
+        Added set_log_buffer() and get_log_buffer() to Log::Handler. This was
+          a feature request for debugging reasons from David Coppit.
+        Kicked now the would_log_* methods. Since 0.33 the is_* methods exists
+          as replacement.
 0.37    Released at 2007-07-04.
         Added option rewrite_to_stderr.
         Replaced syswrite to print in _print().
@@ -19,9 +24,9 @@
         Did some code improvements and fix some POD typos.
         Kicked IO::Handle from PREREQS and autoflush myself on the file handle.
 0.32	Released at 2007-04-26.
-	I jumped from 0.15 to 0.32 because there exists brownfields on backpan.
-	Replaced my own routine to get caller() informations with Devel::Backtrace.
-	Added the option debugger_skip.
+	    I jumped from 0.15 to 0.32 because there exists brownfields on backpan.
+	    Replaced my own routine to get caller() informations with Devel::Backtrace.
+	    Added the option debugger_skip.
 0.15	Released at 2007-04-25.
         Fixed typos in POD.
         Changed the way to activate the debugger. Now the debugger is activated

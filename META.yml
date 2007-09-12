@@ -1,6 +1,6 @@
 ---
 name: Log-Handler
-version: 0.37
+version: 0.37_01
 author:
   - Jonny Schulz
 abstract: A simple handler to log messages to log files.
@@ -16,7 +16,7 @@ requires:
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.37
+    version: 0.37_01
 generated_by: Module::Build version 0.2808
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

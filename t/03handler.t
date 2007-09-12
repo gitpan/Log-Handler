@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 18;
+use Test::More tests => 20;
 use File::Spec;
 use Log::Handler;
 
@@ -20,6 +20,8 @@ my $log = Log::Handler->new(
    newline => 1,
    prefix => 'test [<--LEVEL-->] ',
 );
+
+$log->set_buffer_log(1);
 
 ok(1, "new");
 
@@ -65,3 +67,8 @@ if ($lines == 13) {
 }
 
 ok(unlink($logfile), "unlink logfile");
+
+my @buffer = $log->get_buffer_log(0);
+ok(@buffer == 13, "get buffer log");
+@buffer = $log->get_buffer_log();
+ok(@buffer == 0, "buffer cleared");

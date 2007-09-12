@@ -35,21 +35,21 @@ There are eigth log levels and thirteen methods to handle this levels:
 
 =over 4
 
-=item emergency(), emerg()
-
-=item alert()
-
-=item critical(), crit()
-
-=item error(), err()
-
-=item warning(), warn()
-
-=item notice(), note()
+=item debug()
 
 =item info()
 
-=item debug()
+=item notice(), note()
+
+=item warning(), warn()
+
+=item error(), err()
+
+=item critical(), crit()
+
+=item alert()
+
+=item emergency(), emerg()
 
 =back
 
@@ -79,21 +79,21 @@ Both calls write to the log file (provided that the log level INFO would log)
 
 =over 4
 
-=item is_emergency(), is_emerg()
-
-=item is_alert()
-
-=item is_critical(), is_crit()
-
-=item is_error(), is_err()
-
-=item is_warning(), is_warn()
-
-=item is_notice(), is_note()
+=item is_debug()
 
 =item is_info()
 
-=item is_debug()
+=item is_notice(), is_note()
+
+=item is_warning(), is_warn()
+
+=item is_error(), is_err()
+
+=item is_critical(), is_crit()
+
+=item is_alert()
+
+=item is_emergency(), is_emerg()
 
 =back
 
@@ -112,30 +112,6 @@ but this isn't that what we really want because it could costs a lot of resource
 Now we dump the $hash only if the current log level would log it.
 
 The methods C<is_note()>, C<is_warn()>, C<is_err()>, C<is_crit()> and C<is_emerg()> are just shortcuts.
-
-=head2 would_log_* methods
-
-The old and deprecated would_log_* (is_* since 0.33) methods still exists for compabilities.
-
-=over 4
-
-=item would_log_emergency(), would_log_emerg()
-
-=item would_log_alert()
-
-=item would_log_critical(), would_log_crit()
-
-=item would_log_error(), would_log_err()
-
-=item would_log_warning(), would_log_warn()
-
-=item would_log_notice(), would_log_note()
-
-=item would_log_info()
-
-=item would_log_debug()
-
-=back
 
 =head2 set_prefix()
 
@@ -522,6 +498,37 @@ This option let skip the caller informations the count of C<debug_skip>.
        CALL(1): package(main) filename(./trace.pl) line(14) subroutine(main::test1) hasargs(0)
        CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
 
+=head2 set_buffer_log() and get_buffer_log()
+
+This two methods let the handler buffer messages.
+
+    $log->set_buffer_log(1);   # to turn the buffer on
+    $log->set_buffer_log(0);   # to turn the buffer off
+    $log->set_buffer_log(0,1); # to clear the buffer
+    $log->get_buffer_log();    # to get the buffer
+
+Maybe you want to do something like:
+
+    my $log = Log::Handler->new(filename => 'file.log', mode => 'append');
+    $log->set_buffer_log(1);
+    $log->error('this error would go to file.log');
+    $log->warning('and this warning would go to file.log as well');
+
+Both messages would be buffered as well. If you want to print this messages to STDOUT you
+could do the following:
+
+    print STDOUT $log->get_buffer_log;
+
+and then clear the buffer with
+
+    $log->set_buffer_log(0,1);
+
+But you could to this in one step as well and turn the buffer on or off or clear the buffer:
+
+    print STDOUT $log->get_buffer_log(0);
+    print STDOUT $log->get_buffer_log(1);
+    print STDOUT $log->get_buffer_log(0,1);
+
 =head1 EXAMPLES
 
 =head2 Simple example to log all level:
@@ -710,7 +717,7 @@ SUCH DAMAGES.
 
 package Log::Handler;
 
-our $VERSION = '0.37';
+our $VERSION = '0.37_01';
 
 use strict;
 use warnings;
@@ -753,14 +760,14 @@ BEGIN {
 
          # --------------------------------------------------------------
          # Creating the 8 syslog level methods - total 13 with shortcuts:
-         #      emergency(), emerg()
-         #      alert()
-         #      critical(), crit()
-         #      error(), err()
-         #      warning(), warn()
-         #      notice(), note()
-         #      info()
          #      debug()
+         #      info()
+         #      notice(), note()
+         #      warning(), warn()
+         #      error(), err()
+         #      critical(), crit()
+         #      alert()
+         #      emergency(), emerg()
          # --------------------------------------------------------------
 
          *{"$routine"} = sub {
@@ -771,14 +778,14 @@ BEGIN {
 
          # -----------------------------------------------------------
          # Creating the 8 is_ level methods - total 13 with shortcuts:
-         #      is_emergency(), is_emerg()
-         #      is_alert()
-         #      is_critical(), is_crit()
-         #      is_error(), is_err()
-         #      is_warning(), is_warn()
-         #      is_notice(), is_note()
-         #      is_info()
          #      is_debug()
+         #      is_info()
+         #      is_notice(), is_note()
+         #      is_warning(), is_warn()
+         #      is_error(), is_err()
+         #      is_critical(), is_crit()
+         #      is_alert()
+         #      is_emergency(), is_emerg()
          # -----------------------------------------------------------
 
          *{"is_$routine"} = sub {
@@ -789,30 +796,6 @@ BEGIN {
             return undef;
          };
 
-         # ------------------------------------------------------------------
-         # Creating the 8 would_log_ level methods - total 13 with shortcuts:
-         #      would_log_emergency(), would_log_emerg()
-         #      would_log_alert()
-         #      would_log_critical(), would_log_crit()
-         #      would_log_error()
-         #      would_log_err()
-         #      would_log_warning(), would_log_warn
-         #      would_log_notice(), would_log_note()
-         #      would_log_info()
-         #      would_log_debug()
-         #
-         # This methods do the same as the is_* methods and are deprecated
-         # but necessary for compabilities because the is_* methods are
-         # new since version 0.33.
-         # ------------------------------------------------------------------
-
-         *{"would_log_$routine"} = sub {
-            my $self = shift;
-            return 1
-               if &{$level} >= $self->{minlevel}
-               && &{$level} <= $self->{maxlevel};
-            return undef;
-         };
       } # end "no strict 'refs'" block
    }
 }
@@ -912,6 +895,8 @@ sub new {
       },
    });
 
+   $self->{buffer_log} = 0;
+   $self->{buffer} = [];
    # build the prefix
    $self->_build_prefix;
 
@@ -956,7 +941,8 @@ sub new {
    # open the log file permanent
    if ($opts{fileopen} == 1) {
       $self->_open or return undef;
-      $self->_setino if $opts{reopen} == 1;
+      $self->{inode} = (stat($self->{filename}))[1]
+         if $opts{reopen};
    }
 
    return $self;
@@ -968,6 +954,25 @@ sub set_prefix {
    my $self = shift;
    $self->{prefix} = shift;
    $self->_build_prefix;
+}
+
+sub set_buffer_log {
+   my ($self, @todo) = @_;
+   for my $t (@todo) {
+      if ($t) {
+         $self->{buffer_log} = 1;
+      } else {
+         $self->{buffer_log} = 0;
+         $self->{buffer} = [];
+      }
+   }
+}
+
+sub get_buffer_log {
+   my $self = shift;
+   my $buf  = $self->{buffer};
+   $self->set_buffer_log(@_) if @_;
+   return @$buf;
 }
 
 sub trace {
@@ -1027,12 +1032,6 @@ sub _close {
    return 1;
 }
 
-sub _setino {
-   my $self = shift;
-   $self->{inode} = (stat($self->{filename}))[1];
-   return 1;
-}
-
 sub _checkino {
    my $self  = shift;
 
@@ -1046,7 +1045,7 @@ sub _checkino {
    } else {
       $self->_close or return undef;
       $self->_open or return undef;
-      $self->_setino if $self->{reopen} == 1;
+      $self->{inode} = (stat($self->{filename}))[1];
    }
 
    return 1;
@@ -1131,6 +1130,10 @@ sub _print {
       $message .= "\n";
    }
 
+   if ($self->{buffer_log}) {
+      push @{$self->{buffer}}, $message;
+   }
+
    my $fh = $self->{fh};
 
    print $fh $message or do {
@@ -1157,7 +1160,7 @@ sub _set_time {
 
 sub _build_prefix {
    my $self = shift;
-   $self->{prefixes} = [ split(/<--LEVEL-->/, $self->{prefix})];
+   $self->{prefixes} = [ split(/<--LEVEL-->/, $self->{prefix}) ];
 }
 
 sub _raise_error {

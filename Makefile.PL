@@ -2,17 +2,17 @@
 use ExtUtils::MakeMaker;
 WriteMakefile
 (
-          'PL_FILES' => {},
-          'INSTALLDIRS' => 'site',
           'NAME' => 'Log::Handler',
-          'EXE_FILES' => [],
           'VERSION_FROM' => 'lib/Log/Handler.pm',
           'PREREQ_PM' => {
-                           'Test::More' => 0,
-                           'Params::Validate' => 0,
-                           'File::Spec' => 0,
+                           'Carp' => '0',
                            'Devel::Backtrace' => '0.05',
-                           'Carp' => 0
-                         }
+                           'File::Spec' => '0',
+                           'Params::Validate' => '0',
+                           'Test::More' => '0'
+                         },
+          'INSTALLDIRS' => 'site',
+          'EXE_FILES' => [],
+          'PL_FILES' => {}
         )
 ;
