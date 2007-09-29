@@ -1,10 +1,10 @@
 NAME
-    Log::Handler - A simple handler to log messages to log files.
+    Log::Handler - A simple handler to log messages to a log file.
 
 SYNOPSIS
         use Log::Handler;
 
-        my $log = Log::Handler->new( filename => $logfile, mode => 'append' );
+        my $log = Log::Handler->new();
 
         $log->alert("foo bar");
 
@@ -12,19 +12,18 @@ DESCRIPTION
     This module is just a simple object oriented log file handler and very
     easy to use. It's possible to define a log level for your programs and
     control the amount of informations that will be logged to the log file.
-    In addition it's possible to say how you wish to open the log file -
-    transient or permanent - and lock and unlock the log file by each write
-    operation. If you wish you can assign the handler to check the inode of
-    the log file (not on windows). That could be very useful if a rotate
-    mechanism moves and zip the log file.
+    In addition it's possible to configure how you wish to open the log file
+    - transient or permanent - and lock and unlock the log file by each
+    write operation. If you wish you can assign the handler to check the
+    inode of the log file (not on Windows). That could be very useful if a
+    rotate mechanism moves and zip the log file.
 
 METHODS
   new()
     Call "new()" to create a new log handler object.
 
-    The "new()" method expected the options for the log file. The only one
-    mandatory option is "filename". All other options will be set to a
-    default value.
+    The "new()" method expected the options for the log file. Each option
+    will be set to a default value if not set.
 
   Log levels
     There are eigth log levels and thirteen methods to handle this levels:
@@ -51,7 +50,7 @@ METHODS
     "emergency" then the levels emergency, alert, critical, error and
     warning will be logged.
 
-    The call of all methods is very simple:
+    The call of a log level method is very simple:
 
         $log->info("Hello World! How are you?");
 
@@ -78,16 +77,16 @@ METHODS
     current log level would write the message to the log file. All methods
     returns TRUE if the handler would log it and FALSE if not. Example:
 
-        $log->debug(Dumper($hash));
+        $log->debug(Dumper(\%hash));
 
-    This example would dump the $hash in any case and handoff it to the log
+    This example would dump the hash in any case and handoff it to the log
     handler, but this isn't that what we really want because it could costs
     a lot of resources.
 
-        $log->debug(Dumper($hash))
+        $log->debug(Dumper(\%hash))
            if $log->is_debug();
 
-    Now we dump the $hash only if the current log level would log it.
+    Now we dump the hash only if the current log level would log it.
 
     The methods "is_note()", "is_warn()", "is_err()", "is_crit()" and
     "is_emerg()" are just shortcuts.
@@ -98,8 +97,8 @@ METHODS
 
         my $log = Log::Handler->new(
            filename => 'file.log',
-           mode => 'append',
-           prefix => "myhost:$$ [<--LEVEL-->] "
+           mode     => 'append',
+           prefix   => "myhost:$$ [<--LEVEL-->] "
         );
 
         $log->set_prefix("[<--LEVEL-->] myhost:$$ ");
@@ -147,8 +146,10 @@ METHODS
     file permanent and the call of "new" fails then you can absorb the
     error.
 
-        my $log = Log::Handler->new(filename => 'file.log')
-           or warn Log::Handler->errstr;
+        my $log = Log::Handler->new(
+            filename        => 'file.log',
+            die_on_errors   => 0
+        ) or warn Log::Handler->errstr;
 
   close()
     Call "close()" if you want to close the log file.
@@ -174,16 +175,16 @@ METHODS
     Maybe you like to print caller informations to the log file if an
     unexpected error occurs.
 
-        $SIG{__DIE__} = sub { $log->trace(@_) && exit(9) };
+        $SIG{__DIE__} = sub { $log->trace(@_) };
 
     Take a look at the examples of the options "debug", "debug_mode" and
     "debug_skip" for more informations.
 
 OPTIONS
   filename
-    This is the only mandatory option and the script croaks if it isn't set.
-    You have to set a file name, a GLOBREF or you can set a string as an
-    alias for STDOUT or STDERR.
+    With "filename" you can set a file name, a GLOBREF or you can set a
+    string as an alias for STDOUT or STDERR. The default is STDOUT for this
+    option.
 
     Set a file name:
 
@@ -194,7 +195,7 @@ OPTIONS
         open FH, '>', 'file.log' or die $!;
         my $log = Log::Handler->new( filename => \*FH );
 
-    Or with
+    Or the same with
 
         open my $fh, '>', 'file.log' or die $!;
         my $log = Log::Handler->new( filename => $fh );
@@ -208,9 +209,6 @@ OPTIONS
     If the option "filename" is set in a config file and you want to debug
     to your screen then you can set *STDOUT or *STDERR as a string.
 
-        my $out = '*STDOUT';
-        my $log = Log::Handler->new( filename => $out );
-        # or
         my $log = Log::Handler->new( filename => '*STDOUT' );
         # or
         my $log = Log::Handler->new( filename => '*STDERR' );
@@ -238,9 +236,9 @@ OPTIONS
   fileopen
     Open a log file transient or permanent.
 
-        0 - open and close the logfile by each write operation (default)
+        0 - open and close the logfile by each write operation
         1 - open the logfile if C<new()> called and try to reopen the
-            file if C<reopen> is set to 1 and the inode of the file has changed
+            file if C<reopen> is set to 1 and the inode of the file has changed (default)
 
   reopen
     This option works only if option "fileopen" is set to 1.
@@ -404,7 +402,6 @@ OPTIONS
         use Log::Handler;
 
         my $log = Log::Handler->new(
-           filename   => \*STDOUT,
            maxlevel   => 'debug',
            debug      => 1,
            debug_mode => 1
@@ -473,37 +470,6 @@ OPTIONS
            CALL(2): package(main) filename(./trace.pl) line(16) subroutine(main::test2) hasargs(0)
            CALL(1): package(main) filename(./trace.pl) line(14) subroutine(main::test1) hasargs(0)
            CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
-
-  set_buffer_log() and get_buffer_log()
-    This two methods let the handler buffer messages.
-
-        $log->set_buffer_log(1);   # to turn the buffer on
-        $log->set_buffer_log(0);   # to turn the buffer off
-        $log->set_buffer_log(0,1); # to clear the buffer
-        $log->get_buffer_log();    # to get the buffer
-
-    Maybe you want to do something like:
-
-        my $log = Log::Handler->new(filename => 'file.log', mode => 'append');
-        $log->set_buffer_log(1);
-        $log->error('this error would go to file.log');
-        $log->warning('and this warning would go to file.log as well');
-
-    Both messages would be buffered as well. If you want to print this
-    messages to STDOUT you could do the following:
-
-        print STDOUT $log->get_buffer_log;
-
-    and then clear the buffer with
-
-        $log->set_buffer_log(0,1);
-
-    But you could to this in one step as well and turn the buffer on or off
-    or clear the buffer:
-
-        print STDOUT $log->get_buffer_log(0);
-        print STDOUT $log->get_buffer_log(1);
-        print STDOUT $log->get_buffer_log(0,1);
 
 EXAMPLES
   Simple example to log all level:
@@ -594,16 +560,11 @@ EXAMPLES
 
         my $log = Log::Handler->new(
            filename   => 'file1.log',
-           mode       => 'trunc',
+           mode       => 'append',
            maxlevel   => 4,
-           prefix     => '',
-           timeformat => ''
         );
 
-        my %hash = (
-            foo => 1,
-            bar => 2
-        );
+        my %hash = (foo => 1, bar => 2);
 
         $log->debug("\n".Dumper(\%hash))
             if $log->is_debug();
@@ -647,6 +608,8 @@ QUESTIONS
     MAIL: <jschulz.cpan(at)bloonix.de>
 
     IRC: irc.perl.org#perlde
+
+    If you send me a mail then add Log::Handler into the subject.
 
 COPYRIGHT
     Copyright (C) 2007 by Jonny Schulz. All rights reserved.

@@ -1,27 +1,25 @@
 use strict;
 use warnings;
-use Test::More tests => 20;
+use Test::More tests => 18;
 use File::Spec;
 use Log::Handler;
 
 my $logfile = File::Spec->catfile('t', 'Log-Handler-Test-File.log');
 
 my $log = Log::Handler->new(
-   filename => $logfile,
-   permissions => '0664',
-   mode => 'append',
-   autoflush => 0,
-   timeformat => '',
-   maxlevel => 'debug',
-   minlevel => 'emergency',
-   fileopen => 1,
-   filelock => 1,
-   reopen => 1,
-   newline => 1,
-   prefix => 'test [<--LEVEL-->] ',
+   filename     => $logfile,
+   permissions  => '0664',
+   mode         => 'append',
+   autoflush    => 0,
+   timeformat   => '',
+   maxlevel     => 'debug',
+   minlevel     => 'emergency',
+   fileopen     => 1,
+   filelock     => 1,
+   reopen       => 1,
+   newline      => 1,
+   prefix       => 'test [<--LEVEL-->] ',
 );
-
-$log->set_buffer_log(1);
 
 ok(1, "new");
 
@@ -67,8 +65,3 @@ if ($lines == 13) {
 }
 
 ok(unlink($logfile), "unlink logfile");
-
-my @buffer = $log->get_buffer_log(0);
-ok(@buffer == 13, "get buffer log");
-@buffer = $log->get_buffer_log();
-ok(@buffer == 0, "buffer cleared");

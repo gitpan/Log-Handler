@@ -1,6 +1,9 @@
+0.38    Released at 2007-09-29.
+        Kicked set_log_buffer() and get_buffer_log().
+        Did some code improvements and split _print() into different routines.
+        The option filename isn't mandatory any more. The default is *STDOUT.
 0.37_01 Released at 2007-07-20.
-        Added set_log_buffer() and get_log_buffer() to Log::Handler. This was
-          a feature request for debugging reasons from David Coppit.
+        Added set_buffer_log() and get_buffer_log() to Log::Handler.
         Kicked now the would_log_* methods. Since 0.33 the is_* methods exists
           as replacement.
 0.37    Released at 2007-07-04.
