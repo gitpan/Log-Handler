@@ -1,32 +1,58 @@
 NAME
-    Log::Handler - A simple handler to log messages to a log file.
+    Log::Handler - A simple handler to log messages to one or more log
+    files.
 
 SYNOPSIS
         use Log::Handler;
 
         my $log = Log::Handler->new();
 
+        $log->add(filename => \*STDOUT);
+
         $log->alert("foo bar");
 
 DESCRIPTION
     This module is just a simple object oriented log file handler and very
     easy to use. It's possible to define a log level for your programs and
-    control the amount of informations that will be logged to the log file.
-    In addition it's possible to configure how you wish to open the log file
-    - transient or permanent - and lock and unlock the log file by each
-    write operation. If you wish you can assign the handler to check the
-    inode of the log file (not on Windows). That could be very useful if a
-    rotate mechanism moves and zip the log file.
+    control the amount of informations that will be logged to log files. In
+    addition it's possible to configure how you wish to open the log files -
+    transient or permanent - and lock and unlock the log files by each write
+    operation. If you wish you can assign the handler to check the inode of
+    the log files (not on Windows). That could be very useful if a rotate
+    mechanism moves and zip the log file.
+
+WHATS NEW, WHATS DEPRECATED
+    Since version 0.39 the method "add()" is totaly new. With this method
+    it's now possible to add more than one log file to the handler and
+    define different log levels for each log file. As example you can log
+    the levels 0-4 (emerg-warn) to log file A and the levels 4-7
+    (warn-debug) to log file B.
+
+    Placeholders are now available for the prefix. A postfix option is now
+    availble too, but the usage of <--LEVEL--> in the prefix is deprecated,
+    use %L instead.
+
+    The methods "close()", "get_prefix()" and "set_prefix()" are not
+    available any more.
+
+    The method "trace()" writes caller informations to all log files. Maybe
+    this will be changed in further releases so that it's possible to define
+    just one log file for traces.
 
 METHODS
   new()
     Call "new()" to create a new log handler object.
 
-    The "new()" method expected the options for the log file. Each option
-    will be set to a default value if not set.
+    You can pass the options for the first log file if you want or later by
+    the call of "add()".
+
+  add()
+    Call "add()" to add a log file to the object. "add()" expects the
+    options for the log file. Each option will be set to a default value if
+    not set.
 
   Log levels
-    There are eigth log levels and thirteen methods to handle this levels:
+    There are eigth log level methods (thirteen with shortcuts):
 
     debug()
     info()
@@ -91,51 +117,22 @@ METHODS
     The methods "is_note()", "is_warn()", "is_err()", "is_crit()" and
     "is_emerg()" are just shortcuts.
 
-  set_prefix()
-    Call "set_prefix()" to modifier the option prefix after you called
-    "new()".
-
-        my $log = Log::Handler->new(
-           filename => 'file.log',
-           mode     => 'append',
-           prefix   => "myhost:$$ [<--LEVEL-->] "
-        );
-
-        $log->set_prefix("[<--LEVEL-->] myhost:$$ ");
-
-  get_prefix()
-    Call "get_prefix()" to get the current prefix if you want to modifier
-    it.
-
-        # safe the old prefix
-        my $old_prefix = $log->get_prefix();
-
-        # set a new one for a code part in your script
-        $log->set_prefix("my new prefix");
-
-        # now set the your old prefix again
-        $log->set_prefix($old_prefix);
-
-    Or you want to add something to the current prefix:
-
-        $log->set_prefix($log->get_prefix."add something");
-
   errstr()
     Call "errstr()" if you want to get the last error message. That is
     useful with "die_on_errors". If you set this option to 0 then the
     handler wouldn't croak if a simple write operation fails. Set
-    "die_on_errors" to control it yourself. "errstr()" is only useful with
-    "new()", "close()" and the log level methods.
+    "die_on_errors" to control it yourself.
 
         $log->info("Hello World!") or die $log->errstr;
 
     Or
 
-        $error_string = $log->errstr
-           unless $log->info("Hello World!");
+        unless ( $log->info("Hello World!") ) {
+            $error_string = $log->errstr;
+        }
 
     The exception is that the handler croaks in any case if the call of
-    "new()" fails because on missing params or wrong settings!
+    "new()" or "add()" fails because on missing params or wrong settings!
 
         my $log = Log::Handler->new(filename => 'file.log', mode => 'foo bar');
 
@@ -151,28 +148,21 @@ METHODS
             die_on_errors   => 0
         ) or warn Log::Handler->errstr;
 
-  close()
-    Call "close()" if you want to close the log file.
-
-    This option is only useful if you set the option "fileopen" to 1 and if
-    you want to close the log file yourself. If you don't call "close()" the
-    log file will be closed automatically before exit.
-
   trace()
     This method is very useful if you want to print "caller()" informations
-    to the log file. In contrast to the log level methods this method prints
-    "caller()" informations to the log file in any case and you don't need
-    to activate the debugger with the option "debug". Example:
+    to all log files. In contrast to the log level methods this method
+    prints "caller()" informations to all log files in any case and you
+    don't need to activate the debugger with the option "debug". Example:
 
         my $log = Log::Handler->new( filename => \*STDOUT );
         $log->trace("caller informations:");
 
         Jun 05 21:20:32 [TRACE] caller informations
            CALL(2): package(main) filename(./log-handler-test.pl) line(22) subroutine(Log::Handler::trace) hasargs(1)
-           CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_print) hasargs(1)
+           CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_write) hasargs(1)
            CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1097) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
 
-    Maybe you like to print caller informations to the log file if an
+    Maybe you like to print caller informations to all log files if an
     unexpected error occurs.
 
         $SIG{__DIE__} = sub { $log->trace(@_) };
@@ -318,30 +308,46 @@ OPTIONS
         0 - inactive (default)
         1 - active - appends a newline to the log message if not exist
 
-  prefix
-    Set "prefix" to define your own prefix for each message. The default
-    value is "[<--LEVEL-->] ".
+  PLACEHOLDER prefix, postfix
+    It's possible to define a "prefix" and "postfix" for each message that
+    will be logged to the log file. The "prefix" will be written before and
+    the "postfix" after the message. Within the "prefix" and "postfix" it's
+    possible to use different placeholders that will be replaced before the
+    message goes to the log file.
 
-    "<--LEVEL-->" is replaced with the current message level. Default
-    example:
+    The available placeholders are:
 
-        $log->alert("message ...");
+        %L  Log level
+        %T  Timestamp
+        %P  PID
+        %H  Hostname
+        %N  Newline
+        %C  Filename and line number where the logger was called
+        %S  The program name
 
-    would log
+    The default "prefix" is set to "%T [%L] ". The "postfix" is not defined
+    by default. As example the following code
 
-        Feb 01 12:56:31 [ALERT] message ...
+        $log->alert("foo bar");
 
-    If you set "prefix" to
+    would log by default
 
-        prefix => 'foo <--LEVEL--> bar: '
+        Feb 01 12:56:31 [ALERT] foo bar
 
-        $log->info("foobar");
+    If you set "prefix" and "postfix" to
+
+        prefix  => '%T foo %L bar '
+        postfix => ' (%C)'
+
+    and call
+
+        $log->info("baz");
 
     then it would log
 
-        Feb 01 12:56:31 foo INFO bar: foobar
+        Feb 01 12:56:31 foo INFO bar baz (script.pl, line 40)
 
-    Take a look to the EXAMPLES to see more.
+    Traces will be added after the "postfix".
 
   maxlevel and minlevel
     With these options it's possible to set the log levels for your program.
@@ -418,7 +424,7 @@ OPTIONS
            CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
            CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
            CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
-           CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_print) hasargs(1)
+           CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_write) hasargs(1)
            CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1022) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
 
     The same code example but the debugger in block mode would looks like
@@ -451,7 +457,7 @@ OPTIONS
              package     Log::Handler
              filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
              line        681
-             subroutine  Log::Handler::_print
+             subroutine  Log::Handler::_write
              hasargs     1
           CALL(0):
              package     Log::Handler
@@ -472,7 +478,7 @@ OPTIONS
            CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
 
 EXAMPLES
-  Simple example to log all level:
+  Simple example to log all level to one log file:
         use Log::Handler;
 
         my $log = Log::Handler->new(
@@ -502,16 +508,65 @@ EXAMPLES
         Feb 01 12:56:31 [DEBUG] this is a debug message
         Feb 01 12:56:31 [INFO] this is a info message
         Feb 01 12:56:31 [NOTICE] this is a notice
-        Feb 01 12:56:31 [NOTE] this is a notice as well
+        Feb 01 12:56:31 [NOTICE] this is a notice as well
         Feb 01 12:56:31 [WARNING] this is a warning
-        Feb 01 12:56:31 [WARN] this is a warning
+        Feb 01 12:56:31 [WARNING] this is a warning
         Feb 01 12:56:31 [ERROR] this is a error message
-        Feb 01 12:56:31 [ERR] this is a error message as well
+        Feb 01 12:56:31 [ERROR] this is a error message as well
         Feb 01 12:56:31 [CRITICAL] this is a critical message
-        Feb 01 12:56:31 [CRIT] this is a critial message as well
+        Feb 01 12:56:31 [CRITICAL] this is a critial message as well
         Feb 01 12:56:31 [ALERT] this is a alert message
         Feb 01 12:56:31 [EMERGENCY] this is a emergency message
-        Feb 01 12:56:31 [EMERG] this is a emergency message as well
+        Feb 01 12:56:31 [EMERGENCY] this is a emergency message as well
+
+  Different log files:
+        use Log::Handler;
+
+        # create the log handler object
+        my $log = Log::Handler->new;
+
+        $log->add(
+           filename => 'debug.log',
+           mode     => 'append',
+           maxlevel => 7,
+           minlevel => 7
+        );
+
+        $log->add(
+           filename => 'common.log',
+           mode     => 'append',
+           maxlevel => 6,
+           minlevel => 5
+        );
+
+        $log->add(
+           filename => 'error.log',
+           mode     => 'append',
+           maxlevel => 4,
+           minlevel => 0
+        );
+
+        # log to debug.log
+        $log->debug("this is a debug message");
+
+        # log to common.log
+        $log->info("this is a info message");
+        $log->notice("this is a notice");
+        $log->note("this is a notice as well");
+
+        # log to error.log
+        $log->warning("this is a warning");
+        $log->warn("this is a warning as well");
+        $log->error("this is a error message");
+        $log->err("this is a error message as well");
+        $log->critical("this is a critical message");
+        $log->crit("this is a critical message as well");
+        $log->alert("this is a alert message");
+        $log->emergency("this is a emergency message");
+        $log->emerg("this is a emergency message as well");
+
+        # force caller informations to all log files
+        $log->trace("this message goes to all log files");
 
   Just a notice:
         use Log::Handler;
@@ -525,7 +580,7 @@ EXAMPLES
            timeformat => ''
         );
 
-        $log->note("$$");
+        $log->note($$);
 
     Would truncate /var/run/pid-file1 and write just the pid to the logfile.
 
@@ -592,6 +647,7 @@ PREREQUISITES
         Params::Validate  -  to validate all options
         Devel::Backtrace  -  to backtrace caller()
         Carp              -  to croak() on errors if die_on_errors is active
+        Sys::Hostname     -  to get the current hostname
 
 EXPORTS
     No exports.
@@ -607,7 +663,7 @@ QUESTIONS
 
     MAIL: <jschulz.cpan(at)bloonix.de>
 
-    IRC: irc.perl.org#perlde
+    IRC: irc.perl.org#perl
 
     If you send me a mail then add Log::Handler into the subject.
 

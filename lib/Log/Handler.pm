@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler - A simple handler to log messages to a log file.
+Log::Handler - A simple handler to log messages to one or more log files.
 
 =head1 SYNOPSIS
 
@@ -8,17 +8,34 @@ Log::Handler - A simple handler to log messages to a log file.
 
     my $log = Log::Handler->new();
 
+    $log->add(filename => \*STDOUT);
+
     $log->alert("foo bar");
 
 =head1 DESCRIPTION
 
 This module is just a simple object oriented log file handler and very easy to use.
 It's possible to define a log level for your programs and control the amount of
-informations that will be logged to the log file. In addition it's possible to configure
-how you wish to open the log file - transient or permanent - and lock and unlock the
-log file by each write operation. If you wish you can assign the handler to check the
-inode of the log file (not on Windows). That could be very useful if a rotate
+informations that will be logged to log files. In addition it's possible to configure
+how you wish to open the log files - transient or permanent - and lock and unlock the
+log files by each write operation. If you wish you can assign the handler to check the
+inode of the log files (not on Windows). That could be very useful if a rotate
 mechanism moves and zip the log file.
+
+=head1 WHATS NEW, WHATS DEPRECATED
+
+Since version 0.39 the method C<add()> is totaly new. With this method it's now possible to
+add more than one log file to the handler and define different log levels for each log file.
+As example you can log the levels 0-4 (emerg-warn) to log file A and the levels 4-7 (warn-debug)
+to log file B.
+
+Placeholders are now available for the prefix. A postfix option is now availble too, but
+the usage of <--LEVEL--> in the prefix is deprecated, use %L instead.
+
+The methods C<close()>, C<get_prefix()> and C<set_prefix()> are not available any more.
+
+The method C<trace()> writes caller informations to all log files. Maybe this will be changed
+in further releases so that it's possible to define just one log file for traces.
 
 =head1 METHODS
 
@@ -26,12 +43,16 @@ mechanism moves and zip the log file.
 
 Call C<new()> to create a new log handler object.
 
-The C<new()> method expected the options for the log file.
+You can pass the options for the first log file if you want or later by the call of C<add()>.
+
+=head2 add()
+
+Call C<add()> to add a log file to the object. C<add()> expects the options for the log file.
 Each option will be set to a default value if not set.
 
 =head2 Log levels
 
-There are eigth log levels and thirteen methods to handle this levels:
+There are eigth log level methods (thirteen with shortcuts):
 
 =over 4
 
@@ -113,50 +134,21 @@ Now we dump the hash only if the current log level would log it.
 
 The methods C<is_note()>, C<is_warn()>, C<is_err()>, C<is_crit()> and C<is_emerg()> are just shortcuts.
 
-=head2 set_prefix()
-
-Call C<set_prefix()> to modifier the option prefix after you called C<new()>.
-
-    my $log = Log::Handler->new(
-       filename => 'file.log',
-       mode     => 'append',
-       prefix   => "myhost:$$ [<--LEVEL-->] "
-    );
-
-    $log->set_prefix("[<--LEVEL-->] myhost:$$ ");
-
-=head2 get_prefix()
-
-Call C<get_prefix()> to get the current prefix if you want to modifier it.
-
-    # safe the old prefix
-    my $old_prefix = $log->get_prefix();
-
-    # set a new one for a code part in your script
-    $log->set_prefix("my new prefix");
-
-    # now set the your old prefix again
-    $log->set_prefix($old_prefix);
-
-Or you want to add something to the current prefix:
-
-    $log->set_prefix($log->get_prefix."add something");
-
 =head2 errstr()
 
 Call C<errstr()> if you want to get the last error message. That is useful with
 C<die_on_errors>. If you set this option to C<0> then the handler wouldn't croak
 if a simple write operation fails. Set C<die_on_errors> to control it yourself.
-C<errstr()> is only useful with C<new()>, C<close()> and the log level methods.
 
     $log->info("Hello World!") or die $log->errstr;
 
 Or
 
-    $error_string = $log->errstr
-       unless $log->info("Hello World!");
+    unless ( $log->info("Hello World!") ) {
+        $error_string = $log->errstr;
+    }
 
-The exception is that the handler croaks in any case if the call of C<new()> fails
+The exception is that the handler croaks in any case if the call of C<new()> or C<add()> fails
 because on missing params or wrong settings!
 
     my $log = Log::Handler->new(filename => 'file.log', mode => 'foo bar');
@@ -171,19 +163,11 @@ and the call of C<new> fails then you can absorb the error.
         die_on_errors   => 0
     ) or warn Log::Handler->errstr;
 
-=head2 close()
-
-Call C<close()> if you want to close the log file.
-
-This option is only useful if you set the option C<fileopen> to 1 and if you want to
-close the log file yourself. If you don't call C<close()> the log file will be
-closed automatically before exit.
-
 =head2 trace()
 
-This method is very useful if you want to print C<caller()> informations to the
-log file. In contrast to the log level methods this method prints C<caller()> informations
-to the log file in any case and you don't need to activate the debugger with the
+This method is very useful if you want to print C<caller()> informations to all log files.
+In contrast to the log level methods this method prints C<caller()> informations
+to all log files in any case and you don't need to activate the debugger with the
 option C<debug>. Example:
 
     my $log = Log::Handler->new( filename => \*STDOUT );
@@ -191,10 +175,10 @@ option C<debug>. Example:
 
     Jun 05 21:20:32 [TRACE] caller informations
        CALL(2): package(main) filename(./log-handler-test.pl) line(22) subroutine(Log::Handler::trace) hasargs(1)
-       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_print) hasargs(1)
+       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_write) hasargs(1)
        CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1097) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
 
-Maybe you like to print caller informations to the log file if an unexpected error occurs.
+Maybe you like to print caller informations to all log files if an unexpected error occurs.
 
     $SIG{__DIE__} = sub { $log->trace(@_) };
 
@@ -342,30 +326,47 @@ This helpful option appends a newline to the log message if it not exist.
     0 - inactive (default)
     1 - active - appends a newline to the log message if not exist
 
-=head2 prefix
+=head2 PLACEHOLDER prefix, postfix
 
-Set C<prefix> to define your own prefix for each message. The default value
-is "[<--LEVEL-->] ".
+It's possible to define a C<prefix> and C<postfix> for each message that will
+be logged to the log file. The C<prefix> will be written before and the C<postfix>
+after the message. Within the C<prefix> and C<postfix> it's possible to use
+different placeholders that will be replaced before the message goes to the log
+file.
 
-"<--LEVEL-->" is replaced with the current message level. Default example:
+The available placeholders are:
 
-    $log->alert("message ...");
+    %L  Log level
+    %T  Timestamp
+    %P  PID
+    %H  Hostname
+    %N  Newline
+    %C  Filename and line number where the logger was called
+    %S  The program name
 
-would log
+The default C<prefix> is set to "%T [%L] ". The C<postfix> is not defined by default.
+As example the following code
 
-    Feb 01 12:56:31 [ALERT] message ...
+    $log->alert("foo bar");
 
-If you set C<prefix> to
+would log by default
 
-    prefix => 'foo <--LEVEL--> bar: '
+    Feb 01 12:56:31 [ALERT] foo bar
 
-    $log->info("foobar");
+If you set C<prefix> and C<postfix> to
+
+    prefix  => '%T foo %L bar '
+    postfix => ' (%C)'
+
+and call
+
+    $log->info("baz");
 
 then it would log
 
-    Feb 01 12:56:31 foo INFO bar: foobar
+    Feb 01 12:56:31 foo INFO bar baz (script.pl, line 40)
 
-Take a look to the EXAMPLES to see more.
+Traces will be added after the C<postfix>.
 
 =head2 maxlevel and minlevel
 
@@ -443,7 +444,7 @@ Output:
        CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
        CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
        CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
-       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_print) hasargs(1)
+       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_write) hasargs(1)
        CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1022) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
 
 The same code example but the debugger in block mode would looks like this:
@@ -475,7 +476,7 @@ Output:
          package     Log::Handler
          filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
          line        681
-         subroutine  Log::Handler::_print
+         subroutine  Log::Handler::_write
          hasargs     1
       CALL(0):
          package     Log::Handler
@@ -498,7 +499,7 @@ This option let skip the caller informations the count of C<debug_skip>.
 
 =head1 EXAMPLES
 
-=head2 Simple example to log all level:
+=head2 Simple example to log all level to one log file:
 
     use Log::Handler;
 
@@ -529,16 +530,66 @@ Would log
     Feb 01 12:56:31 [DEBUG] this is a debug message
     Feb 01 12:56:31 [INFO] this is a info message
     Feb 01 12:56:31 [NOTICE] this is a notice
-    Feb 01 12:56:31 [NOTE] this is a notice as well
+    Feb 01 12:56:31 [NOTICE] this is a notice as well
     Feb 01 12:56:31 [WARNING] this is a warning
-    Feb 01 12:56:31 [WARN] this is a warning
+    Feb 01 12:56:31 [WARNING] this is a warning
     Feb 01 12:56:31 [ERROR] this is a error message
-    Feb 01 12:56:31 [ERR] this is a error message as well
+    Feb 01 12:56:31 [ERROR] this is a error message as well
     Feb 01 12:56:31 [CRITICAL] this is a critical message
-    Feb 01 12:56:31 [CRIT] this is a critial message as well
+    Feb 01 12:56:31 [CRITICAL] this is a critial message as well
     Feb 01 12:56:31 [ALERT] this is a alert message
     Feb 01 12:56:31 [EMERGENCY] this is a emergency message
-    Feb 01 12:56:31 [EMERG] this is a emergency message as well
+    Feb 01 12:56:31 [EMERGENCY] this is a emergency message as well
+
+=head2 Different log files:
+
+    use Log::Handler;
+
+    # create the log handler object
+    my $log = Log::Handler->new;
+
+    $log->add(
+       filename => 'debug.log',
+       mode     => 'append',
+       maxlevel => 7,
+       minlevel => 7
+    );
+
+    $log->add(
+       filename => 'common.log',
+       mode     => 'append',
+       maxlevel => 6,
+       minlevel => 5
+    );
+
+    $log->add(
+       filename => 'error.log',
+       mode     => 'append',
+       maxlevel => 4,
+       minlevel => 0
+    );
+
+    # log to debug.log
+    $log->debug("this is a debug message");
+
+    # log to common.log
+    $log->info("this is a info message");
+    $log->notice("this is a notice");
+    $log->note("this is a notice as well");
+
+    # log to error.log
+    $log->warning("this is a warning");
+    $log->warn("this is a warning as well");
+    $log->error("this is a error message");
+    $log->err("this is a error message as well");
+    $log->critical("this is a critical message");
+    $log->crit("this is a critical message as well");
+    $log->alert("this is a alert message");
+    $log->emergency("this is a emergency message");
+    $log->emerg("this is a emergency message as well");
+
+    # force caller informations to all log files
+    $log->trace("this message goes to all log files");
 
 =head2 Just a notice:
 
@@ -553,7 +604,7 @@ Would log
        timeformat => ''
     );
 
-    $log->note("$$");
+    $log->note($$);
 
 Would truncate /var/run/pid-file1 and write just the pid to the logfile.
 
@@ -624,6 +675,7 @@ Would NOT dump %hash to the $log object!
     Params::Validate  -  to validate all options
     Devel::Backtrace  -  to backtrace caller()
     Carp              -  to croak() on errors if die_on_errors is active
+    Sys::Hostname     -  to get the current hostname
 
 =head1 EXPORTS
 
@@ -643,7 +695,7 @@ Do you have any questions or ideas?
 
 MAIL: <jschulz.cpan(at)bloonix.de>
 
-IRC: irc.perl.org#perlde
+IRC: irc.perl.org#perl
 
 If you send me a mail then add Log::Handler into the subject.
 
@@ -680,430 +732,90 @@ SUCH DAMAGES.
 =cut
 
 package Log::Handler;
-our $VERSION = '0.38';
+our $VERSION = '0.38_01';
 
 use strict;
 use warnings;
-use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
-use POSIX qw(strftime);
-use Params::Validate;
-use Carp qw(croak);
-use Devel::Backtrace;
-
-use constant EMERGENCY =>  0;
-use constant EMERG     =>  0;
-use constant ALERT     =>  1;
-use constant CRITICAL  =>  2;
-use constant CRIT      =>  2;
-use constant ERROR     =>  3;
-use constant ERR       =>  3;
-use constant WARNING   =>  4;
-use constant WARN      =>  4;
-use constant NOTICE    =>  5;
-use constant NOTE      =>  5;
-use constant INFO      =>  6;
-use constant DEBUG     =>  7;
-use constant NOTHING   =>  8;
+use Log::Handler::Logger;
+$Log::Handler::Logger::CALLER = 4;
 $Log::Handler::ERRSTR = '';
 
-# --------------------------------------------------------------------
-# The BEGIN block is used to generate the syslog methods and the is_*
-# methods. The syslog methods calling _print() with the syslog level
-# as first uppercase argument. The is_* methods are only used to check
-# if the current set of max- and minlevel would log the message to the
-# log file. The levels NOTE, ERR, CRIT and EMERG are just shortcuts.
-# --------------------------------------------------------------------
+# the log levels methods
+sub debug     { shift->_write('DEBUG', @_)     }
+sub info      { shift->_write('INFO', @_)      }
+sub notice    { shift->_write('NOTICE', @_)    }
+sub note      { shift->_write('NOTICE', @_)    }
+sub warning   { shift->_write('WARNING', @_)   }
+sub warn      { shift->_write('WARNING', @_)   }
+sub error     { shift->_write('ERROR', @_)     }
+sub err       { shift->_write('ERROR', @_)     }
+sub critical  { shift->_write('CRITICAL', @_)  }
+sub crit      { shift->_write('CRITICAL', @_)  }
+sub alert     { shift->_write('ALERT', @_)     }
+sub emergency { shift->_write('EMERGENCY', @_) }
+sub emerg     { shift->_write('EMERGENCY', @_) }
+sub trace     { shift->_write('TRACE', @_)   } # special level
 
-BEGIN {
-    for my $level (qw/DEBUG INFO NOTICE NOTE WARNING WARN ERROR ERR CRITICAL CRIT ALERT EMERGENCY EMERG/) {
-
-        my $routine = lc($level);
-
-        {  # start "no strict 'refs'" block
-            no strict 'refs';
-
-            # --------------------------------------------------------------
-            # Creating the 8 syslog level methods - total 13 with shortcuts:
-            # debug(), info(), notice(), note(), warning(), warn(), error(),
-            # err(), critical(), crit(), alert(), emergency(), emerg()
-            # --------------------------------------------------------------
-
-            *{"$routine"} = sub {
-                my $self = shift;
-                return 1
-                    if &{$level} < $self->{minlevel}
-                    || &{$level} > $self->{maxlevel};
-                return $self->_print($level, @_);
-            };
-
-            # -------------------------------------------------------------
-            # Creating the 8 is_ level methods - total 13 with shortcuts:
-            # is_debug(), is_info(), is_notice(), is_note(),  is_warning(),
-            # is_warn(), is_error(), is_err(), is_critical(), is_crit()
-            # is_alert(), is_emergency(), is_emerg()
-            # -------------------------------------------------------------
-
-            *{"is_$routine"} = sub {
-                my $self = shift;
-                return 1
-                    if &{$level} >= $self->{minlevel}
-                    && &{$level} <= $self->{maxlevel};
-                return undef;
-            };
-
-        } # end "no strict 'refs'" block
-    }
-}
+# the methods for checking if a log level is active
+sub is_debug     { shift->_is_active('DEBUG')     }
+sub is_info      { shift->_is_active('INFO')      }
+sub is_notice    { shift->_is_active('NOTICE')    }
+sub is_note      { shift->_is_active('NOTICE')    }
+sub is_warning   { shift->_is_active('WARNING')   }
+sub is_warn      { shift->_is_active('WARNING')   }
+sub is_error     { shift->_is_active('ERROR')     }
+sub is_err       { shift->_is_active('ERROR')     }
+sub is_critical  { shift->_is_active('CRITICAL')  }
+sub is_crit      { shift->_is_active('CRITICAL')  }
+sub is_alert     { shift->_is_active('ALERT')     }
+sub is_emergency { shift->_is_active('EMERGENCY') }
+sub is_emerg     { shift->_is_active('EMERGENCY') }
 
 sub new {
     my $class = shift;
-    my %opts  = ();
-    my $self  = bless \%opts, $class;
-    my $bool  = qr/^[10]\z/;
-    my $level = qr/^([0-8]|nothing|debug|info|notice|note|warning|warn
-                     |error|err|critical|crit|alert|emergency|emerg)\z/x;
-
-    %opts = Params::Validate::validate(@_, {
-        filename => {
-            type => Params::Validate::SCALAR | Params::Validate::GLOBREF,
-            default => '*STDOUT',
-        },
-        filelock => {
-            type => Params::Validate::SCALAR,
-            regex => $bool,
-            default => 1,
-        },
-        fileopen => {
-            type => Params::Validate::SCALAR,
-            regex => $bool,
-            default => 1,
-        },
-        reopen => {
-            type  => Params::Validate::SCALAR,
-            regex => $bool,
-            default => 1,
-        },
-        mode => {
-            type => Params::Validate::SCALAR,
-            regex => qr/^(append|excl|trunc)\z/,
-            default => 'excl',
-        },
-        autoflush => {
-            type => Params::Validate::SCALAR,
-            regex => $bool,
-            default => 1,
-        },
-        permissions => {
-            type => Params::Validate::SCALAR,
-            regex => qr/^[0-7]{3,4}\z/,
-            default => '0640',
-        },
-        timeformat => {
-            type => Params::Validate::SCALAR,
-            default => '%b %d %H:%M:%S',
-        },
-        newline => {
-            type => Params::Validate::SCALAR,
-            regex => $bool,
-            default => 0,
-        },
-        prefix => {
-            type => Params::Validate::SCALAR,
-            default => '[<--LEVEL-->] ',
-        },
-        minlevel => {
-            type => Params::Validate::SCALAR,
-            regex => $level,
-            default => 0,
-        },
-        maxlevel => {
-            type => Params::Validate::SCALAR,
-            regex => $level,
-            default => 4,
-        },
-        rewrite_to_stderr => {
-            type => Params::Validate::SCALAR,
-            regex => $bool,
-            default => 0,
-        },
-        die_on_errors => {
-            type => Params::Validate::SCALAR,
-            regex => $bool,
-            default => 1,
-        },
-        debug => {
-            type => Params::Validate::SCALAR,
-            regex => $bool,
-            default => 0,
-        },
-        debug_mode => {
-            type => Params::Validate::SCALAR,
-            regex => qr/^[12]\z/,
-            default => 1,
-        },
-        debug_skip => {
-            type => Params::Validate::SCALAR,
-            regex => qr/^\d+\z/,
-            default => 0,
-        },
-        utf8 => {
-            type => Params::Validate::SCALAR,
-            regex => $bool,
-            default => 0,
-        },
-    });
-
-    $self->_build_prefix;
-
-    # convert the level strings to numbers
-    {  # start "no strict" block
-        no strict 'refs';
-        $opts{minlevel} = &{uc($opts{minlevel})}
-            unless $opts{minlevel} =~ /^\d\z/;
-        $opts{maxlevel} = &{uc($opts{maxlevel})}
-            unless $opts{maxlevel} =~ /^\d\z/;
-    } # end "no strict" block
-
-    # it's possible to set *STDOUT and *STDERR as string
-    if (ref($opts{filename}) eq 'GLOB') {
-        $opts{fh} = $opts{filename};
-    } elsif ($opts{filename} eq '*STDOUT') {
-        $opts{fh} = \*STDOUT;
-    } elsif ($opts{filename} eq '*STDERR') {
-        $opts{fh} = \*STDERR;
+    my $self  = bless { }, $class;
+    if (@_) {
+        $self->add(@_);
     }
+    return $self;
+}
 
-    # if filename is a GLOB, then we force some options and return
-    if (defined $opts{fh}) {
-        $opts{fileopen} = 1; # never call _open() and _close()
-        $opts{reopen}   = 0; # never try to reopen
-        $opts{filelock} = 0; # no, we won't lock it
-        if ($opts{autoflush}) {
-            my $oldfh = select $opts{fh}; 
-            $| = $opts{autoflush}; 
-            select $oldfh;
-        }
-        if ($self->{utf8}) {
-            binmode $opts{fh}, ':utf8';
-        }
-        return $self;
-    }
+sub add {
+    my $self = shift;
+    my $logger = Log::Handler::Logger->new(@_);
+    push @{$self->{levels}->{TRACE}}, $logger;
 
-    if ($opts{mode} eq 'append') {
-        $opts{mode} = O_WRONLY | O_APPEND | O_CREAT;
-    } elsif ($opts{mode} eq 'excl') {
-        $opts{mode} = O_WRONLY | O_EXCL | O_CREAT;
-    } elsif ($opts{mode} eq 'trunc') {
-        $opts{mode} = O_WRONLY | O_TRUNC | O_CREAT;
-    }
-
-    $opts{permissions} = oct($opts{permissions});
-
-    # open the log file permanent
-    if ($opts{fileopen} == 1) {
-        $self->_open or return undef;
-        if ($opts{reopen}) {
-            $self->{inode} = (stat($self->{filename}))[1];
-        }
+    # bind the file to the log level
+    foreach my $level ( $logger->levels ) {
+        push @{$self->{levels}->{$level}}, $logger;
     }
 
     return $self;
 }
 
-sub get_prefix { $_[0]->{prefix} }
-
-sub set_prefix {
-    my $self = shift;
-    $self->{prefix} = shift;
-    $self->_build_prefix;
-}
-
-sub trace {
-    my $self = shift;
-    return $self->_print('TRACE', @_);
-}
-
-sub close {
-    my $self = shift;
-    if ($self->{fileopen} == 1) {
-        $self->_close or return undef;
-    }
-    return 1;
-}
-
 # to make it possible to call Log::Handler->errstr
 sub errstr { $Log::Handler::ERRSTR }
-
-sub DESTROY {
-    my $self = shift;
-    CORE::close($self->{fh})
-        if $self->{fh}
-        && !ref($self->{filename})
-        && $self->{filename} !~ /^\*STDOUT\z|^\*STDERR\z/;
-}
 
 #
 # private stuff
 #
 
-sub _print {
-    my $self = shift;
-
-    $self->_pre_print() or return undef;
-    my $msg = $self->_build_message(@_);
-
-    print {$self->{fh}} $$msg or do {
-        if ($self->{rewrite_to_stderr}) {
-            print STDERR $$msg;
-        }
-        return $self->_raise_error("unable to print to logfile: $!");
-    };
-
-    $self->_post_print() or return undef;
-
-    return 1;
-}
-
-sub _open {
-    my $self = shift;
-
-    sysopen(my $fh, $self->{filename}, $self->{mode}, $self->{permissions})
-        or return $self->_raise_error("unable to open logfile $self->{filename}: $!");
-
-    my $oldfh = select $fh;    
-    $| = $self->{autoflush};
-    select $oldfh;
-    binmode $fh, ':utf8' if $self->{utf8};
-    $self->{fh} = $fh;
-    return 1;
-}
-
-sub _close {
-    my $self = shift;
-
-    CORE::close($self->{fh})
-        or return $self->_raise_error("unable to close logfile $self->{filename}: $!");
-
-    delete $self->{fh};
-    return 1;
-}
-
-sub _checkino {
+sub _write {
     my $self  = shift;
-
-    if (-e $self->{filename}) {
-        my $ino = (stat($self->{filename}))[1];
-        unless ($self->{inode} == $ino) {
-            $self->_close or return undef;
-            $self->_open or return undef;
-            $self->{inode} = $ino;
-        }
-    } else {
-        $self->_close or return undef;
-        $self->_open or return undef;
-        $self->{inode} = (stat($self->{filename}))[1];
-    }
-
-    return 1;
-}
-
-sub _lock {
-    my $self = shift;
-
-    flock($self->{fh}, LOCK_EX)
-        or return $self->_raise_error("unable to lock logfile $self->{filename}: $!");
-
-    return 1;
-}
-
-sub _unlock {
-    my $self = shift;
-
-    flock($self->{fh}, LOCK_UN)
-        or return $self->_raise_error("unable to unlock logfile $self->{filename}: $!");
-
-    return 1;
-}
-
-sub _pre_print {
-    my $self = shift;
-    if (!$self->{fileopen}) {
-        $self->_open or return undef;
-    } elsif ($self->{reopen}) {
-        $self->_checkino or return undef;
-    }
-    if ($self->{filelock}) {
-        $self->_lock or return undef;
-    }
-    return 1;
-}
-
-sub _post_print {
-    my $self = shift;
-    if ($self->{filelock}) {
-        $self->_unlock or return undef;
-    }
-    if (!$self->{fileopen}) {
-        $self->_close or return undef;
-    }
-    return 1;
-}
-
-sub _build_message {
-    my $self = shift;
     my $level = shift;
-    my $message = '';
 
-    if ($self->{timeformat}) {
-        $message .= $self->_set_time.' ';
-    }
-    if (length($self->{prefix})) {
-        $message .= join($level, @{$self->{prefixes}});
-    }
-    if (@_) {
-        $message .= join(' ', @_);
-    }
-    if ($self->{debug} || $level eq 'TRACE') {
-        $message .= "\n" if $message =~ /.\z|^\z/;
-        my $bt = Devel::Backtrace->new($self->{debug_skip});
-        my $pt = $bt->points - 1;
-        for my $p (reverse 0..$pt) {
-            $message .= ' ' x 3 . "CALL($p):";
-            my $c = $bt->point($p);
-            for my $k (qw/package filename line subroutine hasargs wantarray evaltext is_require/) {
-                next unless defined $c->{$k};
-                if ($self->{debug_mode} == 1) {
-                    $message .= " $k($c->{$k})";
-                } elsif ($self->{debug_mode} == 2) {
-                    $message .= "\n" . ' ' x 6 . sprintf('%-12s', $k) . $c->{$k};
-                }
-            }
-            $message .= "\n";
+    if ( $self->_is_active($level) ) {
+        foreach my $logger ( @{$self->{levels}->{$level}} ) {
+            $logger->write($level, @_) or return undef;
         }
-    } elsif ($self->{newline} && $message =~ /.\z|^\z/) { # I hope that works on the most OSs
-        $message .= "\n";
     }
 
-    return \$message;
+    return 1;
 }
 
-sub _set_time {
-    my $self = shift;
-    my $time = strftime($self->{timeformat}, localtime);
-    return $time;
-}
-
-sub _build_prefix {
-    my $self = shift;
-    $self->{prefixes} = [ split(/<--LEVEL-->/, $self->{prefix}) ];
-}
-
-sub _raise_error {
-    my $self = shift;
-    $Log::Handler::ERRSTR = shift;
-    return undef unless $self->{die_on_errors};
-    my $class = ref($self);
-    croak "$class: ".$Log::Handler::ERRSTR;
+sub _is_active {
+    my ($self, $level) = @_;
+    return $self->{levels}->{$level} ? 1 : 0;
 }
 
 1;

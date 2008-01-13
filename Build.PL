@@ -14,6 +14,7 @@ my $build = Module::Build->new(
         'Params::Validate' => 0,
         'Test::More'       => 0,
         Carp               => 0,
+        'Sys::Hostname'    => 0,
     },
     recommends         => {},
     sign               => 0,

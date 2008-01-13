@@ -9,6 +9,7 @@ WriteMakefile
                            'Devel::Backtrace' => '0.05',
                            'File::Spec' => '0',
                            'Params::Validate' => '0',
+                           'Sys::Hostname' => '0',
                            'Test::More' => '0'
                          },
           'INSTALLDIRS' => 'site',
