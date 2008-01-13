@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler - A simple handler to log messages to one or more log files.
+Log::Handler - A simple handler to log messages to log files.
 
 =head1 SYNOPSIS
 
@@ -22,20 +22,39 @@ log files by each write operation. If you wish you can assign the handler to che
 inode of the log files (not on Windows). That could be very useful if a rotate
 mechanism moves and zip the log file.
 
-=head1 WHATS NEW, WHATS DEPRECATED
+=head1 WHAT IS NEW, WHAT IS DEPRECATED
+
+=head2 More than one log file
 
 Since version 0.39 the method C<add()> is totaly new. With this method it's now possible to
 add more than one log file to the handler and define different log levels for each log file.
 As example you can log the levels 0-4 (emerg-warn) to log file A and the levels 4-7 (warn-debug)
 to log file B.
 
-Placeholders are now available for the prefix. A postfix option is now availble too, but
-the usage of <--LEVEL--> in the prefix is deprecated, use %L instead.
+=head2 Log::Handler::Logger
+
+The main logic of Log::Handler is moved to Log::Handler::Logger. If you add a new log file
+to the handler this file got it's own Log::Handler::Logger object and the Log::Handler just
+dispatch messages to the different objects.
+
+=head2 Placeholder
+
+Placeholders are now available for the prefix in printf style. The old style of <--LEVEL-->
+is deprecated, instead you have to use %L as example. In addition a postfix option is
+available now. Take a look to the documentation of prefix and postfix.
+
+=head2 Kicked methods
 
 The methods C<close()>, C<get_prefix()> and C<set_prefix()> are not available any more.
 
-The method C<trace()> writes caller informations to all log files. Maybe this will be changed
-in further releases so that it's possible to define just one log file for traces.
+=head2 trace()
+
+The method C<trace()> writes caller informations to all log files by default. It's possible
+to disable this by set trace to 0.
+
+=head2 Examples
+
+Take a look to the example directory of the distribution if you need a code example.
 
 =head1 METHODS
 
@@ -233,8 +252,7 @@ and you have to control the handles yourself. The forced options are
 =head2 filelock
 
 Maybe it's desirable to lock the log file by each write operation because a lot of processes
-write at the same time to the log file. You can set the option C<filelock> to activate or deactivate
-the locking.
+write at the same time to the log file. You can set the option C<filelock> to 0 or 1.
 
     0 - no file lock
     1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each write operation (default)
@@ -251,7 +269,7 @@ Open a log file transient or permanent.
 
 This option works only if option C<fileopen> is set to 1.
 
-    0 - deactivate
+    0 - deactivated
     1 - try to reopen the log file if the inode changed (default)
 
 =head2 fileopen and reopen
@@ -410,6 +428,11 @@ on missing params or wrong settings.
 =head2 utf8
 
 If this option is set to 1 then UTF-8 will be set with C<binmode()> on the output filehandle.
+
+=head2 trace
+
+With this options it's possible to disable the tracing for a log file. By default this
+option is set to 1 and tracing is enabled.
 
 =head2 debug
 
@@ -732,7 +755,7 @@ SUCH DAMAGES.
 =cut
 
 package Log::Handler;
-our $VERSION = '0.38_01';
+our $VERSION = '0.38_02';
 
 use strict;
 use warnings;
@@ -740,36 +763,73 @@ use Log::Handler::Logger;
 $Log::Handler::Logger::CALLER = 4;
 $Log::Handler::ERRSTR = '';
 
-# the log levels methods
-sub debug     { shift->_write('DEBUG', @_)     }
-sub info      { shift->_write('INFO', @_)      }
-sub notice    { shift->_write('NOTICE', @_)    }
-sub note      { shift->_write('NOTICE', @_)    }
-sub warning   { shift->_write('WARNING', @_)   }
-sub warn      { shift->_write('WARNING', @_)   }
-sub error     { shift->_write('ERROR', @_)     }
-sub err       { shift->_write('ERROR', @_)     }
-sub critical  { shift->_write('CRITICAL', @_)  }
-sub crit      { shift->_write('CRITICAL', @_)  }
-sub alert     { shift->_write('ALERT', @_)     }
-sub emergency { shift->_write('EMERGENCY', @_) }
-sub emerg     { shift->_write('EMERGENCY', @_) }
-sub trace     { shift->_write('TRACE', @_)   } # special level
+# --------------------------------------------------------------------
+# The BEGIN block is used to generate the syslog methods and the is_*
+# methods. The syslog methods calling write() with the syslog level
+# as first uppercase argument if the current log level is valid.
+# The is_* methods are only used to check if the current set of max-
+# and minlevel would log the message to the log file and returns TRUE
+# or FALSE. The levels NOTE, ERR, CRIT and EMERG are just shortcuts.
+# --------------------------------------------------------------------
 
-# the methods for checking if a log level is active
-sub is_debug     { shift->_is_active('DEBUG')     }
-sub is_info      { shift->_is_active('INFO')      }
-sub is_notice    { shift->_is_active('NOTICE')    }
-sub is_note      { shift->_is_active('NOTICE')    }
-sub is_warning   { shift->_is_active('WARNING')   }
-sub is_warn      { shift->_is_active('WARNING')   }
-sub is_error     { shift->_is_active('ERROR')     }
-sub is_err       { shift->_is_active('ERROR')     }
-sub is_critical  { shift->_is_active('CRITICAL')  }
-sub is_crit      { shift->_is_active('CRITICAL')  }
-sub is_alert     { shift->_is_active('ALERT')     }
-sub is_emergency { shift->_is_active('EMERGENCY') }
-sub is_emerg     { shift->_is_active('EMERGENCY') }
+BEGIN {
+    my %LEVELS_BY_ROUTINE = (
+        debug     => 'DEBUG',
+        info      => 'INFO',
+        notice    => 'NOTICE',
+        note      => 'NOTICE',
+        warning   => 'WARNING',
+        warn      => 'WARNING',
+        error     => 'ERROR',
+        err       => 'ERROR',
+        critical  => 'CRITICAL',
+        crit      => 'CRITICAL',
+        alert     => 'ALERT',
+        emergency => 'EMERGENCY',
+        emerg     => 'EMERGENCY',
+        trace     => 'TRACE',
+    );
+
+    while ( my ($routine, $level) = each %LEVELS_BY_ROUTINE ) {
+
+        {   # start "no strict 'refs'" block
+            no strict 'refs';
+
+            # --------------------------------------------------------------
+            # Creating the 8 syslog level methods - total 13 with shortcuts:
+            # debug(), info(), notice(), note(), warning(), warn(), error(),
+            # err(), critical(), crit(), alert(), emergency(), emerg()
+            # --------------------------------------------------------------
+
+            *{"$routine"} = sub {
+                my $self  = shift;
+
+                if ( $self->{levels}->{$level} ) {
+                    foreach my $logger ( @{$self->{levels}->{$level}} ) {
+                        $logger->write($level, @_) or return undef;
+                    }
+                }
+
+                return 1;
+            };
+
+            next if $routine eq 'trace';
+
+            # -------------------------------------------------------------
+            # Creating the 8 is_ level methods - total 13 with shortcuts:
+            # is_debug(), is_info(), is_notice(), is_note(),  is_warning(),
+            # is_warn(), is_error(), is_err(), is_critical(), is_crit()
+            # is_alert(), is_emergency(), is_emerg()
+            # -------------------------------------------------------------
+
+            *{"is_$routine"} = sub {
+                my $self = shift;
+                return $self->{levels}->{$level} ? 1 : 0;
+            };
+
+        } # end "no strict 'refs'" block
+    }
+}
 
 sub new {
     my $class = shift;
@@ -783,39 +843,56 @@ sub new {
 sub add {
     my $self = shift;
     my $logger = Log::Handler::Logger->new(@_);
-    push @{$self->{levels}->{TRACE}}, $logger;
 
-    # bind the file to the log level
-    foreach my $level ( $logger->levels ) {
-        push @{$self->{levels}->{$level}}, $logger;
+    # There are 2 ways to add the logger objects. The one way is to
+    # push all objects into a array or build a hash and if one of the
+    # log level methods is called the array or hash must be iterated
+    # to find out which logger would log. Example:
+    #
+    #       push @{$self->{logger}}, $logger;
+    #
+    #       sub info {
+    #           my $self = shift;
+    #           foreach my $logger ( @{$self->{logger}} ) {
+    #               if ($logger->would_log('INFO')) {
+    #                   $logger->write('INFO', @_) or return undef;
+    #               }
+    #           }
+    #           return 1;
+    #       }
+    #
+    # I though that's a bad way because if 4 log files are added then
+    # all logger objects would be checked by each call. For this reason
+    # I though it's better to build a HoA with all active levels as hashkeys
+    # and push the logger objects into the active levels. So it's doesn't
+    # necessary to iterate over all logger objects and it must be only
+    # checked if a level is defined and iterate over logger objects that
+    # are pushed into this array. Example:
+    #
+    #       push @{$self->{levels}->{INFO}}, $logger;
+    #
+    #       sub info {
+    #           my $self  = shift;
+    #           if ( $self->{levels}->{'INFO'} ) {
+    #               foreach my $logger ( @{$self->{levels}->{'INFO'}} ) {
+    #                   $logger->write('INFO', @_) or return undef;
+    #               }
+    #           }
+    #           return 1;
+    #       }
+    #
+    # That's much faster as the first example.
+
+    # Iterate all level and if a level is active the logger is pushed into the array
+    foreach my $level (qw/DEBUG INFO NOTICE WARNING ERROR CRITICAL ALERT EMERGENCY TRACE/) {
+        if ( $logger->would_log($level) ) {
+            push @{$self->{levels}->{$level}}, $logger;
+        }
     }
 
     return $self;
 }
 
-# to make it possible to call Log::Handler->errstr
 sub errstr { $Log::Handler::ERRSTR }
-
-#
-# private stuff
-#
-
-sub _write {
-    my $self  = shift;
-    my $level = shift;
-
-    if ( $self->_is_active($level) ) {
-        foreach my $logger ( @{$self->{levels}->{$level}} ) {
-            $logger->write($level, @_) or return undef;
-        }
-    }
-
-    return 1;
-}
-
-sub _is_active {
-    my ($self, $level) = @_;
-    return $self->{levels}->{$level} ? 1 : 0;
-}
 
 1;

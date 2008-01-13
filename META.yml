@@ -1,9 +1,9 @@
 ---
 name: Log-Handler
-version: 0.38_01
+version: 0.38_02
 author:
   - Jonny Schulz
-abstract: A simple handler to log messages to one or more log files.
+abstract: A simple handler to log messages to log files.
 license: perl
 resources:
   license: http://dev.perl.org/licenses/
@@ -17,10 +17,10 @@ requires:
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.38_01
+    version: 0.38_02
   Log::Handler::Logger:
     file: lib/Log/Handler/Logger.pm
-    version: 0.00_01
+    version: 0.00_02
 generated_by: Module::Build version 0.2808
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

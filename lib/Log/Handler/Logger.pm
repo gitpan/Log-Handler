@@ -38,15 +38,6 @@ The C<new()> method expected the options for the log file. Each option will
 be set to a default value if not set. If this method is called with no options
 then it creates an object to log to STDOUT with all default values.
 
-=head2 levels()
-
-This method returns the active log levels as strings in a list.
-
-As example if maxlevel is set to warn and minlevel is set to emergency then
-the method would return
-
-    EMERGENCY, ALERT, CRITICAL, ERROR, WARNING
-
 =head2 write()
 
 Call C<write()> if you want to log messages to the log file. The log level must
@@ -135,7 +126,7 @@ SUCH DAMAGES.
 =cut
 
 package Log::Handler::Logger;
-our $VERSION = '0.00_01';
+our $VERSION = '0.00_02';
 our $CALLER  = 2;
 our $MESSAGE = '';
 
@@ -240,11 +231,6 @@ sub new {
     return $self;
 }
 
-sub levels {
-    my $self = shift;
-    return @LEVEL_BY_NUM[$self->{minlevel}..$self->{maxlevel}];
-}
-
 sub write {
     my $self  = shift;
     my $level = shift;
@@ -283,11 +269,13 @@ sub write {
 
 sub would_log {
     my ($self, $level) = @_;
-    if ($level ne 'TRACE') {
+    if ($level eq 'TRACE') {
+        return undef unless $self->{trace};
+    } else {
         return undef
             if $LEVEL_BY_STRING{$level} < $self->{minlevel}
             || $LEVEL_BY_STRING{$level} > $self->{maxlevel};
-    }
+    } 
     return 1;
 }
 
@@ -516,6 +504,11 @@ sub _new_logger {
             type => Params::Validate::SCALAR,
             regex => $bool_rx,
             default => 0,
+        },
+        trace => {
+            type => Params::Validate::SCALAR,
+            regex => $bool_rx,
+            default => 1,
         },
     });
 

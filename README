@@ -1,6 +1,5 @@
 NAME
-    Log::Handler - A simple handler to log messages to one or more log
-    files.
+    Log::Handler - A simple handler to log messages to log files.
 
 SYNOPSIS
         use Log::Handler;
@@ -21,23 +20,37 @@ DESCRIPTION
     the log files (not on Windows). That could be very useful if a rotate
     mechanism moves and zip the log file.
 
-WHATS NEW, WHATS DEPRECATED
+WHAT IS NEW, WHAT IS DEPRECATED
+  More than one log file
     Since version 0.39 the method "add()" is totaly new. With this method
     it's now possible to add more than one log file to the handler and
     define different log levels for each log file. As example you can log
     the levels 0-4 (emerg-warn) to log file A and the levels 4-7
     (warn-debug) to log file B.
 
-    Placeholders are now available for the prefix. A postfix option is now
-    availble too, but the usage of <--LEVEL--> in the prefix is deprecated,
-    use %L instead.
+  Log::Handler::Logger
+    The main logic of Log::Handler is moved to Log::Handler::Logger. If you
+    add a new log file to the handler this file got it's own
+    Log::Handler::Logger object and the Log::Handler just dispatch messages
+    to the different objects.
 
+  Placeholder
+    Placeholders are now available for the prefix in printf style. The old
+    style of <--LEVEL--> is deprecated, instead you have to use %L as
+    example. In addition a postfix option is available now. Take a look to
+    the documentation of prefix and postfix.
+
+  Kicked methods
     The methods "close()", "get_prefix()" and "set_prefix()" are not
     available any more.
 
-    The method "trace()" writes caller informations to all log files. Maybe
-    this will be changed in further releases so that it's possible to define
-    just one log file for traces.
+  trace()
+    The method "trace()" writes caller informations to all log files by
+    default. It's possible to disable this by set trace to 0.
+
+  Examples
+    Take a look to the example directory of the distribution if you need a
+    code example.
 
 METHODS
   new()
@@ -218,7 +231,7 @@ OPTIONS
   filelock
     Maybe it's desirable to lock the log file by each write operation
     because a lot of processes write at the same time to the log file. You
-    can set the option "filelock" to activate or deactivate the locking.
+    can set the option "filelock" to 0 or 1.
 
         0 - no file lock
         1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each write operation (default)
@@ -233,7 +246,7 @@ OPTIONS
   reopen
     This option works only if option "fileopen" is set to 1.
 
-        0 - deactivate
+        0 - deactivated
         1 - try to reopen the log file if the inode changed (default)
 
   fileopen and reopen
@@ -390,6 +403,10 @@ OPTIONS
   utf8
     If this option is set to 1 then UTF-8 will be set with "binmode()" on
     the output filehandle.
+
+  trace
+    With this options it's possible to disable the tracing for a log file.
+    By default this option is set to 1 and tracing is enabled.
 
   debug
     You can activate a simple debugger that writes "caller()" informations

@@ -1,3 +1,11 @@
+0.38_02 Released at 2008-01-13.
+        - Fixed test for 'mode' in t/03handler.t.
+        - POD and intern documentation improved.
+        - Fixed example examples/trace.pl.
+        - Kicked method levels() from Log::Handler::Logger.
+        - Added the option trace. With this option it's possible
+          to deactivate the logging of trace messages to a logfile.
+
 0.38_01 Released at 2008-01-13.
         - Added Log::Handler::Logger and moved the main logger logic to it.
         - Now it's possible to define more than an log file. Each log file
