@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler::Logger - A simple logger to log messages to a log file.
+Log::Handler::Logger - The main logger class.
 
 =head1 SYNOPSIS
 
@@ -16,7 +16,7 @@ Log::Handler::Logger - A simple logger to log messages to a log file.
 
 =head1 DESCRIPTION
 
-This module is the main logger class and is used by Log::Handler.
+This module is the main logger class.
 
 =head2 LOG LEVELS
 
@@ -126,7 +126,7 @@ SUCH DAMAGES.
 =cut
 
 package Log::Handler::Logger;
-our $VERSION = '0.00_02';
+our $VERSION = '0.00_03';
 our $CALLER  = 2;
 our $MESSAGE = '';
 

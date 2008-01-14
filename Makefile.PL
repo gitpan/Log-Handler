@@ -6,6 +6,7 @@ WriteMakefile
           'VERSION_FROM' => 'lib/Log/Handler.pm',
           'PREREQ_PM' => {
                            'Carp' => '0',
+                           'Config::General' => '0',
                            'Devel::Backtrace' => '0.05',
                            'File::Spec' => '0',
                            'Params::Validate' => '0',

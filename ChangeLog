@@ -1,3 +1,8 @@
+0.38_03 Released at 2008-01-14.
+        - Added Log::Handler::Config.pm.
+        - Added plugins for Config::General, Config::Properties and YAML.
+        - Fixed some POD typos.
+
 0.38_02 Released at 2008-01-13.
         - Fixed test for 'mode' in t/03handler.t.
         - POD and intern documentation improved.

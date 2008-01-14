@@ -38,7 +38,7 @@ ok($params->{fileopen} eq "1", "checking param fileopen");
 ok($params->{inode} =~ /^\d+\z/, "checking param inode");
 ok($params->{maxlevel} eq "7", "checking param maxlevel");
 ok($params->{minlevel} eq "0", "checking param minlevel");
-ok($params->{mode} =~ /^\d+\z/, "checking param mode ($params->{mode})");
+ok($params->{mode}, "checking param mode");
 ok($params->{newline} eq "1", "checking param newline");
 ok($params->{permissions} eq "436", "checking param permissions");
 ok($params->{prefix} eq "prefix [%L] ", "checking param prefix");

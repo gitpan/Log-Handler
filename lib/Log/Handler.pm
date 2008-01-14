@@ -27,15 +27,15 @@ mechanism moves and zip the log file.
 =head2 More than one log file
 
 Since version 0.39 the method C<add()> is totaly new. With this method it's now possible to
-add more than one log file to the handler and define different log levels for each log file.
-As example you can log the levels 0-4 (emerg-warn) to log file A and the levels 4-7 (warn-debug)
+add further log files to the handler and define a own level range each log file. As example
+you can log the levels 0-4 (emerg-warn) to log file A and the levels 4-7 (warn-debug)
 to log file B.
 
 =head2 Log::Handler::Logger
 
 The main logic of Log::Handler is moved to Log::Handler::Logger. If you add a new log file
-to the handler this file got it's own Log::Handler::Logger object and the Log::Handler just
-dispatch messages to the different objects.
+to the handler the file got it's own Log::Handler::Logger object and the Log::Handler just
+dispatch messages to the file objects.
 
 =head2 Placeholder
 
@@ -49,8 +49,8 @@ The methods C<close()>, C<get_prefix()> and C<set_prefix()> are not available an
 
 =head2 trace()
 
-The method C<trace()> writes caller informations to all log files by default. It's possible
-to disable this by set trace to 0.
+The method C<trace()> writes C<caller()> informations to all log files by default.
+It's possible to disable this by set trace to 0.
 
 =head2 Examples
 
@@ -151,7 +151,31 @@ but this isn't that what we really want because it could costs a lot of resource
 
 Now we dump the hash only if the current log level would log it.
 
-The methods C<is_note()>, C<is_warn()>, C<is_err()>, C<is_crit()> and C<is_emerg()> are just shortcuts.
+The methods C<is_note()>, C<is_warn()>, C<is_err()>, C<is_crit()> and C<is_emerg()>
+are just shortcuts.
+
+=head2 trace()
+
+This method is a special log level and very useful if you want to print C<caller()>
+informations to all log files.
+In contrast to the log level methods this method prints C<caller()> informations
+to all log files in any case and you don't need to activate the debugger with the
+option C<debug>. Example:
+
+    my $log = Log::Handler->new( filename => \*STDOUT );
+    $log->trace("caller informations:");
+
+    Jun 05 21:20:32 [TRACE] caller informations
+       CALL(2): package(main) filename(./log-handler-test.pl) line(22) subroutine(Log::Handler::trace) hasargs(1)
+       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_write) hasargs(1)
+       CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1097) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
+
+Maybe you like to print C<caller()> informations to all log files if an unexpected error occurs.
+
+    $SIG{__DIE__} = sub { $log->trace(@_) };
+
+Take a look at the examples of the options C<debug>, C<debug_mode> and C<debug_skip>
+for more informations.
 
 =head2 errstr()
 
@@ -167,8 +191,8 @@ Or
         $error_string = $log->errstr;
     }
 
-The exception is that the handler croaks in any case if the call of C<new()> or C<add()> fails
-because on missing params or wrong settings!
+The exception is that the handler croaks in any case if the call of C<new()> or C<add()>
+fails because on missing params or wrong settings!
 
     my $log = Log::Handler->new(filename => 'file.log', mode => 'foo bar');
 
@@ -182,34 +206,20 @@ and the call of C<new> fails then you can absorb the error.
         die_on_errors   => 0
     ) or warn Log::Handler->errstr;
 
-=head2 trace()
+=head2 config()
 
-This method is very useful if you want to print C<caller()> informations to all log files.
-In contrast to the log level methods this method prints C<caller()> informations
-to all log files in any case and you don't need to activate the debugger with the
-option C<debug>. Example:
+With this method it's possible to load your logger configuration from a file.
 
-    my $log = Log::Handler->new( filename => \*STDOUT );
-    $log->trace("caller informations:");
+    $log->config(filename => 'file.conf');
 
-    Jun 05 21:20:32 [TRACE] caller informations
-       CALL(2): package(main) filename(./log-handler-test.pl) line(22) subroutine(Log::Handler::trace) hasargs(1)
-       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_write) hasargs(1)
-       CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1097) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
-
-Maybe you like to print caller informations to all log files if an unexpected error occurs.
-
-    $SIG{__DIE__} = sub { $log->trace(@_) };
-
-Take a look at the examples of the options C<debug>, C<debug_mode> and C<debug_skip>
-for more informations.
+Take a look into the documentation of L<Log::Handler::Config> for more informations.
 
 =head1 OPTIONS
 
 =head2 filename
 
-With C<filename> you can set a file name, a GLOBREF or you can set a string as an alias for STDOUT or STDERR.
-The default is STDOUT for this option.
+With C<filename> you can set a file name, a GLOBREF or you can set a string as an alias
+for STDOUT or STDERR. The default is STDOUT for this option.
 
 Set a file name:
 
@@ -511,7 +521,7 @@ Output:
 
 =head2 debug_skip
 
-This option let skip the caller informations the count of C<debug_skip>.
+This option let skip the C<caller()> informations the count of C<debug_skip>.
 
     debug_skip => 2
 
@@ -611,7 +621,7 @@ Would log
     $log->emergency("this is a emergency message");
     $log->emerg("this is a emergency message as well");
 
-    # force caller informations to all log files
+    # force caller() informations to all log files
     $log->trace("this message goes to all log files");
 
 =head2 Just a notice:
@@ -646,7 +656,7 @@ Would truncate /var/run/pid-file1 and write just the pid to the logfile.
        mode     => 'append',
        maxlevel => 6,
        newline  => 1,
-       prefix   => "${hostname}[$pid] [<--LEVEL-->] $progname: "
+       prefix   => "%H[%P] [%L] %S: "
     );
 
     $log->info("Hello World!");
@@ -699,6 +709,7 @@ Would NOT dump %hash to the $log object!
     Devel::Backtrace  -  to backtrace caller()
     Carp              -  to croak() on errors if die_on_errors is active
     Sys::Hostname     -  to get the current hostname
+    Config::General   -  to load configuration from a file
 
 =head1 EXPORTS
 
@@ -755,11 +766,12 @@ SUCH DAMAGES.
 =cut
 
 package Log::Handler;
-our $VERSION = '0.38_02';
+our $VERSION = '0.38_03';
 
 use strict;
 use warnings;
 use Log::Handler::Logger;
+use Log::Handler::Config;
 $Log::Handler::Logger::CALLER = 4;
 $Log::Handler::ERRSTR = '';
 
@@ -891,6 +903,12 @@ sub add {
     }
 
     return $self;
+}
+
+sub config {
+    my $self = shift;
+    my $configs = Log::Handler::Config->config(@_);
+    $self->add($_) for @$configs;
 }
 
 sub errstr { $Log::Handler::ERRSTR }

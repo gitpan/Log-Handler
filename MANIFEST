@@ -5,7 +5,11 @@ examples/example.pl
 examples/trace.pl
 INSTALL
 lib/Log/Handler.pm
+lib/Log/Handler/Config.pm
 lib/Log/Handler/Logger.pm
+lib/Log/Handler/Plugin/Config/General.pm
+lib/Log/Handler/Plugin/Config/Properties.pm
+lib/Log/Handler/Plugin/YAML.pm
 Makefile.PL
 MANIFEST			This list of files
 META.yml

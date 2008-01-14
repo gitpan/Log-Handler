@@ -15,8 +15,12 @@ my $build = Module::Build->new(
         'Test::More'       => 0,
         Carp               => 0,
         'Sys::Hostname'    => 0,
+        'Config::General'  => 0,
     },
-    recommends         => {},
+    recommends         => {
+        'Config::Properties' => 0,
+        'YAML'               => 0
+    },
     sign               => 0,
 );
 $build->create_build_script;

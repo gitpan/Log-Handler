@@ -23,16 +23,16 @@ DESCRIPTION
 WHAT IS NEW, WHAT IS DEPRECATED
   More than one log file
     Since version 0.39 the method "add()" is totaly new. With this method
-    it's now possible to add more than one log file to the handler and
-    define different log levels for each log file. As example you can log
-    the levels 0-4 (emerg-warn) to log file A and the levels 4-7
-    (warn-debug) to log file B.
+    it's now possible to add further log files to the handler and define a
+    own level range each log file. As example you can log the levels 0-4
+    (emerg-warn) to log file A and the levels 4-7 (warn-debug) to log file
+    B.
 
   Log::Handler::Logger
     The main logic of Log::Handler is moved to Log::Handler::Logger. If you
-    add a new log file to the handler this file got it's own
+    add a new log file to the handler the file got it's own
     Log::Handler::Logger object and the Log::Handler just dispatch messages
-    to the different objects.
+    to the file objects.
 
   Placeholder
     Placeholders are now available for the prefix in printf style. The old
@@ -45,7 +45,7 @@ WHAT IS NEW, WHAT IS DEPRECATED
     available any more.
 
   trace()
-    The method "trace()" writes caller informations to all log files by
+    The method "trace()" writes "caller()" informations to all log files by
     default. It's possible to disable this by set trace to 0.
 
   Examples
@@ -130,6 +130,29 @@ METHODS
     The methods "is_note()", "is_warn()", "is_err()", "is_crit()" and
     "is_emerg()" are just shortcuts.
 
+  trace()
+    This method is a special log level and very useful if you want to print
+    "caller()" informations to all log files. In contrast to the log level
+    methods this method prints "caller()" informations to all log files in
+    any case and you don't need to activate the debugger with the option
+    "debug". Example:
+
+        my $log = Log::Handler->new( filename => \*STDOUT );
+        $log->trace("caller informations:");
+
+        Jun 05 21:20:32 [TRACE] caller informations
+           CALL(2): package(main) filename(./log-handler-test.pl) line(22) subroutine(Log::Handler::trace) hasargs(1)
+           CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_write) hasargs(1)
+           CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1097) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
+
+    Maybe you like to print "caller()" informations to all log files if an
+    unexpected error occurs.
+
+        $SIG{__DIE__} = sub { $log->trace(@_) };
+
+    Take a look at the examples of the options "debug", "debug_mode" and
+    "debug_skip" for more informations.
+
   errstr()
     Call "errstr()" if you want to get the last error message. That is
     useful with "die_on_errors". If you set this option to 0 then the
@@ -161,27 +184,14 @@ METHODS
             die_on_errors   => 0
         ) or warn Log::Handler->errstr;
 
-  trace()
-    This method is very useful if you want to print "caller()" informations
-    to all log files. In contrast to the log level methods this method
-    prints "caller()" informations to all log files in any case and you
-    don't need to activate the debugger with the option "debug". Example:
+  config()
+    With this method it's possible to load your logger configuration from a
+    file.
 
-        my $log = Log::Handler->new( filename => \*STDOUT );
-        $log->trace("caller informations:");
+        $log->config(filename => 'file.conf');
 
-        Jun 05 21:20:32 [TRACE] caller informations
-           CALL(2): package(main) filename(./log-handler-test.pl) line(22) subroutine(Log::Handler::trace) hasargs(1)
-           CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_write) hasargs(1)
-           CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1097) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
-
-    Maybe you like to print caller informations to all log files if an
-    unexpected error occurs.
-
-        $SIG{__DIE__} = sub { $log->trace(@_) };
-
-    Take a look at the examples of the options "debug", "debug_mode" and
-    "debug_skip" for more informations.
+    Take a look into the documentation of Log::Handler::Config for more
+    informations.
 
 OPTIONS
   filename
@@ -485,7 +495,8 @@ OPTIONS
              wantarray   0
 
   debug_skip
-    This option let skip the caller informations the count of "debug_skip".
+    This option let skip the "caller()" informations the count of
+    "debug_skip".
 
         debug_skip => 2
 
@@ -582,7 +593,7 @@ EXAMPLES
         $log->emergency("this is a emergency message");
         $log->emerg("this is a emergency message as well");
 
-        # force caller informations to all log files
+        # force caller() informations to all log files
         $log->trace("this message goes to all log files");
 
   Just a notice:
@@ -615,7 +626,7 @@ EXAMPLES
            mode     => 'append',
            maxlevel => 6,
            newline  => 1,
-           prefix   => "${hostname}[$pid] [<--LEVEL-->] $progname: "
+           prefix   => "%H[%P] [%L] %S: "
         );
 
         $log->info("Hello World!");
@@ -665,6 +676,7 @@ PREREQUISITES
         Devel::Backtrace  -  to backtrace caller()
         Carp              -  to croak() on errors if die_on_errors is active
         Sys::Hostname     -  to get the current hostname
+        Config::General   -  to load configuration from a file
 
 EXPORTS
     No exports.

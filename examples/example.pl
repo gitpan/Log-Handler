@@ -2,20 +2,11 @@
 use strict;
 use warnings;
 use Log::Handler;
-use Config::General;
 use Data::Dumper;
-
-# Read the log file configuration
-my $config_file = 'example.cfg';
-my $config = Config::General->new($config_file)
-    or die "unable to get config '$config_file': $!";
-my %config = $config->getall();
 
 # Create a new log file object
 my $log = Log::Handler->new;
-$log->add(%{$config{default}}, %{$config{common}});
-$log->add(%{$config{default}}, %{$config{error}});
-$log->add(%{$config{default}}, %{$config{debug}});
+$log->config(filename => 'example.cfg');
 
 # Manipulate __DIE__ and __WARN__
 $SIG{__DIE__}  = sub { $log->trace('__DIE__:', @_) };
@@ -26,7 +17,7 @@ $log->warning("program startet");
 
 # first checking if the current log level is_debug() before we dump the hash
 if ($log->is_debug) {
-    $log->debug("DUMP CONFIG:\n".Dumper(\%config));
+    $log->debug("DUMP LOGGER:\n".Dumper($log));
 }
 
 # <-- main program -->
