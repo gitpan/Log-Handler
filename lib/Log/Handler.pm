@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler - A handler to log messages to different outputs.
+Log::Handler - Log messages to different outputs.
 
 =head1 SYNOPSIS
 
@@ -739,7 +739,7 @@ package Log::Handler;
 
 use strict;
 use warnings;
-our $VERSION = '0.38_04';
+our $VERSION = '0.38_05';
 our $ERRSTR  = '';
 $Log::Handler::Logger::CALLER = 4;
 

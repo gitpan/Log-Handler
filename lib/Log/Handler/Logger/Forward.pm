@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler::Logger::Forward - Log messages as email.
+Log::Handler::Logger::Forward - Forwarnd messages to routines.
 
 =head1 SYNOPSIS
 
@@ -103,7 +103,7 @@ package Log::Handler::Logger::Forward;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_01';
+our $VERSION = '0.00_02';
 our $ERRSTR  = '';
 
 use Carp;

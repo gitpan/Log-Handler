@@ -1,3 +1,6 @@
+0.38_05 Released at 2008-01-19.
+        - Very annoyingly... wrong description for Log::Handler::Logger::Forward.
+
 0.38_04 Released at 2008-01-19.
         - Fixed test for parameter 'filename' in t/03handler.t.
         - Fixed a lot of typos and improved the code.
