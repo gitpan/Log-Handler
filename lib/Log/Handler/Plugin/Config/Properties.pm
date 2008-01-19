@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler::Plugin::Config::Properties - Config loader for YAML.
+Log::Handler::Plugin::Config::Properties - Config loader for Config::Properties.
 
 =head1 SYNOPSIS
 
@@ -18,7 +18,7 @@ The configuration will be splitted by dot.
 
 =head1 PREREQUISITES
     
-    Config::Properties  -  to load Config::Properties configuration files
+    Config::Properties
 
 =head1 EXPORTS
     
@@ -42,10 +42,10 @@ modify it under the same terms as Perl itself.
 =cut
 
 package Log::Handler::Plugin::Config::Properties;
-our $VERSION = '0.00_01';
 
 use strict;
 use warnings;
+our $VERSION = '0.00_02';
 use Config::Properties;
 
 sub get_config {

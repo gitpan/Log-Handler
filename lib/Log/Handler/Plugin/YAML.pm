@@ -1,12 +1,12 @@
 =head1 NAME
 
-Log::Handler::Plugin::YAML - Config loader for YAML.
+Log::Handler::Plugin::Config::YAML - Config loader for YAML.
 
 =head1 SYNOPSIS
 
-    use Log::Handler::Plugin::YAML;
+    use Log::Handler::Plugin::Config::YAML;
 
-    my $config = Log::Handler::Plugin::YAML->get_config( $config_file );
+    my $config = Log::Handler::Plugin::Config::YAML->get_config( $config_file );
 
 =head1 ROUTINES
 
@@ -16,7 +16,7 @@ Expect the config file name and returns the config as a reference.
 
 =head1 PREREQUISITES
     
-    YAML  -  to load configuration files
+    YAML
 
 =head1 EXPORTS
     
@@ -39,11 +39,11 @@ modify it under the same terms as Perl itself.
 
 =cut
 
-package Log::Handler::Plugin::YAML;
-our $VERSION = '0.00_01';
+package Log::Handler::Plugin::Config::YAML;
 
 use strict;
 use warnings;
+our $VERSION = '0.00_02';
 use YAML qw/LoadFile/;
 
 sub get_config {

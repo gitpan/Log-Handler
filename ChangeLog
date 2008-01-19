@@ -1,3 +1,10 @@
+0.38_04 Released at 2008-01-19.
+        - Fixed test for parameter 'filename' in t/03handler.t.
+        - Fixed a lot of typos and improved the code.
+        - Added Log::Handler::Logger::Forward.
+        - Added Log::Handler::Logger::Email with Net::SMTP.
+        - Added fatal() to Log::Handler.
+
 0.38_03 Released at 2008-01-14.
         - Added Log::Handler::Config.pm.
         - Added plugins for Config::General, Config::Properties and YAML.
@@ -13,7 +20,7 @@
 
 0.38_01 Released at 2008-01-13.
         - Added Log::Handler::Logger and moved the main logger logic to it.
-        - Now it's possible to define more than an log file. Each log file
+        - Now it's possible to define more than one log file. Each log file
           got it's own Log::Handler::Logger object.
         - The simple call of "Log::Handler->new()" will not create a default
           output object for *STDOUT any more, it just creates an empty Log::Handler object.

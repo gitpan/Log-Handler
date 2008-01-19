@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler::Plugin::Config::General - Config loader for YAML.
+Log::Handler::Plugin::Config::General - Config loader for Config::General.
 
 =head1 SYNOPSIS
 
@@ -16,7 +16,7 @@ Expect the config file name and returns the config as a reference.
 
 =head1 PREREQUISITES
     
-    Config::General  -  to load configuration files
+    Config::General
 
 =head1 EXPORTS
     
@@ -40,10 +40,10 @@ modify it under the same terms as Perl itself.
 =cut
 
 package Log::Handler::Plugin::Config::General;
-our $VERSION = '0.00_01';
 
 use strict;
 use warnings;
+our $VERSION = '0.00_02';
 use Config::General;
 
 sub get_config {

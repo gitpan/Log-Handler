@@ -6,7 +6,7 @@ Log::Handler::Logger - The main logger class.
 
     use Log::Handler::Logger;
 
-    my $log = Log::Handler::Logger->new();
+    my $log = Log::Handler::Logger->new( \%options );
 
     $log->write($LEVEL, $MESSAGE);
 
@@ -66,12 +66,13 @@ Please look into the documentation of Log::Handler for more informations.
 
 =head1 PREREQUISITES
 
-    Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
-    POSIX             -  to generate the time stamp with strftime()
-    Params::Validate  -  to validate all options
-    Devel::Backtrace  -  to backtrace caller()
-    Carp              -  to croak() on errors if die_on_errors is active
-    Sys::Hostname     -  to get the current hostname
+    Carp
+    Devel::Backtrace
+    Params::Validate
+    POSIX
+    Time::HiRes
+    Sys::Hostname
+    UNIVERSAL::require
 
 =head1 EXPORTS
 
@@ -126,18 +127,21 @@ SUCH DAMAGES.
 =cut
 
 package Log::Handler::Logger;
-our $VERSION = '0.00_03';
-our $CALLER  = 2;
-our $MESSAGE = '';
 
 use strict;
 use warnings;
-use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
-use POSIX qw(strftime);
+our $VERSION = '0.00_04';
+our $CALLER  =  2;
+our $MESSAGE = '';
+our $ERRSTR  = '';
+
+use POSIX;
 use Params::Validate;
-use Carp qw(croak);
+use Carp;
 use Devel::Backtrace;
 use Sys::Hostname;
+use Time::HiRes;
+use UNIVERSAL::require;
 
 my %LEVEL_BY_STRING = (
     NOTHING   =>  8,
@@ -173,61 +177,54 @@ my %FUNCTIONS = (
     '%P'    =>  sub { $$ },
     '%T'    =>  sub { shift->_set_time },
     '%H'    =>  \&Sys::Hostname::hostname,
-    '%C'    =>  sub { my @c = caller($CALLER); "$c[1] line $c[2]" },
+    '%C'    =>  sub { my @c = caller($CALLER); "$c[1], line $c[2]" },
     '%N'    =>  sub { "\n" },
     '%S'    =>  sub { $0 },
+    '%M'    =>  sub { shift->_measurement },
+    '%m'    =>  sub { shift->_measurement(1) },
 );
 
-$Log::Handler::Logger::ERRSTR = '';
+my @LOGGER_OPTIONS = qw(
+    timeformat
+    prefix
+    postfix
+    newline
+    minlevel
+    maxlevel
+    die_on_errors
+    debug
+    debug_mode
+    debug_skip
+    trace
+);
+
+my %AVAILABLE_MODULES = (
+    file    => 'Log::Handler::Logger::File',
+    email   => 'Log::Handler::Logger::Email',
+    dbi     => 'Log::Handler::Logger::DBI',
+    socket  => 'Log::Handler::Logger::Socket',
+    forward => 'Log::Handler::Logger::Forward',
+);
+
+my %LOADED_MODULES = ();
+
+use constant BOOL_RX  => qr/^\d+\z/;
+
+use constant LEVEL_RX => qr/^(?:
+    8 | nothing   |
+    7 | debug     |
+    6 | info      |
+    5 | notice    | note |
+    4 | warning   | warn |
+    3 | error     | err  |
+    2 | critical  | crit |
+    1 | alert     |
+    0 | emergency | emerg
+)\z/x;
 
 sub new {
     my $class = shift;
     my $self  = $class->_new_logger(@_);
-
-    # it's possible to set *STDOUT and *STDERR as string
-    # or pass a GLOB as filename
-    if (ref($self->{filename}) eq 'GLOB') {
-        $self->{fh} = $self->{filename};
-    } elsif ($self->{filename} eq '*STDOUT') {
-        $self->{fh} = \*STDOUT;
-    } elsif ($self->{filename} eq '*STDERR') {
-        $self->{fh} = \*STDERR;
-    }
-
-    # if filename is a GLOB, then we force some options and return
-    if (defined $self->{fh}) {
-        $self->{fileopen} = 1; # never call _open() and _close()
-        $self->{reopen}   = 0; # never try to reopen
-        $self->{filelock} = 0; # no, we won't lock
-        if ($self->{autoflush}) {
-            my $oldfh = select $self->{fh};
-            $| = $self->{autoflush};
-            select $oldfh;
-        }
-        if ($self->{utf8}) {
-            binmode $self->{fh}, ':utf8';
-        }
-        return $self;
-    }
-
-    if ($self->{mode} eq 'append') {
-        $self->{mode} = O_WRONLY | O_APPEND | O_CREAT;
-    } elsif ($self->{mode} eq 'excl') {
-        $self->{mode} = O_WRONLY | O_EXCL | O_CREAT;
-    } elsif ($self->{mode} eq 'trunc') {
-        $self->{mode} = O_WRONLY | O_TRUNC | O_CREAT;
-    }
-
-    $self->{permissions} = oct($self->{permissions});
-
-    # open the log file permanent
-    if ($self->{fileopen} == 1) {
-        $self->_open or return undef;
-        if ($self->{reopen}) {
-            $self->{inode} = (stat($self->{filename}))[1];
-        }
-    }
-
     return $self;
 }
 
@@ -237,132 +234,30 @@ sub write {
 
     return 1 unless $self->would_log($level);
 
-    if (!$self->{fileopen}) {
-        $self->_open or return undef;
-    } elsif ($self->{reopen}) {
-        $self->_checkino or return undef;
-    }
-
-    if ($self->{filelock}) {
-        $self->_lock or return undef;
-    }
-
     my $message = $self->_build_message($level, @_);
+    my $logger  = $self->{logger};
 
-    print {$self->{fh}} $$message or do {
-        if ($self->{rewrite_to_stderr}) {
-            print STDERR $$message;
-        }
-        return $self->_raise_error("unable to print to logfile: $!");
-    };
-
-    if ($self->{filelock}) {
-        $self->_unlock or return undef;
-    }
-
-    if (!$self->{fileopen}) {
-        $self->_close or return undef;
-    }
+    $logger->write($message) or
+        return $self->_raise_error($logger->errstr);
 
     return 1;
 }
 
 sub would_log {
     my ($self, $level) = @_;
-    if ($level eq 'TRACE') {
-        return undef unless $self->{trace};
-    } else {
-        return undef
-            if $LEVEL_BY_STRING{$level} < $self->{minlevel}
-            || $LEVEL_BY_STRING{$level} > $self->{maxlevel};
-    } 
-    return 1;
+    my $active_levels = $self->{active_levels};
+    return $active_levels->{$level} ? 1 : undef;
 }
 
-sub errstr { $Log::Handler::Logger::ERRSTR }
-
-sub DESTROY {
-    my $self = shift;
-    close($self->{fh})
-        if $self->{fh}
-        && !ref($self->{filename})
-        && $self->{filename} !~ /^\*STDOUT\z|^\*STDERR\z/;
-}
+sub errstr { $ERRSTR }
 
 #
 # private stuff
 #
 
-sub _open {
-    my $self = shift;
-
-    sysopen(my $fh, $self->{filename}, $self->{mode}, $self->{permissions})
-        or return $self->_raise_error("unable to open logfile $self->{filename}: $!");
-
-    if ($self->{autoflush}) {
-        my $oldfh = select $fh;
-        $| = $self->{autoflush};
-        select $oldfh;
-    }
-
-    if ($self->{utf8}) {
-        binmode $fh, ':utf8' if $self->{utf8};
-    }
-
-    $self->{fh} = $fh;
-    return 1;
-}
-
-sub _close {
-    my $self = shift;
-
-    close($self->{fh})
-        or return $self->_raise_error("unable to close logfile $self->{filename}: $!");
-
-    delete $self->{fh};
-    return 1;
-}
-
-sub _checkino {
-    my $self  = shift;
-
-    if (-e $self->{filename}) {
-        my $ino = (stat($self->{filename}))[1];
-        unless ($self->{inode} == $ino) {
-            $self->_close or return undef;
-            $self->_open or return undef;
-            $self->{inode} = $ino;
-        }
-    } else {
-        $self->_close or return undef;
-        $self->_open or return undef;
-        $self->{inode} = (stat($self->{filename}))[1];
-    }
-
-    return 1;
-}
-
-sub _lock {
-    my $self = shift;
-
-    flock($self->{fh}, LOCK_EX)
-        or return $self->_raise_error("unable to lock logfile $self->{filename}: $!");
-
-    return 1;
-}
-
-sub _unlock {
-    my $self = shift;
-
-    flock($self->{fh}, LOCK_UN)
-        or return $self->_raise_error("unable to unlock logfile $self->{filename}: $!");
-
-    return 1;
-}
-
 sub _build_message {
-    my $self  = shift;
-    my $level = shift;
+    my $self    = shift;
+    my $level   = shift;
     my $message = '';
 
     if ($self->{prefix}) {
@@ -403,51 +298,58 @@ sub _build_message {
 
 sub _set_time {
     my $self = shift;
-    my $time = strftime($self->{timeformat}, localtime);
+    my $time = POSIX::strftime($self->{timeformat}, localtime);
     return $time;
 }
 
-sub _new_logger {
-    my $class    = shift;
-    my $bool_rx  = qr/^[10]\z/;
-    my $level_rx = qr/^([0-8]|nothing|debug|info|notice|note|warning|warn
-                       |error|err|critical|crit|alert|emergency|emerg)\z/x;
+sub _measurement {
+    my ($self, $flag) = @_;
+    if (!$self->{timeofday}) {
+        $self->{timeofday} = Time::HiRes::gettimeofday;
+        return 0;
+    }
+    my $new_time = Time::HiRes::gettimeofday;
+    my $cur_time = $new_time - $self->{timeofday};
+    $self->{timeofday} = $new_time;
+    return $flag ? sprintf("%.6f", $cur_time) : $cur_time;
+}
 
-    my %options = Params::Validate::validate(@_, {
-        filename => {
-            type => Params::Validate::SCALAR | Params::Validate::GLOBREF,
-            default => '*STDOUT',
-        },
-        filelock => {
-            type => Params::Validate::SCALAR,
-            regex => $bool_rx,
-            default => 1,
-        },
-        fileopen => {
-            type => Params::Validate::SCALAR,
-            regex => $bool_rx,
-            default => 1,
-        },
-        reopen => {
-            type  => Params::Validate::SCALAR,
-            regex => $bool_rx,
-            default => 1,
-        },
-        mode => {
-            type => Params::Validate::SCALAR,
-            regex => qr/^(append|excl|trunc)\z/,
-            default => 'excl',
-        },
-        autoflush => {
-            type => Params::Validate::SCALAR,
-            regex => $bool_rx,
-            default => 1,
-        },
-        permissions => {
-            type => Params::Validate::SCALAR,
-            regex => qr/^[0-7]{3,4}\z/,
-            default => '0640',
-        },
+sub _new_logger {
+    my $class   = shift;
+    my $type    = shift;
+    my $args    = @_ > 1 ? {@_} : shift;
+    my $package = ref($type);
+    my ($logger, @logger_opts);
+
+    if ( length($package) ) {
+        $package .= '::write';
+        eval { die "bad package" unless defined &$package };
+        if ($@) {
+            Carp::croak "the logger must be a blessed referece and provide a write() method";
+        }
+        push @logger_opts, $args;
+        $logger = $type;
+    } else {
+        push @logger_opts, $class->_shift_options($args);
+
+        if (exists $AVAILABLE_MODULES{$type}) {
+            $package = $AVAILABLE_MODULES{$type};
+        } elsif ($type =~ /::/) {
+            $package = $type;
+        } else {
+            $package = __PACKAGE__ . '::' . ucfirst($type);
+        }
+
+        if (!$LOADED_MODULES{$package}) {
+            $package->require;
+            $LOADED_MODULES{$package} = 1;
+        }
+
+        # create a new output object
+        $logger = $package->new($args) or Carp::croak $package->errstr;
+    }
+
+    my %options = Params::Validate::validate(@logger_opts, {
         timeformat => {
             type => Params::Validate::SCALAR,
             default => '%b %d %H:%M:%S',
@@ -462,32 +364,27 @@ sub _new_logger {
         },
         newline => {
             type => Params::Validate::SCALAR,
-            regex => $bool_rx,
+            regex => BOOL_RX,
             default => 0,
         },
         minlevel => {
             type => Params::Validate::SCALAR,
-            regex => $level_rx,
+            regex => LEVEL_RX,
             default => 0,
         },
         maxlevel => {
             type => Params::Validate::SCALAR,
-            regex => $level_rx,
+            regex => LEVEL_RX,
             default => 4,
-        },
-        rewrite_to_stderr => {
-            type => Params::Validate::SCALAR,
-            regex => $bool_rx,
-            default => 0,
         },
         die_on_errors => {
             type => Params::Validate::SCALAR,
-            regex => $bool_rx,
+            regex => BOOL_RX,
             default => 1,
         },
         debug => {
             type => Params::Validate::SCALAR,
-            regex => $bool_rx,
+            regex => BOOL_RX,
             default => 0,
         },
         debug_mode => {
@@ -500,14 +397,9 @@ sub _new_logger {
             regex => qr/^\d+\z/,
             default => 0,
         },
-        utf8 => {
-            type => Params::Validate::SCALAR,
-            regex => $bool_rx,
-            default => 0,
-        },
         trace => {
             type => Params::Validate::SCALAR,
-            regex => $bool_rx,
+            regex => BOOL_RX,
             default => 1,
         },
     });
@@ -519,10 +411,21 @@ sub _new_logger {
         }
     }
 
+    foreach my $level_num ($options{minlevel} .. $options{maxlevel}) {
+        my $level = $LEVEL_BY_NUM[ $level_num ];
+        $options{active_levels}{$level} = 1;
+        next if $level_num > 3;
+        $options{active_levels}{FATAL} = 1;
+    }
+
+    if ($options{trace}) {
+        $options{active_levels}{TRACE} = 1;
+    }
+
     foreach my $p (qw/prefix postfix/) {
         next unless length($options{$p});
         $options{$p}  =~ s/<--LEVEL-->/%L/g;
-        foreach my $c ( split /(%[A-Z])/, $options{$p} ) {
+        foreach my $c ( split /(%[a-zA-Z])/, $options{$p} ) {
             if ( exists $FUNCTIONS{$c} ) {
                 push @{$options{"${p}es"}}, $FUNCTIONS{$c};
             } else {
@@ -531,15 +434,29 @@ sub _new_logger {
         }
     }
 
-    return bless \%options, $class;
+    my $self = bless \%options, $class;
+    $self->{logger} = $logger;
+    return $self;
+}
+
+sub _shift_options {
+    my ($self, $options) = @_;
+    my %logger_opts;
+
+    foreach my $opt (@LOGGER_OPTIONS) {
+        next unless exists $options->{$opt};
+        $logger_opts{$opt} = delete $options->{$opt};
+    }
+
+    return \%logger_opts;
 }
 
 sub _raise_error {
     my $self = shift;
-    $Log::Handler::Logger::ERRSTR = shift;
+    $ERRSTR = shift;
     return undef unless $self->{die_on_errors};
     my $class = ref($self);
-    croak "$class: ".$Log::Handler::Logger::ERRSTR;
+    Carp::croak "$class: ".$ERRSTR;
 }
 
 1;

@@ -222,9 +222,9 @@ Load the config
 
 =head1 PREREQUISITES
 
-    Params::Validate    -  to validate parameters
-    UNIVERSAL::require  -  to load plugins
-    Carp                -  to croak on errors
+    Carp
+    Params::Validate
+    UNIVERSAL::require
 
 =head1 EXPORTS
 
@@ -248,45 +248,56 @@ modify it under the same terms as Perl itself.
 =cut
 
 package Log::Handler::Config;
-our $VERSION = '0.00_01';
 
 use strict;
 use warnings;
-use Log::Handler::Logger;
+our $VERSION = '0.00_02';
+
+use Carp;
 use Params::Validate;
 use UNIVERSAL::require;
-use Carp qw(croak);
+use Log::Handler::Logger;
 
 sub config {
     my $class   = shift;
     my $params  = $class->_validate(@_);
     my $plugin  = $params->{plugin};
-    my (%default, $config, @all_configs);
+    my ($config, %all_configs);
 
     if ($params->{filename}) {
-        $plugin->require or croak "unable to load plugin '$plugin'";
+        $plugin->require or Carp::croak "unable to load plugin '$plugin'";
         $config = $plugin->get_config($params->{filename});
     } elsif ($params->{config}) {
         $config = $params->{config};
     } else {
-        croak "missing mandatory option 'filename' or 'config'";
+        Carp::croak "missing mandatory option 'filename' or 'config'";
     }
 
+    $class->_is_hash('main', $config);
+
     if ($params->{section}) {
+        $class->_is_hash($params->{section}, $config->{ $params->{section} });
         $config = $config->{ $params->{section} };
     }
 
-    if ($config->{default}) {
-        %default = %{ $config->{default} };
+    while ( my ($type, $type_config) = each %$config ) {
+        $class->_is_hash($type, $type_config);
+        my %default = ();
+
+        if ($type_config->{default}) {
+            $class->_is_hash('default', $type_config->{default});
+            %default = %{ $type_config->{default} };
+        }
+
+        while ( my ($name, $log_config) = each %$type_config ) {
+            $class->_is_hash($name, $log_config);
+            next if $name eq 'default';
+            my %new_config = (%default, %$log_config);
+            push @{$all_configs{$type}}, \%new_config;
+        }
     }
 
-    while ( my ($name, $log_config) = each %$config ) {
-        next if $name eq 'default';
-        my %new_config = (%default, %$log_config);
-        push @all_configs, \%new_config;
-    }
-
-    return \@all_configs;
+    return \%all_configs;
 }
 
 #
@@ -319,6 +330,13 @@ sub _validate {
     $options{plugin} = "Log::Handler::Plugin::$options{plugin}";
 
     return \%options;
+}
+
+sub _is_hash {
+    my ($self, $name, $ref) = @_;
+    if (ref($ref) ne 'HASH') {
+        Carp::croak "bad config structure! Config name '$name' missplaced";
+    }
 }
 
 1;

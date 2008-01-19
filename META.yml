@@ -1,9 +1,9 @@
 ---
 name: Log-Handler
-version: 0.38_03
+version: 0.38_04
 author:
   - Jonny Schulz
-abstract: A simple handler to log messages to log files.
+abstract: A handler to log messages to different outputs.
 license: perl
 resources:
   license: http://dev.perl.org/licenses/
@@ -11,32 +11,46 @@ requires:
   Carp: 0
   Config::General: 0
   Devel::Backtrace: 0.05
+  Fcntl: 0
   File::Spec: 0
+  Net::SMTP: 0
+  POSIX: 0
   Params::Validate: 0
   Sys::Hostname: 0
   Test::More: 0
+  Time::HiRes: 0
+  UNIVERSAL::require: 0
 recommends:
   Config::Properties: 0
   YAML: 0
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.38_03
+    version: 0.38_04
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
-    version: 0.00_01
+    version: 0.00_02
   Log::Handler::Logger:
     file: lib/Log/Handler/Logger.pm
-    version: 0.00_03
+    version: 0.00_04
+  Log::Handler::Logger::Email:
+    file: lib/Log/Handler/Logger/Email.pm
+    version: 0.00_01
+  Log::Handler::Logger::File:
+    file: lib/Log/Handler/Logger/File.pm
+    version: 0.00_01
+  Log::Handler::Logger::Forward:
+    file: lib/Log/Handler/Logger/Forward.pm
+    version: 0.00_01
   Log::Handler::Plugin::Config::General:
     file: lib/Log/Handler/Plugin/Config/General.pm
-    version: 0.00_01
+    version: 0.00_02
   Log::Handler::Plugin::Config::Properties:
     file: lib/Log/Handler/Plugin/Config/Properties.pm
-    version: 0.00_01
-  Log::Handler::Plugin::YAML:
+    version: 0.00_02
+  Log::Handler::Plugin::Config::YAML:
     file: lib/Log/Handler/Plugin/YAML.pm
-    version: 0.00_01
+    version: 0.00_02
 generated_by: Module::Build version 0.2808
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

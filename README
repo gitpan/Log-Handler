@@ -1,38 +1,46 @@
 NAME
-    Log::Handler - A simple handler to log messages to log files.
+    Log::Handler - A handler to log messages to different outputs.
 
 SYNOPSIS
         use Log::Handler;
 
         my $log = Log::Handler->new();
 
-        $log->add(filename => \*STDOUT);
+        $log->add(File => {
+            filename => 'file.log',
+            maxlevel => 'debug',
+            minlevel => 'warn',
+            newline  => 1,
+        });
 
         $log->alert("foo bar");
 
 DESCRIPTION
-    This module is just a simple object oriented log file handler and very
-    easy to use. It's possible to define a log level for your programs and
-    control the amount of informations that will be logged to log files. In
-    addition it's possible to configure how you wish to open the log files -
-    transient or permanent - and lock and unlock the log files by each write
-    operation. If you wish you can assign the handler to check the inode of
-    the log files (not on Windows). That could be very useful if a rotate
-    mechanism moves and zip the log file.
+    This module is just a simple object oriented log handler and very easy
+    to use. It's possible to define a log level for your programs and
+    control the amount of informations that will be logged to one or more
+    outputs. The outputs are different modules in the Log::Handler::Logger
+    subtree and it's possible to extend it.
 
 WHAT IS NEW, WHAT IS DEPRECATED
-  More than one log file
-    Since version 0.39 the method "add()" is totaly new. With this method
-    it's now possible to add further log files to the handler and define a
-    own level range each log file. As example you can log the levels 0-4
-    (emerg-warn) to log file A and the levels 4-7 (warn-debug) to log file
-    B.
+  Backward compatibilities
+    As I re-designed the Log::Handler it was my wish to support the old
+    style in version 0.38. The one exception is that the option
+    "redirect_to_stderr" doesn't exist any more. In all other cases you can
+    use all things from 0.38.
+
+  More than one output
+    Since version 0.38_01 the method "add()" is totaly new. With this method
+    it's now possible to add output objects as much as you wish, each with
+    an own level range and different other options. As example you can log
+    the levels 0-4 (emerg-warn) to one object and the levels 4-7
+    (warn-debug) to another object. In addition you want to forward all log
+    levels to a subroutine. That's possible.
 
   Log::Handler::Logger
-    The main logic of Log::Handler is moved to Log::Handler::Logger. If you
-    add a new log file to the handler the file got it's own
-    Log::Handler::Logger object and the Log::Handler just dispatch messages
-    to the file objects.
+    The main logic of Log::Handler is moved to Log::Handler::Logger. The
+    Log::Handler just manage all logger objects and forward messages to it
+    if the current log handler would log.
 
   Placeholder
     Placeholders are now available for the prefix in printf style. The old
@@ -40,31 +48,90 @@ WHAT IS NEW, WHAT IS DEPRECATED
     example. In addition a postfix option is available now. Take a look to
     the documentation of prefix and postfix.
 
+  Configuration file
+    Now it's possible to load the configuration from a file or define
+    defaults. For this purpose I wrote "Log::Handler::Config".
+
   Kicked methods
     The methods "close()", "get_prefix()" and "set_prefix()" are not
     available any more.
 
+  Kicked options
+    "rewrite_to_stderr".
+
   trace()
-    The method "trace()" writes "caller()" informations to all log files by
+    The method "trace()" writes "caller()" informations to all logger by
     default. It's possible to disable this by set trace to 0.
 
-  Examples
-    Take a look to the example directory of the distribution if you need a
-    code example.
+  Further releases
+    Extensions and further changes are planed. I hope I have enough time to
+    implement my ideas as soon as possible!
 
 METHODS
   new()
     Call "new()" to create a new log handler object.
 
-    You can pass the options for the first log file if you want or later by
-    the call of "add()".
+        my $log = Log::Handler->new();
 
   add()
-    Call "add()" to add a log file to the object. "add()" expects the
-    options for the log file. Each option will be set to a default value if
-    not set.
+    Call "add()" to add a new logger.
 
-  Log levels
+    There are different ways to add a new logger object to the handler. In
+    the following example I show you one simple way:
+
+        use Log::Handler;
+        use Log::Handler::Logger::File;
+
+        # the logger options (how to handle the file)
+        my %logger_options = (
+            timeformat      => '%Y/%m/%d %H:%M:%S',
+            newline         => 1,
+            prefix          => '%T [%L] %S: ',
+            postfix         => '',
+            maxlevel        => 'debug',
+            minlevel        => 'emergency',
+            die_on_errors   => 1,
+            trace           => 1,
+            debug           => 0,
+            debug_mode      => 2,
+            debug_skip      => 0,
+        );
+
+        # the options for the file
+        my %file_options = (
+            filename        => 'file.log',
+            filelock        => 1,
+            fileopen        => 1,
+            reopen          => 1,
+            mode            => 'append',
+            autoflush       => 1,
+            permissions     => '0660',
+            utf8            => 1,
+        );
+
+        # we creating the objects
+        my $log  = Log::Handler->new();
+        my $file = Log::Handler::Logger::File->new( \%file_options );
+
+        # now we add the file object to the handler and the logger options
+        $log->add( $file => \%logger_options );
+
+    But it can be simplier! You can pass all options for the logger and for
+    the file in one step. You just need to tell the handler what do you want
+    to add.
+
+        use Log::Handler;
+
+        my %all_options = (%logger_options, %file_options);
+
+        $log->add( file => \%all_options );
+
+    Further examples:
+
+        $log->add( email => \%all_options );
+        $log->add( forward => \%all_options );
+
+  Log level methods
     There are eigth log level methods (thirteen with shortcuts):
 
     debug()
@@ -97,8 +164,7 @@ METHODS
 
         $log->info("Hello World!", "How are you?");
 
-    Both calls write to the log file (provided that the log level INFO would
-    log)
+    Both calls would log
 
         Feb 01 12:56:31 [INFO] Hello World! How are you?
 
@@ -113,29 +179,37 @@ METHODS
     is_emergency(), is_emerg()
 
     These thirteen methods could be very useful if you want to kwow if the
-    current log level would write the message to the log file. All methods
-    returns TRUE if the handler would log it and FALSE if not. Example:
+    current log level would output the message. All methods returns TRUE if
+    the current set of minlevel and maxlevel would log the message and FALSE
+    if not. Example:
 
         $log->debug(Dumper(\%hash));
 
-    This example would dump the hash in any case and handoff it to the log
-    handler, but this isn't that what we really want because it could costs
-    a lot of resources.
+    This example would dump the hash in any case and pass it to the log
+    handler, but that is not that what we really want!
 
-        $log->debug(Dumper(\%hash))
-           if $log->is_debug();
+        if ( $log->is_debug ) {
+            $log->debug(Dumper(\%hash));
+        }
 
     Now we dump the hash only if the current log level would log it.
 
     The methods "is_note()", "is_warn()", "is_err()", "is_crit()" and
     "is_emerg()" are just shortcuts.
 
+  fatal(), is_fatal()
+    This are special methods that can be used for CRITICAL, ALERT and
+    EMERGENCY messages. A lot of people like to use just the levels DEBUG,
+    INFO, WARN, ERROR and FATAL so I though to implement this. You just have
+    to set "minlevel" to "critical", "alert" or "emergency" to use it.
+
   trace()
     This method is a special log level and very useful if you want to print
-    "caller()" informations to all log files. In contrast to the log level
-    methods this method prints "caller()" informations to all log files in
-    any case and you don't need to activate the debugger with the option
-    "debug". Example:
+    "caller()" informations to all log files.
+
+    In contrast to the log level methods this method prints "caller()"
+    informations to all log files in any case and you don't need to activate
+    the debugger with the option "debug". Example:
 
         my $log = Log::Handler->new( filename => \*STDOUT );
         $log->trace("caller informations:");
@@ -154,10 +228,21 @@ METHODS
     "debug_skip" for more informations.
 
   errstr()
-    Call "errstr()" if you want to get the last error message. That is
-    useful with "die_on_errors". If you set this option to 0 then the
+    Call "errstr()" if you want to get the last error message. This is
+    useful with "die_on_errors". If you set "die_on_errors" to 0 then the
     handler wouldn't croak if a simple write operation fails. Set
     "die_on_errors" to control it yourself.
+
+        use Log::Handler;
+
+        my $log = Log::Handler->new();
+
+        $log->add(file => {
+            filename      => 'file.log',
+            maxlevel      => 'info',
+            mode          => 'append',
+            die_on_errors => 0,
+        });
 
         $log->info("Hello World!") or die $log->errstr;
 
@@ -168,21 +253,7 @@ METHODS
         }
 
     The exception is that the handler croaks in any case if the call of
-    "new()" or "add()" fails because on missing params or wrong settings!
-
-        my $log = Log::Handler->new(filename => 'file.log', mode => 'foo bar');
-
-    That would croak, because the option "mode" except "append" or "trunc"
-    or "excl".
-
-    If you set the option "fileopen" to 1 - the default - to open the log
-    file permanent and the call of "new" fails then you can absorb the
-    error.
-
-        my $log = Log::Handler->new(
-            filename        => 'file.log',
-            die_on_errors   => 0
-        ) or warn Log::Handler->errstr;
+    "new()" or "add()" fails because on missing or wrong settings!
 
   config()
     With this method it's possible to load your logger configuration from a
@@ -193,126 +264,7 @@ METHODS
     Take a look into the documentation of Log::Handler::Config for more
     informations.
 
-OPTIONS
-  filename
-    With "filename" you can set a file name, a GLOBREF or you can set a
-    string as an alias for STDOUT or STDERR. The default is STDOUT for this
-    option.
-
-    Set a file name:
-
-        my $log = Log::Handler->new( filename => 'file.log'  );
-
-    Set a GLOBREF
-
-        open FH, '>', 'file.log' or die $!;
-        my $log = Log::Handler->new( filename => \*FH );
-
-    Or the same with
-
-        open my $fh, '>', 'file.log' or die $!;
-        my $log = Log::Handler->new( filename => $fh );
-
-    Set STDOUT or STDERR
-
-        my $log = Log::Handler->new( filename => \*STDOUT );
-        # or
-        my $log = Log::Handler->new( filename => \*STDERR );
-
-    If the option "filename" is set in a config file and you want to debug
-    to your screen then you can set *STDOUT or *STDERR as a string.
-
-        my $log = Log::Handler->new( filename => '*STDOUT' );
-        # or
-        my $log = Log::Handler->new( filename => '*STDERR' );
-
-    That is not possible:
-
-        my $log = Log::Handler->new( filename => '*FH' );
-
-    Note that if you set a GLOBREF to "filename" some options will be forced
-    (overwritten) and you have to control the handles yourself. The forced
-    options are
-
-        fileopen => 1
-        filelock => 0
-        reopen   => 0
-
-  filelock
-    Maybe it's desirable to lock the log file by each write operation
-    because a lot of processes write at the same time to the log file. You
-    can set the option "filelock" to 0 or 1.
-
-        0 - no file lock
-        1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each write operation (default)
-
-  fileopen
-    Open a log file transient or permanent.
-
-        0 - open and close the logfile by each write operation
-        1 - open the logfile if C<new()> called and try to reopen the
-            file if C<reopen> is set to 1 and the inode of the file has changed (default)
-
-  reopen
-    This option works only if option "fileopen" is set to 1.
-
-        0 - deactivated
-        1 - try to reopen the log file if the inode changed (default)
-
-  fileopen and reopen
-    Please note that it's better to set "reopen" and "fileopen" to 0 on
-    Windows because Windows unfortunately haven't the faintest idea of
-    inodes.
-
-    To write your code independent you should control it:
-
-        my $os_is_win = $^O =~ /win/i ? 0 : 1;
-
-        my $log = Log::Handler->new(
-           filename => 'file.log',
-           mode     => 'append',
-           fileopen => $os_is_win
-        );
-
-    If you set "fileopen" to 0 then it implies that "reopen" has no
-    importance.
-
-  mode
-    There are three possible modes to open a log file.
-
-        append - O_WRONLY | O_APPEND | O_CREAT
-        excl   - O_WRONLY | O_EXCL   | O_CREAT (default)
-        trunc  - O_WRONLY | O_TRUNC  | O_CREAT
-
-    "append" would open the log file in any case and appends the messages at
-    the end of the log file.
-
-    "excl" would fail by open the log file if the log file already exists.
-    This is the default option because some security reasons.
-
-    "trunc" would truncate the complete log file if it exists. Please take
-    care to use this option.
-
-    Take a look to the documentation of "sysopen()" to get more
-    informations.
-
-  autoflush
-        0 - autoflush off
-        1 - autoflush on (default)
-
-  permissions
-    The option "permissions" sets the permission of the file if it creates
-    and must be set as a octal value. The permission need to be in octal and
-    are modified by your process's current "umask".
-
-    That means that you have to use the unix style permissions such as
-    "chmod". 0640 is the default permission for this option. That means that
-    the owner got read and write permissions and users in the same group got
-    only read permissions. All other users got no access.
-
-    Take a look to the documentation of "sysopen()" to get more
-    informations.
-
+LOGGER OPTIONS
   timeformat
     You can set "timeformat" with a date and time format that will be
     coverted by POSIX::strftime. The default format is "%b %d %H:%M:%S" and
@@ -331,7 +283,7 @@ OPTIONS
         0 - inactive (default)
         1 - active - appends a newline to the log message if not exist
 
-  PLACEHOLDER prefix, postfix
+  prefix, postfix
     It's possible to define a "prefix" and "postfix" for each message that
     will be logged to the log file. The "prefix" will be written before and
     the "postfix" after the message. Within the "prefix" and "postfix" it's
@@ -345,8 +297,10 @@ OPTIONS
         %P  PID
         %H  Hostname
         %N  Newline
-        %C  Filename and line number where the logger was called
-        %S  The program name
+        %C  Caller - filename and line number where the logger was called
+        %S  Script - the program name
+        %M  Measurement - replaced with the time since the last call of the handler
+        %m  The same as %M just 3 internal decimal places (0.001)
 
     The default "prefix" is set to "%T [%L] ". The "postfix" is not defined
     by default. As example the following code
@@ -392,13 +346,9 @@ OPTIONS
 
     Example: If "maxlevel" is set to 4 and "minlevel" to 0 then the levels
     emergency (emerg), alert, critical (crit) and error (err) are active and
-    would be logged to the log file.
+    would be logged.
 
     You can set both to 8 or "nothing" if you don't want to log any message.
-
-  rewrite_to_stderr
-    Set this option to 1 if you want that Log::Handler prints messages to
-    STDERR if the message couldn't print to the log file. The default is 0.
 
   die_on_errors
     Set "die_on_errors" to 0 if you don't want that the handler croaks if
@@ -410,19 +360,15 @@ OPTIONS
     The exception is that the handler croaks in any case if the call of
     "new()" fails because on missing params or wrong settings.
 
-  utf8
-    If this option is set to 1 then UTF-8 will be set with "binmode()" on
-    the output filehandle.
-
   trace
-    With this options it's possible to disable the tracing for a log file.
-    By default this option is set to 1 and tracing is enabled.
+    With this options it's possible to disable the tracing for a logger. By
+    default this option is set to 1 and tracing is enabled.
 
   debug
     You can activate a simple debugger that writes "caller()" informations
-    for each log level that would log to the log file. The debugger is
-    logging all defined values except "hints" and "bitmask". Set "debug" to
-    1 to activate the debugger. The debugger is set to 0 by default.
+    for each log level that would logged. The debugger is logging all
+    defined values except "hints" and "bitmask". Set "debug" to 1 to
+    activate the debugger. The debugger is set to 0 by default.
 
   debug_mode
     There are two debug modes: line(1) and block(2) mode. The default mode
@@ -434,11 +380,14 @@ OPTIONS
         use warnings;
         use Log::Handler;
 
-        my $log = Log::Handler->new(
-           maxlevel   => 'debug',
-           debug      => 1,
-           debug_mode => 1
-        );
+        my $log = Log::Handler->new()
+
+        $log->add(file => {
+            filename   => '*STDOUT',
+            maxlevel   => 'debug',
+            debug      => 1,
+            debug_mode => 1
+        });
 
         sub test1 { $log->debug() }
         sub test2 { &test1; }
@@ -509,13 +458,15 @@ EXAMPLES
   Simple example to log all level to one log file:
         use Log::Handler;
 
-        my $log = Log::Handler->new(
+        my $log = Log::Handler->new();
+
+        $log->add(file => {
            filename => 'file1.log',
            mode     => 'append',
            newline  => 1,
            maxlevel => 7,
            minlevel => 0
-        );
+        });
 
         $log->debug("this is a debug message");
         $log->info("this is a info message");
@@ -553,26 +504,29 @@ EXAMPLES
         # create the log handler object
         my $log = Log::Handler->new;
 
-        $log->add(
-           filename => 'debug.log',
-           mode     => 'append',
-           maxlevel => 7,
-           minlevel => 7
-        );
+        $log->add(file => {
+            filename => 'debug.log',
+            mode     => 'append',
+            maxlevel => 7,
+            minlevel => 7,
+            trace    => 1,
+        });
 
-        $log->add(
-           filename => 'common.log',
-           mode     => 'append',
-           maxlevel => 6,
-           minlevel => 5
-        );
+        $log->add(file => {
+            filename => 'common.log',
+            mode     => 'append',
+            maxlevel => 6,
+            minlevel => 5,
+            trace    => 0,
+        });
 
-        $log->add(
-           filename => 'error.log',
-           mode     => 'append',
-           maxlevel => 4,
-           minlevel => 0
-        );
+        $log->add(file => {
+            filename => 'error.log',
+            mode     => 'append',
+            maxlevel => 4,
+            minlevel => 0,
+            trace    => 1,
+        });
 
         # log to debug.log
         $log->debug("this is a debug message");
@@ -593,20 +547,22 @@ EXAMPLES
         $log->emergency("this is a emergency message");
         $log->emerg("this is a emergency message as well");
 
-        # force caller() informations to all log files
+        # force caller() informations just to error.log and debug.log
         $log->trace("this message goes to all log files");
 
   Just a notice:
         use Log::Handler;
 
-        my $log = Log::Handler->new(
+        my $log = Log::Handler->new();
+
+        $log->add(file => {
            filename   => '/var/run/pid-file1',
            mode       => 'trunc',
            maxlevel   => 5,
            minlevel   => 5,
            prefix     => '',
            timeformat => ''
-        );
+        });
 
         $log->note($$);
 
@@ -614,20 +570,16 @@ EXAMPLES
 
   Selfmade prefix:
         use Log::Handler;
-        use Sys::Hostname;
 
-        my $hostname =  hostname;
-        my $pid      =  $$;
-        my $progname =  $0;
-           $progname =~ s@.*[/\\]@@;
+        my $log = Log::Handler->new();
 
-        my $log = Log::Handler->new(
+        $log->add(file => {
            filename => "${progname}.log",
            mode     => 'append',
            maxlevel => 6,
            newline  => 1,
            prefix   => "%H[%P] [%L] %S: "
-        );
+        });
 
         $log->info("Hello World!");
         $log->warning("There is something wrong!");
@@ -641,11 +593,13 @@ EXAMPLES
         use Log::Handler;
         use Data::Dumper;
 
-        my $log = Log::Handler->new(
+        my $log = Log::Handler->new();
+
+        $log->add(file => {
            filename   => 'file1.log',
            mode       => 'append',
            maxlevel   => 4,
-        );
+        });
 
         my %hash = (foo => 1, bar => 2);
 
@@ -654,29 +608,33 @@ EXAMPLES
 
     Would NOT dump %hash to the $log object!
 
-  die_on_errors example:
-        use Log::Handler;
-        use Data::Dumper;
+EXTENSIONS
+    Do you want write further extensions? There are just some requirements!
 
-        my $log = Log::Handler->new(
-           filename      => 'file1.log',
-           mode          => 'append',
-           die_on_errors => 0
-        ) or die Log::Handler->errstr();
+    Logger objects should provide a "new()" and a "write()" method.
 
-        if ($log->is_debug()) {
-           $log->debug("\n".Dumper(\%hash))
-              or die $log->errstr();
-        }
+    Config plugins should provide a "get_config()" routine.
+
+    Take a look into the source or write me a mail if you have questions.
 
 PREREQUISITES
-        Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
-        POSIX             -  to generate the time stamp with strftime()
-        Params::Validate  -  to validate all options
-        Devel::Backtrace  -  to backtrace caller()
-        Carp              -  to croak() on errors if die_on_errors is active
-        Sys::Hostname     -  to get the current hostname
-        Config::General   -  to load configuration from a file
+    Prerequisites for all modules:
+
+        Carp
+        Config::General
+        Devel::Backtrace
+        Fcntl
+        Net::SMTP
+        Params::Validate
+        POSIX
+        Time::HiRes
+        Sys::Hostname
+        UNIVERSAL::require
+
+    Just for the test suite:
+
+        File::Spec
+        Test::More
 
 EXPORTS
     No exports.
@@ -695,6 +653,10 @@ QUESTIONS
     IRC: irc.perl.org#perl
 
     If you send me a mail then add Log::Handler into the subject.
+
+TODO
+        * Log::Handler::Logger::DBI
+        * Log::Handler::Logger::Socket
 
 COPYRIGHT
     Copyright (C) 2007 by Jonny Schulz. All rights reserved.

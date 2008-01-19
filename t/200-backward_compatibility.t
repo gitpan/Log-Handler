@@ -4,9 +4,9 @@ use Test::More tests => 40;
 use File::Spec;
 use Log::Handler;
 
-my $logfile = File::Spec->catfile('t', 'Log-Handler-Test-File.log');
-
-my $log = Log::Handler->new(
+my $rand_num = int(rand(999999));
+my $logfile  = File::Spec->catfile('t', "Log-Handler-$rand_num.log");
+my $log      = Log::Handler->new(
     filename     => $logfile,
     permissions  => '0664',
     mode         => 'append',
@@ -25,30 +25,32 @@ my $log = Log::Handler->new(
 ok(1, "new");
 
 # checking all parameter
-my $params = $log->{levels}->{DEBUG}->[0];
-ok($params->{autoflush} eq "0", "checking param autoflush");
-ok($params->{debug} eq "0", "checking param debug");
-ok($params->{debug_mode} eq "1", "checking param debug_mode");
-ok($params->{debug_skip} eq "0", "checking param debug_skip");
-ok($params->{die_on_errors} eq "1", "checking param die_on_errors");
-ok(ref($params->{fh}) eq "GLOB", "checking param fh");
-ok($params->{filelock} eq "1", "checking param filelock");
-ok($params->{filename} eq "t/Log-Handler-Test-File.log", "checking param filename");
-ok($params->{fileopen} eq "1", "checking param fileopen");
-ok($params->{inode} =~ /^\d+\z/, "checking param inode");
-ok($params->{maxlevel} eq "7", "checking param maxlevel");
-ok($params->{minlevel} eq "0", "checking param minlevel");
-ok($params->{mode}, "checking param mode");
-ok($params->{newline} eq "1", "checking param newline");
-ok($params->{permissions} eq "436", "checking param permissions");
-ok($params->{prefix} eq "prefix [%L] ", "checking param prefix");
-ok($params->{postfix} eq " postfix", "checking param prefix");
-ok(ref($params->{prefixes}) eq "ARRAY", "checking param prefixes");
-ok(ref($params->{postfixes}) eq "ARRAY", "checking param prefixes");
-ok($params->{reopen} eq "1", "checking param reopen");
-ok($params->{rewrite_to_stderr} eq "0", "checking param rewrite_to_stderr");
-ok($params->{timeformat} eq "", "checking param timeformat");
-ok($params->{utf8} eq "0", "checking param utf8");
+my $log_params  = $log->{levels}->{DEBUG}->[0];
+my $file_params = $log_params->{logger};
+
+ok($log_params->{debug} eq "0", "checking param debug");
+ok($log_params->{debug_mode} eq "1", "checking param debug_mode");
+ok($log_params->{debug_skip} eq "0", "checking param debug_skip");
+ok($log_params->{die_on_errors} eq "1", "checking param die_on_errors");
+ok($log_params->{maxlevel} eq "7", "checking param maxlevel");
+ok($log_params->{minlevel} eq "0", "checking param minlevel");
+ok($log_params->{newline} eq "1", "checking param newline");
+ok($log_params->{prefix} eq "prefix [%L] ", "checking param prefix");
+ok($log_params->{postfix} eq " postfix", "checking param prefix");
+ok(ref($log_params->{prefixes}) eq "ARRAY", "checking param prefixes");
+ok(ref($log_params->{postfixes}) eq "ARRAY", "checking param prefixes");
+ok($log_params->{timeformat} eq "", "checking param timeformat");
+
+ok($file_params->{autoflush} eq "0", "checking param autoflush");
+ok($file_params->{filelock} eq "1", "checking param filelock");
+ok($file_params->{filename} eq $logfile, "checking param filename");
+ok($file_params->{fileopen} eq "1", "checking param fileopen");
+ok($file_params->{inode} =~ /^\d+\z/, "checking param inode");
+ok(ref($file_params->{fh}) eq "GLOB", "checking param fh");
+ok($file_params->{mode}, "checking param mode");
+ok($file_params->{permissions} eq "436", "checking param permissions");
+ok($file_params->{reopen} eq "1", "checking param reopen");
+ok($file_params->{utf8} eq "0", "checking param utf8");
 
 # checking all log methods
 ok($log->debug("debug"), "checking debug") if $log->is_debug;
@@ -90,4 +92,7 @@ if ($lines == 13) {
    ok(0, "checking logfile ($lines)");
 }
 
-ok(unlink($logfile), "unlink logfile");
+close($file_params->{fh}) or die $!;
+ok(1, "close logfile");
+unlink($logfile) or die $!;
+ok(1, "unlink logfile");
