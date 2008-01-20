@@ -21,7 +21,7 @@ ok(1, 'new');
 
 # checking all log levels for would()
 foreach my $i (1..10) {
-    $log->write(\"test $i\n") or die $!;
+    $log->write("test $i\n") or die $!;
 }
 ok(1, "checking write()");
 

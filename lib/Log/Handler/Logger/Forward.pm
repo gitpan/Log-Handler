@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler::Logger::Forward - Forwarnd messages to routines.
+Log::Handler::Logger::Forward - Forward messages.
 
 =head1 SYNOPSIS
 
@@ -14,7 +14,7 @@ Log::Handler::Logger::Forward - Forwarnd messages to routines.
 
 =head1 DESCRIPTION
 
-Forward messages to sub routines.
+This logger makes it possible to forward messages to sub routines.
 
 =head1 METHODS
 
@@ -41,6 +41,12 @@ This function returns the last error message.
 =head2 forward_to
 
 This option excepts a array reference with code references.
+
+=head1 FORWARDED MESSAGE
+
+Note that the messages is forwarded as a hash reference.
+
+The hash key C<message> contains the message.
 
 =head1 PREREQUISITES
 
@@ -103,7 +109,7 @@ package Log::Handler::Logger::Forward;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_02';
+our $VERSION = '0.00_03';
 our $ERRSTR  = '';
 
 use Carp;
@@ -120,7 +126,7 @@ sub write {
     my $to = $self->{forward_to};
 
     foreach my $coderef ( @$to ) {
-        eval { &$coderef($$message) };
+        eval { &$coderef($message) };
         if ($@) {
             return $self->_raise_error($@);
         }

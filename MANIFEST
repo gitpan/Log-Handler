@@ -22,6 +22,7 @@ t/001-pod.t
 t/002-pod-coverage.t
 t/010-handler.t
 t/020-logger-forward.t
+t/021-logger-forward-setinfo.t
 t/030-logger-file.t
 t/040-logger-email.t
 t/200-backward_compatibility.t

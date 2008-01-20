@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler - Log messages to different outputs.
+Log::Handler - Log messages to one or more outputs.
 
 =head1 SYNOPSIS
 
@@ -8,7 +8,7 @@ Log::Handler - Log messages to different outputs.
 
     my $log = Log::Handler->new();
 
-    $log->add(File => {
+    $log->add(file => {
         filename => 'file.log',
         maxlevel => 'debug',
         minlevel => 'warn',
@@ -21,24 +21,22 @@ Log::Handler - Log messages to different outputs.
 
 This module is just a simple object oriented log handler and very easy to use.
 It's possible to define a log level for your programs and control the amount of
-informations that will be logged to one or more outputs. The outputs are different
-modules in the Log::Handler::Logger subtree and it's possible to extend it.
+informations that will be logged to one or more outputs.
 
 =head1 WHAT IS NEW, WHAT IS DEPRECATED
 
 =head2 Backward compatibilities
 
-As I re-designed the Log::Handler it was my wish to support the old style in version 0.38.
+As I re-designed the Log::Handler it was my wish to support the old style from version 0.38.
 The one exception is that the option C<redirect_to_stderr> doesn't exist any more. In all
 other cases you can use all things from 0.38.
 
 =head2 More than one output
 
-Since version 0.38_01 the method C<add()> is totaly new. With this method it's now possible
-to add output objects as much as you wish, each with an own level range and different other
-options. As example you can log the levels 0-4 (emerg-warn) to one object and the levels
-4-7 (warn-debug) to another object. In addition you want to forward all log levels to a
-subroutine. That's possible.
+Since version 0.38_01 the method C<add()> is totaly new. With this method you can add logger
+objects as much as you wish, each with its own level range and different other options.
+As example you can add a logger for the levels 0-4 (emergency-warning) and another logger
+for the levels 4-7 (warning-debug).
 
 =head2 Log::Handler::Logger
 
@@ -46,16 +44,24 @@ The main logic of Log::Handler is moved to Log::Handler::Logger. The Log::Handle
 manage all logger objects and forward messages to it if the current log handler would
 log.
 
+=head2 Output logger
+
+There are different output logger available:
+
+    Log::Handler::Logger::File
+    Log::Handler::Logger::Email
+    Log::Handler::Logger::Forward
+
 =head2 Placeholder
 
-Placeholders are now available for the prefix in printf style. The old style of <--LEVEL-->
-is deprecated, instead you have to use %L as example. In addition a postfix option is
-available now. Take a look to the documentation of prefix and postfix.
+Placeholders are now available for the prefix in C<printf()> style. The old style of
+<--LEVEL--> is deprecated and you should use C<%L> instead. In addition a C<postfix> option
+is available now. Take a look to the documentation of C<prefix> and C<postfix>.
 
 =head2 Configuration file
 
-Now it's possible to load the configuration from a file or define defaults. For this purpose
-I wrote C<Log::Handler::Config>.
+Now it's possible to load the configuration from a file. Take a look into the documentation
+for L<Log::Handler::Config>.
 
 =head2 Kicked methods
 
@@ -68,11 +74,11 @@ C<rewrite_to_stderr>.
 =head2 trace()
 
 The method C<trace()> writes C<caller()> informations to all logger by default.
-It's possible to disable this by set trace to 0.
+It's possible to disable this by set the option C<trace> to 0.
 
 =head2 Further releases
 
-Extensions and further changes are planed. I hope I have enough time to implement my
+Extensions and changes are planed. I hope I have enough time to implement my
 ideas as soon as possible!
 
 =head1 METHODS
@@ -127,14 +133,16 @@ example I show you one simple way:
     # now we add the file object to the handler and the logger options
     $log->add( $file => \%logger_options );
 
-But it can be simplier! You can pass all options for the logger and for the
-file in one step. You just need to tell the handler what do you want to add.
+But it can be simplier! You can pass all options for the logger and for the file
+in one step. You just need to tell the handler what do you want to add.
 
     use Log::Handler;
 
     my %all_options = (%logger_options, %file_options);
 
     $log->add( file => \%all_options );
+
+Take a look to the examples section for more informations.
 
 Further examples:
 
@@ -210,8 +218,8 @@ Both calls would log
 =back
 
 These thirteen methods could be very useful if you want to kwow if the current log level
-would output the message. All methods returns TRUE if the current set of minlevel and
-maxlevel would log the message and FALSE if not. Example:
+would output the message. All methods returns TRUE if the current set of C<minlevel> and
+C<maxlevel> would log the message and FALSE if not. Example:
 
     $log->debug(Dumper(\%hash));
 
@@ -230,20 +238,21 @@ are just shortcuts.
 =head2 fatal(), is_fatal()
 
 This are special methods that can be used for CRITICAL, ALERT and EMERGENCY messages.
-A lot of people like to use just the levels DEBUG, INFO, WARN, ERROR and FATAL so I 
-though to implement this. You just have to set C<minlevel> to C<critical>, C<alert>
+A lot of people like to use just DEBUG, INFO, WARN, ERROR and FATAL. For this reason
+I though to implement it. You just have to set C<minlevel> to C<critical>, C<alert>
 or C<emergency> to use it.
 
 =head2 trace()
 
-This method is a special log level and very useful if you want to print C<caller()>
-informations to all log files.
+This method is a special log level and very useful if you want to log C<caller()>
+informations.
 
-In contrast to the log level methods this method prints C<caller()> informations
-to all log files in any case and you don't need to activate the debugger with the
-option C<debug>. Example:
+In contrast to the log level methods this method forces C<caller()> informations to all
+logger and you don't need to activate the debugger with the option C<debug>. Example:
 
-    my $log = Log::Handler->new( filename => \*STDOUT );
+    my $log = Log::Handler->new();
+
+    $log->add(file => { filename => '*STDOUT' });
     $log->trace("caller informations:");
 
     Jun 05 21:20:32 [TRACE] caller informations
@@ -251,7 +260,7 @@ option C<debug>. Example:
        CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_write) hasargs(1)
        CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1097) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
 
-Maybe you like to print C<caller()> informations to all log files if an unexpected error occurs.
+Maybe you like to forward C<caller()> informations to all logger if an unexpected error occurs.
 
     $SIG{__DIE__} = sub { $log->trace(@_) };
 
@@ -261,8 +270,8 @@ for more informations.
 =head2 errstr()
 
 Call C<errstr()> if you want to get the last error message. This is useful with
-C<die_on_errors>. If you set C<die_on_errors> to C<0> then the handler wouldn't
-croak if a simple write operation fails. Set C<die_on_errors> to control it yourself.
+C<die_on_errors>. If you set C<die_on_errors> to C<0> the handler wouldn't croak
+on failed write operations. Set C<die_on_errors> to control it yourself.
 
     use Log::Handler;
 
@@ -298,8 +307,9 @@ Take a look into the documentation of L<Log::Handler::Config> for more informati
 
 =head2 timeformat
 
-You can set C<timeformat> with a date and time format that will be coverted
-by POSIX::strftime. The default format is "%b %d %H:%M:%S" and looks like
+The C<timeformat> is used for the placeholder C<%T>. You can set C<timeformat> with a
+date and time format that will be coverted by C<POSIX::strftime>. The default format
+is C<%b %d %H:%M:%S> and looks like
 
     Feb 01 12:56:31
 
@@ -319,27 +329,27 @@ This helpful option appends a newline to the log message if it not exist.
 It's possible to define a C<prefix> and C<postfix> for each message that will
 be logged to the log file. The C<prefix> will be written before and the C<postfix>
 after the message. Within the C<prefix> and C<postfix> it's possible to use
-different placeholders that will be replaced before the message goes to the log
-file.
+different placeholders that will be replaced.
 
 The available placeholders are:
 
-    %L  Log level
-    %T  Timestamp
-    %P  PID
-    %H  Hostname
-    %N  Newline
-    %C  Caller - filename and line number where the logger was called
-    %S  Script - the program name
-    %M  Measurement - replaced with the time since the last call of the handler
-    %m  The same as %M just 3 internal decimal places (0.001)
+    %L   Log level
+    %T   Timestamp
+    %P   PID
+    %H   Hostname
+    %N   Newline
+    %C   Caller - filename and line number where the logger was called
+    %p   Script - the program name
+    %t   Measurement - replaced with the time since the last call of the handler
 
-The default C<prefix> is set to "%T [%L] ". The C<postfix> is not defined by default.
+The default C<prefix> is set to C<'%T [%L] '>. The C<postfix> is not defined
+by default.
+
 As example the following code
 
     $log->alert("foo bar");
 
-would log by default
+would log
 
     Feb 01 12:56:31 [ALERT] foo bar
 
@@ -374,13 +384,13 @@ The log levels are:
 
 The levels C<note>, C<err>, C<crit> and C<emerg> are just shortcuts.
 
-It's possible to set the log level as a string or as number. The default
-C<maxlevel> is 4 and the default C<minlevel> is 0.
+It's possible to set the log level as a string or as number. The default setting for
+C<maxlevel> is 4 and the default setting for C<minlevel> is 0.
 
-Example: If C<maxlevel> is set to 4 and C<minlevel> to 0 then the levels emergency (emerg),
-alert, critical (crit) and error (err) are active and would be logged.
+Example: If C<maxlevel> is set to 4 and C<minlevel> to 0 then the levels error, critical,
+alert and emergency would be logged.
 
-You can set both to 8 or C<nothing> if you don't want to log any message.
+You can set both to 8 or C<nothing> if you don't want to deactivate the logger.
 
 =head2 die_on_errors
 
@@ -391,6 +401,50 @@ Set C<die_on_errors> to 0 if you don't want that the handler croaks if normal op
 
 The exception is that the handler croaks in any case if the call of C<new()> fails because
 on missing params or wrong settings.
+
+=head2 setinfo
+
+This option is just useful if you want to forward messages with L<Log::Handler::Logger::Forward>.
+
+It expects a array reference with a list of placeholders:
+
+    setinfo => [ qw/%T %L %H/ ]
+
+Then a hash is builded and the placeholders are replaced with real names as hash keys:
+
+    %L   level
+    %T   timestamp
+    %P   pid
+    %H   hostname
+    %N   newline
+    %C   caller
+    %p   progname
+    %t   time
+
+The hash will be passed as a reference to the forwarders. Here a code example:
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(forward => {
+        forward_to => [ \&my_func ],
+        setinfo    => [ qw/%T %L %H/ ],
+        maxlevel   => 'info',
+        prefix     => '',
+    });
+
+    $log->info('a forwarded message');
+
+    # now the message is passed as a hash reference to my_func()
+
+    sub my_func {
+        my $params = shift;
+        print "Timestamp: $params->{timestamp}\n";
+        print "Level:     $params->{level}\n";
+        print "Hostname:  $params->{hostname}\n";
+        print "Message:   $params->{message}\n";
+    }
 
 =head2 trace
 
@@ -596,11 +650,11 @@ Would log
        mode       => 'trunc',
        maxlevel   => 5,
        minlevel   => 5,
-       prefix     => '',
+       prefix     => '%P',
        timeformat => ''
     });
 
-    $log->note($$);
+    $log->note();
 
 Would truncate /var/run/pid-file1 and write just the pid to the logfile.
 
@@ -739,9 +793,9 @@ package Log::Handler;
 
 use strict;
 use warnings;
-our $VERSION = '0.38_05';
+our $VERSION = '0.38_06';
 our $ERRSTR  = '';
-$Log::Handler::Logger::CALLER = 4;
+$Log::Handler::Logger::CALLER = 3;
 
 use Carp;
 use Log::Handler::Config;
@@ -775,15 +829,6 @@ BEGIN {
         emerg     => 'EMERGENCY',
         trace     => 'TRACE',
         fatal     => 'FATAL',
-
-# thinking about ......
-#        carp      => 'FATAL',
-#        croak     => 'FATAL',
-#        cluck     => 'FATAL',
-#        confess   => 'FATAL',
-#        die       => 'FATAL',
-#        exit      => 'NOTICE', # exit is normal, not fatal!
-
     );
 
     while ( my ($routine, $level) = each %LEVELS_BY_ROUTINE ) {

@@ -16,6 +16,7 @@ my $build = Module::Build->new(
     requires => {
         'Carp'               => 0,
         'Config::General'    => 0,
+        'Data::Dumper'       => 0,
         'Devel::Backtrace'   => 0.05,
         'Fcntl'              => 0,
         'File::Spec'         => 0,

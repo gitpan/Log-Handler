@@ -1,3 +1,10 @@
+0.38_06 Released at 2008-01-20.
+        - POD improved and a lot of POD typos fixed.
+        - Fixed splitToTree argument for plugin Config::Properties.
+        - Different code improvements.
+        - Add option setinfo to Log::Handler::Logger.
+        - The message is now handled with a hash ref intern.
+
 0.38_05 Released at 2008-01-19.
         - Very annoyingly... wrong description for Log::Handler::Logger::Forward.
 

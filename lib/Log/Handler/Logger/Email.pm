@@ -7,14 +7,24 @@ Log::Handler::Logger::Email - Log messages as email (via Net::SMTP).
     use Log::Handler::Logger::Email
 
     my $email = Log::Handler::Logger::Email->new(
-
+        host     => 'mx.bar.example',
+        hello    => 'EHLO my.domain.example',
+        timeout  => 120,
+        debug    => 0,
+        from     => 'bar@foo.example',
+        to       => 'foo@bar.example',
+        subject  => 'your subject',
+        buffer   => 100,
+        interval => 60,
     );
 
     $email->write($message);
 
 =head1 DESCRIPTION
 
-Log messages via email.
+With this logger it's possible to log messages via email and it use Net::SMTP to do it.
+
+Net::SMTP is from Graham Barr and it does it's job very well.
 
 =head1 METHODS
 
@@ -22,15 +32,16 @@ Log messages via email.
 
 Call C<new()> to create a new Log::Handler::Logger::Email object.
 
-The C<new()> method expected the options for the emailer.
+The C<new()> method expects all options. Take a look to the OPTIONS
+section for more informations.
 
 =head2 write()
 
-Call C<write()> if you want to log messages as email.
+Call C<write()> if you want to log a message as email.
 
 Example:
 
-    $email->write('this message will be emailed to all sub routines');
+    $email->write('this message will be mailed');
 
 =head2 flush()
 
@@ -62,7 +73,7 @@ With this option you has to define the SMTP host to connect to.
 
 =head2 hello
 
-Identify yourself with a HELO. The default is set to "EHLO BELO".
+Identify yourself with a HELO. The default is set to C<EHLO BELO>.
 
 =head2 timeout
 
@@ -162,10 +173,11 @@ package Log::Handler::Logger::Email;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_01';
+our $VERSION = '0.00_02';
 our $ERRSTR  = '';
 our $TEST    =  0; # is needed to disable flush() for tests
 
+use Data::Dumper;
 use Net::SMTP;
 use Params::Validate;
 use Carp;
@@ -177,11 +189,18 @@ sub new {
 }
 
 sub write {
-    my ($self, $message) = @_;
-    my $return = 1;
+    my $self    = shift;
+    my $message = ();
+    my $return  = 1;
+
+    if (ref($_[0]) eq 'HASH') {
+        $message = $_[0]->{message};
+    } else {
+        $message = shift;
+    }
 
     if (@{$self->{LINE_BUFFER}} < $self->{buffer}) {
-        push @{$self->{LINE_BUFFER}}, $$message;
+        push @{$self->{LINE_BUFFER}}, $message;
     }
 
     if ($self->{interval}) {

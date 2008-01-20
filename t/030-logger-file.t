@@ -19,7 +19,7 @@ my $log      = Log::Handler::Logger::File->new(
 ok(1, 'new');
 
 # write a string to the file
-$log->write(\"test\n") or die $!;
+$log->write("test\n") or die $!;
 ok(1, "checking write");
 
 # checking if the file is readable

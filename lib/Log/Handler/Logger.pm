@@ -6,7 +6,14 @@ Log::Handler::Logger - The main logger class.
 
     use Log::Handler::Logger;
 
-    my $log = Log::Handler::Logger->new( \%options );
+    my $log = Log::Handler::Logger->new(
+        file => {
+            filename => 'file.log',
+            maxlevel => 'debug',
+            minlevel => 'warn',
+            newline  => 1,
+        }
+    );
 
     $log->write($LEVEL, $MESSAGE);
 
@@ -20,13 +27,13 @@ This module is the main logger class.
 
 =head2 LOG LEVELS
 
-There are eight log levels and one special level for usage:
+There are eight log levels and two special level for usage:
 
-    DEBUG, NOTICE, INFO, WARNING, ERROR, CRITICAL, ALERT, EMERGENCY, TRACE
+    DEBUG, NOTICE, INFO, WARNING, ERROR, CRITICAL, ALERT, EMERGENCY, FATAL, TRACE
 
-TRACE can be used to write caller informations to the log file so you can see
-a little history foreach routine that was called. This can be very helpful to
-determine errors and warnings.
+TRACE can be used to append caller informations to the message.
+
+FATAL is the same as CRITICAL, ALERT and EMERGENCY.
 
 =head1 METHODS
 
@@ -34,15 +41,14 @@ determine errors and warnings.
 
 Call C<new()> to create a new Log::Handler::Logger object.
 
-The C<new()> method expected the options for the log file. Each option will
-be set to a default value if not set. If this method is called with no options
-then it creates an object to log to STDOUT with all default values.
+The method expects the options for the logger. Each option will be set to a default
+value if not set. If this method is called with no options then it creates an object
+to log to STDOUT with all default values.
 
 =head2 write()
 
-Call C<write()> if you want to log messages to the log file. The log level must
-be passed in uppercase as first argument. The message will be logged to log file
-if the log level is active.
+Call C<write()> if you want to log messages. The log level must be passed uppercase
+as first argument. The message will be logged to log file if the log level is active.
 
 Example:
 
@@ -50,8 +56,8 @@ Example:
 
 =head2 would_log()
 
-This method is very useful if you want to kwow if the current set of minlevel and maxlevel
-would write the message to the log file. The method returns TRUE if the logger would log
+This method is very useful if you want to kwow if the current set of C<minlevel> and
+C<maxlevel> would log the message. The method returns TRUE if the logger would log
 it and FALSE if not. Example:
 
     $log->would_log('DEBUG');
@@ -62,7 +68,7 @@ This function returns the last error message.
 
 =head1 OPTIONS
 
-Please look into the documentation of Log::Handler for more informations.
+The logger options are documented in L<Log::Handler>.
 
 =head1 PREREQUISITES
 
@@ -130,7 +136,7 @@ package Log::Handler::Logger;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_04';
+our $VERSION = '0.00_05';
 our $CALLER  =  2;
 our $MESSAGE = '';
 our $ERRSTR  = '';
@@ -172,16 +178,23 @@ my @LEVEL_BY_NUM = qw(
     NOTHING
 );
 
-my %FUNCTIONS = (
-    '%L'    =>  sub { $_[1] },
-    '%P'    =>  sub { $$ },
-    '%T'    =>  sub { shift->_set_time },
-    '%H'    =>  \&Sys::Hostname::hostname,
-    '%C'    =>  sub { my @c = caller($CALLER); "$c[1], line $c[2]" },
-    '%N'    =>  sub { "\n" },
-    '%S'    =>  sub { $0 },
-    '%M'    =>  sub { shift->_measurement },
-    '%m'    =>  sub { shift->_measurement(1) },
+my %PLACEHOLDERS = (
+    L  => {     name => 'level',
+                code => sub { $_[1] } },
+    P  => {     name => 'pid',
+                code => sub { $$ } },
+    T  => {     name => 'timestamp',
+                code => sub { shift->_set_time } },
+    H  => {     name => 'hostname',
+                code => \&Sys::Hostname::hostname },
+    C  => {     name => 'caller',
+                code => sub { my @c = caller($CALLER); "$c[1], line $c[2]" } },
+    N  => {     name => 'newline',
+                code => sub { "\n" } },
+    p  => {     name => 'progname',
+                code => sub { $0 } },
+    t  => {     name => 'time',
+                code => sub { shift->_measurement } }
 );
 
 my @LOGGER_OPTIONS = qw(
@@ -192,13 +205,14 @@ my @LOGGER_OPTIONS = qw(
     minlevel
     maxlevel
     die_on_errors
+    setinfo
     debug
     debug_mode
     debug_skip
     trace
 );
 
-my %AVAILABLE_MODULES = (
+my %AVAILABLE_LOGGER = (
     file    => 'Log::Handler::Logger::File',
     email   => 'Log::Handler::Logger::Email',
     dbi     => 'Log::Handler::Logger::DBI',
@@ -223,6 +237,7 @@ use constant LEVEL_RX => qr/^(?:
 )\z/x;
 
 sub new {
+    @_ > 2 or Carp::croak 'Usage: new( $type => \%options )';
     my $class = shift;
     my $self  = $class->_new_logger(@_);
     return $self;
@@ -234,8 +249,8 @@ sub write {
 
     return 1 unless $self->would_log($level);
 
-    my $message = $self->_build_message($level, @_);
     my $logger  = $self->{logger};
+    my $message = $self->_build_message($level, @_);
 
     $logger->write($message) or
         return $self->_raise_error($logger->errstr);
@@ -258,42 +273,63 @@ sub errstr { $ERRSTR }
 sub _build_message {
     my $self    = shift;
     my $level   = shift;
-    my $message = '';
+    my %message = ();
 
     if ($self->{prefix}) {
         foreach my $p ( @{$self->{prefixes}} ) {
-            $message .= &$p($self, $level, @_);
+            $message{message} .= &$p($self, $level, @_);
         }
-    }
-    if (@_) {
-        $message .= join(' ', @_);
-    }
-    if ($self->{postfix}) {
-        foreach my $p ( @{$self->{postfixes}} ) {
-            $message .= &$p($self, $level, @_);
-        }
-    }
-    if ($self->{debug} || $level eq 'TRACE') {
-        $message .= "\n" if $message =~ /.\z|^\z/;
-        my $bt = Devel::Backtrace->new($self->{debug_skip});
-        for my $p (reverse 0..$bt->points-1) {
-            $message .= ' ' x 3 . "CALL($p):";
-            my $c = $bt->point($p);
-            for my $k (qw/package filename line subroutine hasargs wantarray evaltext is_require/) {
-                next unless defined $c->{$k};
-                if ($self->{debug_mode} == 1) {
-                    $message .= " $k($c->{$k})";
-                } elsif ($self->{debug_mode} == 2) {
-                    $message .= "\n" . ' ' x 6 . sprintf('%-12s', $k) . $c->{$k};
-                }
-            }
-            $message .= "\n";
-        }
-    } elsif ($self->{newline} && $message =~ /.\z|^\z/) { # I hope that works on the most OSs
-        $message .= "\n";
     }
 
-    return \$message;
+    if (@_) {
+        $message{message} .= join(' ', @_);
+    }
+
+    if ($self->{postfix}) {
+        foreach my $p ( @{$self->{postfixes}} ) {
+            $message{message} .= &$p($self, $level, @_);
+        }
+    }
+
+    if ($self->{setinfo}) {
+        foreach my $p (@{$self->{setinfo}}) {
+            my $name = $PLACEHOLDERS{$p}{name};
+            my $code = $PLACEHOLDERS{$p}{code};
+            $message{$name} = &$code($self, $level);
+        }
+    }
+
+    if ($self->{debug} || $level eq 'TRACE') {
+        $self->_add_trace(\%message);
+    } elsif ($self->{newline} && $message{message} =~ /.\z|^\z/) {
+        $message{message} .= "\n";
+    }
+
+    return \%message;
+}
+
+sub _add_trace {
+    my ($self, $message) = @_;
+
+    if ( $message->{message} =~ /.\z|^\z/ ) {
+        $message->{message} .= "\n";
+    }
+
+    my $bt = Devel::Backtrace->new($self->{debug_skip});
+
+    for my $p (reverse 0..$bt->points-1) {
+        $message->{message} .= ' ' x 3 . "CALL($p):";
+        my $c = $bt->point($p);
+        for my $k (qw/package filename line subroutine hasargs wantarray evaltext is_require/) {
+            next unless defined $c->{$k};
+            if ($self->{debug_mode} == 1) {
+                $message->{message} .= " $k($c->{$k})";
+            } elsif ($self->{debug_mode} == 2) {
+                $message->{message} .= "\n" . ' ' x 6 . sprintf('%-12s', $k) . $c->{$k};
+            }
+        }
+        $message->{message} .= "\n";
+    }
 }
 
 sub _set_time {
@@ -303,7 +339,7 @@ sub _set_time {
 }
 
 sub _measurement {
-    my ($self, $flag) = @_;
+    my $self = shift;
     if (!$self->{timeofday}) {
         $self->{timeofday} = Time::HiRes::gettimeofday;
         return 0;
@@ -311,7 +347,7 @@ sub _measurement {
     my $new_time = Time::HiRes::gettimeofday;
     my $cur_time = $new_time - $self->{timeofday};
     $self->{timeofday} = $new_time;
-    return $flag ? sprintf("%.6f", $cur_time) : $cur_time;
+    return sprintf("%.6f", $cur_time);
 }
 
 sub _new_logger {
@@ -332,8 +368,8 @@ sub _new_logger {
     } else {
         push @logger_opts, $class->_shift_options($args);
 
-        if (exists $AVAILABLE_MODULES{$type}) {
-            $package = $AVAILABLE_MODULES{$type};
+        if (exists $AVAILABLE_LOGGER{$type}) {
+            $package = $AVAILABLE_LOGGER{$type};
         } elsif ($type =~ /::/) {
             $package = $type;
         } else {
@@ -402,6 +438,10 @@ sub _new_logger {
             regex => BOOL_RX,
             default => 1,
         },
+        setinfo => {
+            type => Params::Validate::ARRAYREF,
+            default => '',
+        },
     });
 
     foreach my $level (qw/minlevel maxlevel/) {
@@ -422,14 +462,23 @@ sub _new_logger {
         $options{active_levels}{TRACE} = 1;
     }
 
-    foreach my $p (qw/prefix postfix/) {
-        next unless length($options{$p});
-        $options{$p}  =~ s/<--LEVEL-->/%L/g;
-        foreach my $c ( split /(%[a-zA-Z])/, $options{$p} ) {
-            if ( exists $FUNCTIONS{$c} ) {
-                push @{$options{"${p}es"}}, $FUNCTIONS{$c};
+    foreach my $o (qw/prefix postfix/) {
+        next unless length($options{$o});
+        $options{$o} =~ s/<--LEVEL-->/%L/g;
+        foreach my $p ( split /%([a-zA-Z])/, $options{$o} ) {
+            if ( exists $PLACEHOLDERS{$p} ) {
+                push @{$options{"${o}es"}}, $PLACEHOLDERS{$p}{code};
             } else {
-                push @{$options{"${p}es"}}, sub { $c };
+                push @{$options{"${o}es"}}, sub { $p };
+            }
+        }
+    }
+
+    if ($options{setinfo}) {
+        foreach (@{$options{setinfo}}) {
+            s/%//; # replace it
+            if ( !exists $PLACEHOLDERS{$_} ) {
+                croak "placeholder '$_' does not exists";
             }
         }
     }

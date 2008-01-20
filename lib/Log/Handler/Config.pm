@@ -4,42 +4,112 @@ Log::Handler::Config - A simple config loader.
 
 =head1 SYNOPSIS
 
-    my $log = Log::Handler->new;
+    use Log::Handler;
+    use Log::Handler::Config;
 
-    $log->config(filename => 'file.conf');
+    my $conf = Log::Handler::Config->config(
+        filename => 'file.conf',
+        plugin   => 'YAML',
+        section  => 'Log::Handler',
+    );
+
+    my $log = Log::Handler->new();
+
+    while ( my ($type, $config) = each %$conf ) {
+        $log->add($type => $config);
+    }
+
+    # or
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->config(
+        filename => 'file.conf',
+        plugin   => 'YAML',
+        section  => 'Log::Handler',
+    );
 
 =head1 DESCRIPTION
 
-This module makes it possible to load the configuration for the Log::Handler.
+This module makes it possible to load the configuration from a file.
 
 =head1 METHODS
 
 =head2 config()
 
-With this method it's possible to load a configuration for your logger.
+=head2 Config structure
 
-If your configuration contains a C<default> section then this parameters
-are used for all other log files. Example:
+With this method it's possible to load a configuration for your logger. Note that
+a special configuration is needed to load it successfully. For each logger it must
+exist a own section. Here a hash example:
 
-    <default>
-        mode = append
-    </default>
+    my %config = (
 
-    <file1>
-        filename = file1.log
-    </file2>
+        # the configuration for a file
 
-    <file2>
-        filename = file2.log
-    </file2>
+        file => {
+            foo => {
+                filename => 'file1.log',
+                maxlevel => 'info',
+                minlevel => 'warn',
+            },
+            bar => {
+                filename => 'file2.log',
+                maxlevel => 'error',
+                minlevel => 'emergency',
+            }
+        }
 
-    <file3>
-        filename = file3.log
-        mode     = trunc
-    </file3>
+        # the configuration for email
 
-The option C<mode> is set for C<file1.log> and C<file2.log> to C<append>,
-for C<file3.log> it's set to C<trunc>.
+        email => {
+            foo =>
+                host     => 'foo.example',
+                from     => 'me@me.example',
+                to       => 'you@foo.example',
+                maxlevel => 'error',
+                minlevel => 'emergency',
+            },
+
+            # and_so_on ...
+        }
+    );
+
+You can store your configuration to a file and loads it. There are different
+config styles available.
+
+=head2 A default section
+
+If your configuration contains a C<default> section then this parameters are used
+for all other sections. Example:
+
+    <file>
+        <default>
+            mode = append
+        </default>
+
+        <my_first_log>
+            filename = file1.log
+            maxlevel = info
+            minlevel = warn
+        </my_first_log>
+
+        <my_second_log>
+            filename = file2.log
+        </my_second_log>
+
+        <my_third_log>
+            filename = file3.log
+            maxlevel = debug
+            minlevel = debug
+            mode     = trunc
+        </my_third_log>
+    </file>
+
+The option C<mode> is set to C<append> for the log file C<file1.log> and C<file2.log>.
+For C<file3.log> it's overwritten and set to C<trunc>.
 
 =head3 filename
 
@@ -47,8 +117,8 @@ The configuration file.
 
 =head3 plugin
 
-The plugin you want to use to load the configuration file. There are 3 plugins
-available:
+With this option you can set the plugin you want to use. There are 3 plugins
+available at the moment:
 
     Config::General
     Config::Properties
@@ -56,41 +126,47 @@ available:
 
 =head3 section
 
-Load the logger configuration from a main section. Example:
+If your configuration is placed in file where you configure your complete program
+you can push your logger configuration into a sub section:
 
-    <Log::Handler>
-        <log_all>
-            filename = file.log
-            minlevel = 0
-            maxlevel = 7
-        </mylog>
-    </Log::Handler>
+    <logger>
+        <file>
+            <mylog>
+                filename = file.log
+                minlevel = 0
+                maxlevel = 7
+            </mylog>
+        </file>
+    </logger>
 
     <Another_Script_Config>
         foo = bar
     </Another_Script_Config>
 
-Now you just want to load the the section C<Log::Handler>. You can do this with
+Now your configuration is placed in the C<logger> section. You can load this section with
 
     $log->config(
         filename => 'file.conf',
         section  => 'logger',
     );
 
-    # or if you got the configuration already
+    # or if you load the configuration yourself
 
     $log->config(
         config  => $config,
         section => 'logger',
     );
 
+    # or just
+
+    $log->config( config => $config->{logger} );
+
 =head3 config
 
-With this option you can pass a configuration that you got already.
+With this option you can pass a configuration that you loaded already but it must
+have the right structure! Take a look to the examples!
 
 =head1 PLUGINS
-
-=head2 Config::General
 
     Config::General     -  inspired by the well known apache config format
     Config::Properties  -  Java-style property files
@@ -98,11 +174,111 @@ With this option you can pass a configuration that you got already.
 
 =head1 EXAMPLES
 
-=head2 Load from a section
+=head2 Configuration examples
+
+=head3 Config::General
+
+    <file>
+        <my_log_file>
+            fileopen = 1
+            reopen = 1
+            permissions = 0640
+            maxlevel = info
+            mode = append
+            timeformat = %b %d %H:%M:%S
+            trace = 0
+            debug_mode = 2
+            filename = example.log
+            minlevel = warn
+            prefix = '%T %H[%P] [%L] %S: '
+            newline = 1
+        </my_log_file>
+    </file>
+
+=head3 YAML
+
+    ---
+    file:
+      my_log_file:
+        debug_mode: 2
+        filename: example.log
+        fileopen: 1
+        maxlevel: info
+        minlevel: warn
+        mode: append
+        newline: 1
+        permissions: 0640
+        prefix: '%T %H[%P] [%L] %S: '
+        reopen: 1
+        timeformat: '%b %d %H:%M:%S'
+        trace: 0
+
+=head3 Config::Properties
+
+    file.my_log_file.reopen = 1
+    file.my_log_file.fileopen = 1
+    file.my_log_file.maxlevel = info
+    file.my_log_file.permissions = 0640
+    file.my_log_file.mode = append
+    file.my_log_file.timeformat = %b %d %H:%M:%S
+    file.my_log_file.trace = 0
+    file.my_log_file.debug_mode = 2
+    file.my_log_file.minlevel = warn
+    file.my_log_file.filename = example.log
+    file.my_log_file.newline = 1
+    file.my_log_file.prefix = '%T %H[%P] [%L] %S: '
+
+=head2 Load the config from a certain section
 
 The config (Config::General)
 
     <logger>
+        <file>
+            <default>
+                newline     = 1
+                permissions = 0640
+                timeformat  = %b %d %H:%M:%S
+                fileopen    = 1
+                reopen      = 1
+                mode        = append
+                prefix      = "%T %H[%P] [%L] %S: "
+                trace       = 0
+                debug_mode  = 2
+            </default>
+
+            <common>
+                filename    = example.log
+                maxlevel    = info
+                minlevel    = warn
+            </common>
+
+            <error>
+                filename    = example-error.log
+                maxlevel    = warn
+                minlevel    = emergency
+                trace       = 1
+            </error>
+
+            <debug>
+                filename    = example-debug.log
+                maxlevel    = debug
+                minlevel    = debug
+            </debug>
+        </file>
+    </logger>
+
+Load the config
+
+    $log->config(
+        filename => 'file.conf',
+        section  => 'logger',
+    );
+
+=head2 Simple configuration without a certain section
+
+The config (Config::General)
+
+    <file>
         <default>
             newline     = 1
             permissions = 0640
@@ -133,92 +309,108 @@ The config (Config::General)
             maxlevel    = debug
             minlevel    = debug
         </debug>
-    </logger>
+    </file>
 
 Load the config
 
-    $log->config(
-        filename => 'file.conf',
-        section  => 'Log::Handler',
-        plugin   => 'Config::General',
-    );
-
-=head2 Simple configuration without a main section
-
-The config (Config::General)
-
-    <default>
-        newline     = 1
-        permissions = 0640
-        timeformat  = %b %d %H:%M:%S
-        fileopen    = 1
-        reopen      = 1
-        mode        = append
-        prefix      = "%T %H[%P] [%L] %S: "
-        trace       = 0
-        debug_mode  = 2
-    </default>
-
-    <common>
-        filename    = example.log
-        maxlevel    = info
-        minlevel    = warn
-    </common>
-
-    <error>
-        filename    = example-error.log
-        maxlevel    = warn
-        minlevel    = emergency
-        trace       = 1
-    </error>
-
-    <debug>
-        filename    = example-debug.log
-        maxlevel    = debug
-        minlevel    = debug
-    </debug>
-
-Load the config
-
-    $log->config(
-        filename => 'file.conf',
-        section  => 'Log::Handler',
-        plugin   => 'Config::General',
-    );
+    $log->config( filename => 'file.conf' );
 
 =head2 The config as hash
 
     $log->config(
         config => {
-            default => {
-                newline     => 1,
-                permissions => '0640',
-                timeformat  => '%b %d %H:%M:%S',
-                fileopen    => 1,
-                reopen      => 1,
-                mode        => 'append
-                prefix      => '%T %H[%P] [%L] %S: ',
-                trace       => 0,
-                debug_mode  => 2,
-            },
-            common => {
-                filename    => 'example.log',
-                maxlevel    => 'info',
-                minlevel    => 'warn',
-            },
-            error => {
-                filename    => 'example-error.log',
-                maxlevel    => 'warn',
-                minlevel    => 'emergency',
-                trace       => 1,
-            },
-            debug => {
-                filename    => 'example-debug.log',
-                maxlevel    => 'debug',
-                minlevel    => 'debug',
-            },
+            file => {
+                default => {
+                    newline     => 1,
+                    permissions => '0640',
+                    timeformat  => '%b %d %H:%M:%S',
+                    fileopen    => 1,
+                    reopen      => 1,
+                    mode        => 'append
+                    prefix      => '%T %H[%P] [%L] %S: ',
+                    trace       => 0,
+                    debug_mode  => 2,
+                },
+                common => {
+                    filename    => 'example.log',
+                    maxlevel    => 'info',
+                    minlevel    => 'warn',
+                },
+                error => {
+                    filename    => 'example-error.log',
+                    maxlevel    => 'warn',
+                    minlevel    => 'emergency',
+                    trace       => 1,
+                },
+                debug => {
+                    filename    => 'example-debug.log',
+                    maxlevel    => 'debug',
+                    minlevel    => 'debug',
+                },
+            }
         }
     );
+
+=head2 Configuration for different outputs
+
+    <logger>
+        <file>
+            <default>
+                newline     = 1
+                permissions = 0640
+                timeformat  = %b %d %H:%M:%S
+                fileopen    = 1
+                reopen      = 1
+                mode        = append
+                prefix      = "%T %H[%P] [%L] %S: "
+                trace       = 0
+                debug_mode  = 2
+            </default>
+
+            <common>
+                filename    = example.log
+                maxlevel    = info
+                minlevel    = warn
+            </common>
+
+            <error>
+                filename    = example-error.log
+                maxlevel    = warn
+                minlevel    = emergency
+                trace       = 1
+            </error>
+        </file>
+
+        <email>
+            <default>
+                timeout     = 60
+                debug       = 0
+                subject     = My subject
+                buffer      = 100
+                interval    = 300
+                prefix      = "%T %H[%P] [%L] %S: "
+                trace       = 0
+                debug_mode  = 2
+            </default>
+
+            <admin>
+                host        = foo.example
+                from        = me@me.example
+                to          = you@foo.example
+                maxlevel    = error
+                minlevel    = emergency
+                trace       = 1
+            </admin>
+
+            <op>
+                host        = bar.example
+                from        = me@me.example
+                to          = you@bar.example
+                maxlevel    = warn
+                minlevel    = emergency
+            </op>
+        </email>
+    </logger>
 
 =head1 PREREQUISITES
 
@@ -238,12 +430,48 @@ Please report all bugs to <jschulz.cpan(at)bloonix.de>.
 
 Jonny Schulz <jschulz.cpan(at)bloonix.de>.
 
-=head1 COPYRIGHT
+=head1 QUESTIONS
+
+Do you have any questions or ideas?
+
+MAIL: <jschulz.cpan(at)bloonix.de>
+
+If you send me a mail then add Log::Handler into the subject.
+    
+=head1 TODO
+
+    * Log::Handler::Logger::DBI
+    * Log::Handler::Logger::Socket
+
+=head1 COPYRIGHT  
 
 Copyright (C) 2007 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
+
+=head1 DISCLAIMER OF WARRANTY
+
+BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
+FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
+OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
+PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
+EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
+ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
+YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
+NECESSARY SERVICING, REPAIR, OR CORRECTION.
+
+IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
+WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
+REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
+LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
+OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
+THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
+RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
+FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
+SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
+SUCH DAMAGES.
 
 =cut
 
@@ -251,12 +479,14 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_02';
+our $VERSION = '0.00_03';
 
 use Carp;
 use Params::Validate;
 use UNIVERSAL::require;
 use Log::Handler::Logger;
+
+my %LOADED_PLUGINS = ();
 
 sub config {
     my $class   = shift;
@@ -265,7 +495,10 @@ sub config {
     my ($config, %all_configs);
 
     if ($params->{filename}) {
-        $plugin->require or Carp::croak "unable to load plugin '$plugin'";
+        if (!$LOADED_PLUGINS{$plugin}) {
+            $plugin->require or Carp::croak "unable to load plugin '$plugin'";
+            $LOADED_PLUGINS{$plugin} = 1;
+        }
         $config = $plugin->get_config($params->{filename});
     } elsif ($params->{config}) {
         $config = $params->{config};

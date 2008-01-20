@@ -6,7 +6,7 @@ use Log::Handler::Logger;
 
 my @LINES;
 sub save_lines {
-    push @LINES, $_[0];
+    push @LINES, $_[0]->{message};
 }
 
 my $log = Log::Handler::Logger->new(Forward => {

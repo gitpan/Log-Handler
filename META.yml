@@ -1,15 +1,16 @@
 ---
 name: Log-Handler
-version: 0.38_05
+version: 0.38_06
 author:
   - Jonny Schulz
-abstract: Log messages to different outputs.
+abstract: Log messages to one or more outputs.
 license: perl
 resources:
   license: http://dev.perl.org/licenses/
 requires:
   Carp: 0
   Config::General: 0
+  Data::Dumper: 0
   Devel::Backtrace: 0.05
   Fcntl: 0
   File::Spec: 0
@@ -26,31 +27,31 @@ recommends:
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.38_05
+    version: 0.38_06
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
-    version: 0.00_02
+    version: 0.00_03
   Log::Handler::Logger:
     file: lib/Log/Handler/Logger.pm
-    version: 0.00_04
+    version: 0.00_05
   Log::Handler::Logger::Email:
     file: lib/Log/Handler/Logger/Email.pm
-    version: 0.00_01
+    version: 0.00_02
   Log::Handler::Logger::File:
     file: lib/Log/Handler/Logger/File.pm
-    version: 0.00_01
+    version: 0.00_02
   Log::Handler::Logger::Forward:
     file: lib/Log/Handler/Logger/Forward.pm
-    version: 0.00_02
+    version: 0.00_03
   Log::Handler::Plugin::Config::General:
     file: lib/Log/Handler/Plugin/Config/General.pm
     version: 0.00_02
   Log::Handler::Plugin::Config::Properties:
     file: lib/Log/Handler/Plugin/Config/Properties.pm
-    version: 0.00_02
+    version: 0.00_03
   Log::Handler::Plugin::Config::YAML:
     file: lib/Log/Handler/Plugin/YAML.pm
-    version: 0.00_02
+    version: 0.00_03
 generated_by: Module::Build version 0.2808
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

@@ -1,12 +1,12 @@
 NAME
-    Log::Handler - Log messages to different outputs.
+    Log::Handler - Log messages to one or more outputs.
 
 SYNOPSIS
         use Log::Handler;
 
         my $log = Log::Handler->new();
 
-        $log->add(File => {
+        $log->add(file => {
             filename => 'file.log',
             maxlevel => 'debug',
             minlevel => 'warn',
@@ -19,38 +19,43 @@ DESCRIPTION
     This module is just a simple object oriented log handler and very easy
     to use. It's possible to define a log level for your programs and
     control the amount of informations that will be logged to one or more
-    outputs. The outputs are different modules in the Log::Handler::Logger
-    subtree and it's possible to extend it.
+    outputs.
 
 WHAT IS NEW, WHAT IS DEPRECATED
   Backward compatibilities
     As I re-designed the Log::Handler it was my wish to support the old
-    style in version 0.38. The one exception is that the option
+    style from version 0.38. The one exception is that the option
     "redirect_to_stderr" doesn't exist any more. In all other cases you can
     use all things from 0.38.
 
   More than one output
     Since version 0.38_01 the method "add()" is totaly new. With this method
-    it's now possible to add output objects as much as you wish, each with
-    an own level range and different other options. As example you can log
-    the levels 0-4 (emerg-warn) to one object and the levels 4-7
-    (warn-debug) to another object. In addition you want to forward all log
-    levels to a subroutine. That's possible.
+    you can add logger objects as much as you wish, each with its own level
+    range and different other options. As example you can add a logger for
+    the levels 0-4 (emergency-warning) and another logger for the levels 4-7
+    (warning-debug).
 
   Log::Handler::Logger
     The main logic of Log::Handler is moved to Log::Handler::Logger. The
     Log::Handler just manage all logger objects and forward messages to it
     if the current log handler would log.
 
+  Output logger
+    There are different output logger available:
+
+        Log::Handler::Logger::File
+        Log::Handler::Logger::Email
+        Log::Handler::Logger::Forward
+
   Placeholder
-    Placeholders are now available for the prefix in printf style. The old
-    style of <--LEVEL--> is deprecated, instead you have to use %L as
-    example. In addition a postfix option is available now. Take a look to
-    the documentation of prefix and postfix.
+    Placeholders are now available for the prefix in "printf()" style. The
+    old style of <--LEVEL--> is deprecated and you should use %L instead. In
+    addition a "postfix" option is available now. Take a look to the
+    documentation of "prefix" and "postfix".
 
   Configuration file
-    Now it's possible to load the configuration from a file or define
-    defaults. For this purpose I wrote "Log::Handler::Config".
+    Now it's possible to load the configuration from a file. Take a look
+    into the documentation for Log::Handler::Config.
 
   Kicked methods
     The methods "close()", "get_prefix()" and "set_prefix()" are not
@@ -61,10 +66,10 @@ WHAT IS NEW, WHAT IS DEPRECATED
 
   trace()
     The method "trace()" writes "caller()" informations to all logger by
-    default. It's possible to disable this by set trace to 0.
+    default. It's possible to disable this by set the option "trace" to 0.
 
   Further releases
-    Extensions and further changes are planed. I hope I have enough time to
+    Extensions and changes are planed. I hope I have enough time to
     implement my ideas as soon as possible!
 
 METHODS
@@ -126,6 +131,8 @@ METHODS
 
         $log->add( file => \%all_options );
 
+    Take a look to the examples section for more informations.
+
     Further examples:
 
         $log->add( email => \%all_options );
@@ -180,8 +187,8 @@ METHODS
 
     These thirteen methods could be very useful if you want to kwow if the
     current log level would output the message. All methods returns TRUE if
-    the current set of minlevel and maxlevel would log the message and FALSE
-    if not. Example:
+    the current set of "minlevel" and "maxlevel" would log the message and
+    FALSE if not. Example:
 
         $log->debug(Dumper(\%hash));
 
@@ -199,19 +206,21 @@ METHODS
 
   fatal(), is_fatal()
     This are special methods that can be used for CRITICAL, ALERT and
-    EMERGENCY messages. A lot of people like to use just the levels DEBUG,
-    INFO, WARN, ERROR and FATAL so I though to implement this. You just have
+    EMERGENCY messages. A lot of people like to use just DEBUG, INFO, WARN,
+    ERROR and FATAL. For this reason I though to implement it. You just have
     to set "minlevel" to "critical", "alert" or "emergency" to use it.
 
   trace()
-    This method is a special log level and very useful if you want to print
-    "caller()" informations to all log files.
+    This method is a special log level and very useful if you want to log
+    "caller()" informations.
 
-    In contrast to the log level methods this method prints "caller()"
-    informations to all log files in any case and you don't need to activate
-    the debugger with the option "debug". Example:
+    In contrast to the log level methods this method forces "caller()"
+    informations to all logger and you don't need to activate the debugger
+    with the option "debug". Example:
 
-        my $log = Log::Handler->new( filename => \*STDOUT );
+        my $log = Log::Handler->new();
+
+        $log->add(file => { filename => '*STDOUT' });
         $log->trace("caller informations:");
 
         Jun 05 21:20:32 [TRACE] caller informations
@@ -219,7 +228,7 @@ METHODS
            CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_write) hasargs(1)
            CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1097) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
 
-    Maybe you like to print "caller()" informations to all log files if an
+    Maybe you like to forward "caller()" informations to all logger if an
     unexpected error occurs.
 
         $SIG{__DIE__} = sub { $log->trace(@_) };
@@ -229,9 +238,9 @@ METHODS
 
   errstr()
     Call "errstr()" if you want to get the last error message. This is
-    useful with "die_on_errors". If you set "die_on_errors" to 0 then the
-    handler wouldn't croak if a simple write operation fails. Set
-    "die_on_errors" to control it yourself.
+    useful with "die_on_errors". If you set "die_on_errors" to 0 the handler
+    wouldn't croak on failed write operations. Set "die_on_errors" to
+    control it yourself.
 
         use Log::Handler;
 
@@ -266,9 +275,9 @@ METHODS
 
 LOGGER OPTIONS
   timeformat
-    You can set "timeformat" with a date and time format that will be
-    coverted by POSIX::strftime. The default format is "%b %d %H:%M:%S" and
-    looks like
+    The "timeformat" is used for the placeholder %T. You can set
+    "timeformat" with a date and time format that will be coverted by
+    "POSIX::strftime". The default format is "%b %d %H:%M:%S" and looks like
 
         Feb 01 12:56:31
 
@@ -287,27 +296,27 @@ LOGGER OPTIONS
     It's possible to define a "prefix" and "postfix" for each message that
     will be logged to the log file. The "prefix" will be written before and
     the "postfix" after the message. Within the "prefix" and "postfix" it's
-    possible to use different placeholders that will be replaced before the
-    message goes to the log file.
+    possible to use different placeholders that will be replaced.
 
     The available placeholders are:
 
-        %L  Log level
-        %T  Timestamp
-        %P  PID
-        %H  Hostname
-        %N  Newline
-        %C  Caller - filename and line number where the logger was called
-        %S  Script - the program name
-        %M  Measurement - replaced with the time since the last call of the handler
-        %m  The same as %M just 3 internal decimal places (0.001)
+        %L   Log level
+        %T   Timestamp
+        %P   PID
+        %H   Hostname
+        %N   Newline
+        %C   Caller - filename and line number where the logger was called
+        %p   Script - the program name
+        %t   Measurement - replaced with the time since the last call of the handler
 
-    The default "prefix" is set to "%T [%L] ". The "postfix" is not defined
-    by default. As example the following code
+    The default "prefix" is set to '%T [%L] '. The "postfix" is not defined
+    by default.
+
+    As example the following code
 
         $log->alert("foo bar");
 
-    would log by default
+    would log
 
         Feb 01 12:56:31 [ALERT] foo bar
 
@@ -342,13 +351,13 @@ LOGGER OPTIONS
     The levels "note", "err", "crit" and "emerg" are just shortcuts.
 
     It's possible to set the log level as a string or as number. The default
-    "maxlevel" is 4 and the default "minlevel" is 0.
+    setting for "maxlevel" is 4 and the default setting for "minlevel" is 0.
 
     Example: If "maxlevel" is set to 4 and "minlevel" to 0 then the levels
-    emergency (emerg), alert, critical (crit) and error (err) are active and
-    would be logged.
+    error, critical, alert and emergency would be logged.
 
-    You can set both to 8 or "nothing" if you don't want to log any message.
+    You can set both to 8 or "nothing" if you don't want to deactivate the
+    logger.
 
   die_on_errors
     Set "die_on_errors" to 0 if you don't want that the handler croaks if
@@ -359,6 +368,52 @@ LOGGER OPTIONS
 
     The exception is that the handler croaks in any case if the call of
     "new()" fails because on missing params or wrong settings.
+
+  setinfo
+    This option is just useful if you want to forward messages with
+    Log::Handler::Logger::Forward.
+
+    It expects a array reference with a list of placeholders:
+
+        setinfo => [ qw/%T %L %H/ ]
+
+    Then a hash is builded and the placeholders are replaced with real names
+    as hash keys:
+
+        %L   level
+        %T   timestamp
+        %P   pid
+        %H   hostname
+        %N   newline
+        %C   caller
+        %p   progname
+        %t   time
+
+    The hash will be passed as a reference to the forwarders. Here a code
+    example:
+
+        use Log::Handler;
+
+        my $log = Log::Handler->new();
+
+        $log->add(forward => {
+            forward_to => [ \&my_func ],
+            setinfo    => [ qw/%T %L %H/ ],
+            maxlevel   => 'info',
+            prefix     => '',
+        });
+
+        $log->info('a forwarded message');
+
+        # now the message is passed as a hash reference to my_func()
+
+        sub my_func {
+            my $params = shift;
+            print "Timestamp: $params->{timestamp}\n";
+            print "Level:     $params->{level}\n";
+            print "Hostname:  $params->{hostname}\n";
+            print "Message:   $params->{message}\n";
+        }
 
   trace
     With this options it's possible to disable the tracing for a logger. By
@@ -560,11 +615,11 @@ EXAMPLES
            mode       => 'trunc',
            maxlevel   => 5,
            minlevel   => 5,
-           prefix     => '',
+           prefix     => '%P',
            timeformat => ''
         });
 
-        $log->note($$);
+        $log->note();
 
     Would truncate /var/run/pid-file1 and write just the pid to the logfile.
 

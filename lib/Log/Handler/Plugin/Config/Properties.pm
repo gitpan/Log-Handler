@@ -45,7 +45,7 @@ package Log::Handler::Plugin::Config::Properties;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_02';
+our $VERSION = '0.00_03';
 use Config::Properties;
 
 sub get_config {
@@ -56,7 +56,7 @@ sub get_config {
     $properties->load($fh);
     close $fh;
 
-    my $config = $properties->splitToTree(qr/./);
+    my $config = $properties->splitToTree(qr/\./);
     return $config;
 }
 

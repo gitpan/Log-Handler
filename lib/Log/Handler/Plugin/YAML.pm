@@ -43,12 +43,12 @@ package Log::Handler::Plugin::Config::YAML;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_02';
-use YAML qw/LoadFile/;
+our $VERSION = '0.00_03';
+use YAML;
 
 sub get_config {
     my ($class, $config_file) = @_;
-    my $config = LoadFile($config_file);
+    my $config = YAML::LoadFile($config_file);
     return $config;
 }
 

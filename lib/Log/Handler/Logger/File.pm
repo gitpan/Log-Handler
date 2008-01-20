@@ -6,7 +6,16 @@ Log::Handler::Logger::File - Log messages to a file.
 
     use Log::Handler::Logger::File;
 
-    my $log = Log::Handler::Logger::File->new(%options);
+    my $log = Log::Handler::Logger::File->new(
+        filename    => 'file.log',
+        filelock    => 1,
+        fileopen    => 1,
+        reopen      => 1,
+        mode        => 'append',
+        autoflush   => 1,
+        permissions => '0664',
+        utf8        => 0,
+    );
 
     $log->write($message);
 
@@ -223,7 +232,7 @@ package Log::Handler::Logger::File;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_01';
+our $VERSION = '0.00_02';
 our $ERRSTR  = '';
 
 use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
@@ -281,7 +290,14 @@ sub new {
 }
 
 sub write {
-    my ($self, $message) = @_;
+    my $self    = shift;
+    my $message = ();
+
+    if (ref($_[0]) eq 'HASH') {
+        $message = $_[0]->{message};
+    } else {
+        $message = shift;
+    }
 
     if (!$self->{fileopen}) {
         $self->_open or return undef;
@@ -293,7 +309,7 @@ sub write {
         $self->_lock or return undef;
     }
 
-    print {$self->{fh}} $$message or
+    print {$self->{fh}} $message or
         return $self->_raise_error("unable to print to logfile: $!");
 
     if ($self->{filelock}) {
