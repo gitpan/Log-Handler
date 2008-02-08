@@ -142,6 +142,19 @@ Both options are set to 1 on default.
 
 =head2 dbi_params
 
+This option is useful if you want to pass arguments to L<DBI>. The default is set to
+
+    {
+        PrintError => 0,
+        AutoCommit => 1
+    }
+
+C<PrintError> is deactivated because this would print error messages as warnings to STDERR.
+
+You can pass your own arguments - and overwrite it - with
+
+    dbi_params => { PrintError => 1, AutoCommit => 0 }
+
 =head2 debug
 
 With this option it's possible to enable debugging. The informations can be
@@ -210,7 +223,7 @@ package Log::Handler::Output::DBI;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_01';
+our $VERSION = '0.00_02';
 our $ERRSTR  = '';
 
 use Carp;
@@ -288,15 +301,11 @@ sub errstr { $ERRSTR }
 
 sub _connect {
     my $self = shift;
-    my $dbh  = ();
 
     warn "Connect to the database: $self->{cstr}->[0] ..." if $self->{debug};
-    eval { $dbh = DBI->connect(@{$self->{cstr}}) or die DBI->errstr };
 
-    if ($@) {
-        warn $@ if $self->{debug};
-        return $self->_raise_error("DBI connect error: ".DBI->errstr);
-    }
+    my $dbh = DBI->connect(@{$self->{cstr}})
+        or return $self->_raise_error("DBI connect error: ".DBI->errstr);
 
     $self->{dbh} = $dbh;
 

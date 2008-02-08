@@ -1,3 +1,7 @@
+0.38_08 Released at 2008-02-??.
+        - Kicked eval { } from Log::Handler::Output::DBI.
+        - Missed documentation for dbi_params in Log::Handler::Output::DBI.
+
 0.38_07 Released at 2008-02-08.
         - Replaced options prefix and postfix with message_layout.
         - Added %m as message to placeholders.
