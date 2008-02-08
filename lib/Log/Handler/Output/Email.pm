@@ -1,12 +1,12 @@
 =head1 NAME
 
-Log::Handler::Logger::Email - Log messages as email (via Net::SMTP).
+Log::Handler::Output::Email - Log messages as email (via Net::SMTP).
 
 =head1 SYNOPSIS
 
-    use Log::Handler::Logger::Email
+    use Log::Handler::Output::Email;
 
-    my $email = Log::Handler::Logger::Email->new(
+    my $email = Log::Handler::Output::Email->new(
         host     => 'mx.bar.example',
         hello    => 'EHLO my.domain.example',
         timeout  => 120,
@@ -18,11 +18,11 @@ Log::Handler::Logger::Email - Log messages as email (via Net::SMTP).
         interval => 60,
     );
 
-    $email->write($message);
+    $email->log($message);
 
 =head1 DESCRIPTION
 
-With this logger it's possible to log messages via email and it use Net::SMTP to do it.
+With this output module it's possible to log messages via email and it use Net::SMTP to do it.
 
 Net::SMTP is from Graham Barr and it does it's job very well.
 
@@ -30,18 +30,18 @@ Net::SMTP is from Graham Barr and it does it's job very well.
 
 =head2 new()
 
-Call C<new()> to create a new Log::Handler::Logger::Email object.
+Call C<new()> to create a new Log::Handler::Output::Email object.
 
 The C<new()> method expects all options. Take a look to the OPTIONS
 section for more informations.
 
-=head2 write()
+=head2 log()
 
-Call C<write()> if you want to log a message as email.
+Call C<log()> if you want to log a message as email.
 
 Example:
 
-    $email->write('this message will be mailed');
+    $email->log('this message will be mailed');
 
 =head2 flush()
 
@@ -49,7 +49,7 @@ Call C<flush()> if you want to flush the buffered lines.
 
 =head2 sendmail()
 
-Call C<sendmail()> if you want to write an email.
+Call C<sendmail()> if you want to send an email.
 
 =head2 errstr()
 
@@ -57,7 +57,7 @@ This function returns the last error message.
 
 =head1 DESTROY
 
-C<DESTROY> is defined and will flush the buffer.
+C<DESTROY> is defined and called C<flush()>.
 
 =head1 OPTIONS
 
@@ -82,7 +82,7 @@ from the SMTP server. The default is set to 120 seconds.
 
 =head2 from
 
-This sender address (MAIL FROM).
+The sender address (MAIL FROM).
 
 =head2 to
 
@@ -91,6 +91,8 @@ The receipient address (RCPT TO).
 =head2 subject
 
 The subject of the mail.
+
+If no subject is set then the first 100 character of the message is used.
 
 =head2 buffer and interval
 
@@ -110,6 +112,11 @@ means to send the complete buffer as one email.
 Note that if the buffer is full and the interval is not expired then all further
 lines get lost - as a matter of course - because we don't want to blow our memory
 away. To flush the buffer every time if it's full you can set the interval to 0.
+
+=head2 debug
+
+With this option it's possible to enable debugging. The informations can be
+intercepted with $SIG{__WARN__}.
 
 =head1 PREREQUISITES
 
@@ -169,11 +176,11 @@ SUCH DAMAGES.
 
 =cut
 
-package Log::Handler::Logger::Email;
+package Log::Handler::Output::Email;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_02';
+our $VERSION = '0.00_03';
 our $ERRSTR  = '';
 our $TEST    =  0; # is needed to disable flush() for tests
 
@@ -183,12 +190,12 @@ use Params::Validate;
 use Carp;
 
 sub new {
-    my $class = shift;
-    my $self  = $class->_new_email(@_);
-    return $self;
+    my $class   = shift;
+    my $options = $class->_validate(@_);
+    return bless $options, $class;
 }
 
-sub write {
+sub log {
     my $self    = shift;
     my $message = ();
     my $return  = 1;
@@ -277,7 +284,7 @@ sub DESTROY { $_[0]->flush }
 # private stuff
 #
 
-sub _new_email {
+sub _validate {
     my $class = shift;
 
     my %options = Params::Validate::validate(@_, {
@@ -332,7 +339,7 @@ sub _new_email {
     }
 
     $options{LINE_BUFFER} = [ ];
-    return bless \%options, $class;
+    return \%options;
 }
 
 sub _raise_error {

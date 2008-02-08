@@ -45,7 +45,7 @@ package Log::Handler::Plugin::Config::Properties;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_03';
+our $VERSION = '0.00_04';
 use Config::Properties;
 
 sub get_config {

@@ -1,12 +1,12 @@
 =head1 NAME
 
-Log::Handler::Logger::File - Log messages to a file.
+Log::Handler::Output::File - Log messages to a file.
 
 =head1 SYNOPSIS
 
-    use Log::Handler::Logger::File;
+    use Log::Handler::Output::File;
 
-    my $log = Log::Handler::Logger::File->new(
+    my $log = Log::Handler::Output::File->new(
         filename    => 'file.log',
         filelock    => 1,
         fileopen    => 1,
@@ -17,7 +17,7 @@ Log::Handler::Logger::File - Log messages to a file.
         utf8        => 0,
     );
 
-    $log->write($message);
+    $log->log($message);
 
 =head1 DESCRIPTION
 
@@ -27,19 +27,19 @@ Log messages to a file.
 
 =head2 new()
 
-Call C<new()> to create a new Log::Handler::Logger::File object.
+Call C<new()> to create a new Log::Handler::Output::File object.
 
 The C<new()> method expected the options for the log file. Each option will
 be set to a default value if not set. If this method is called with no options
 then it creates an object to log to STDOUT with all default values.
 
-=head2 write()
+=head2 log()
 
-Call C<write()> if you want to log messages to the log file.
+Call C<log()> if you want to log messages to the log file.
 
 Example:
 
-    $log->write('this message goes to the logfile');
+    $log->log('this message goes to the logfile');
 
 =head2 errstr()
 
@@ -49,46 +49,63 @@ This function returns the last error message.
 
 =head2 filename
 
-With C<filename> you can set a file name, a GLOBREF or you can set a string as an alias
-for STDOUT or STDERR. The default is STDOUT for this option.
+With C<filename> you can set a file name as a string or as a array reference.
+If you set a array reference then the parts will be concat with C<catfile> from
+C<File::Spec>. It's also possible to set a GLOBREF or a string as an alias for
+STDOUT or STDERR. The default is STDOUT for this option.
 
 Set a file name:
 
-    my $log = Log::Handler::Logger::File->new( filename => 'file.log'  );
+    my $log = Log::Handler::Output::File->new( filename => 'file.log'  );
+
+Set a array reference:
+
+    my $log = Log::Handler::Output::File->new(
+
+        # foo/bar/baz.log
+        filename => [ 'foo', 'bar', 'baz.log' ]
+
+        # /foo/bar/baz.log
+        filename => [ '', 'foo', 'bar', 'baz.log' ]
+
+    );
 
 Set a GLOBREF
 
     open FH, '>', 'file.log' or die $!;
-    my $log = Log::Handler::Logger::File->new( filename => \*FH );
+    my $log = Log::Handler::Output::File->new( filename => \*FH );
 
 Or the same with
 
     open my $fh, '>', 'file.log' or die $!;
-    my $log = Log::Handler::Logger::File->new( filename => $fh );
+    my $log = Log::Handler::Output::File->new( filename => $fh );
 
 Set STDOUT or STDERR
 
-    my $log = Log::Handler::Logger::File->new( filename => \*STDOUT );
+    my $log = Log::Handler::Output::File->new( filename => \*STDOUT );
     # or
-    my $log = Log::Handler::Logger::File->new( filename => \*STDERR );
+    my $log = Log::Handler::Output::File->new( filename => \*STDERR );
 
 If the option C<filename> is set in a config file and you want to debug to your screen then
 you can set C<*STDOUT> or C<*STDERR> as a string.
 
-    my $log = Log::Handler::Logger::File->new( filename => '*STDOUT' );
+    my $log = Log::Handler::Output::File->new( filename => '*STDOUT' );
     # or
-    my $log = Log::Handler::Logger::File->new( filename => '*STDERR' );
+    my $log = Log::Handler::Output::File->new( filename => '*STDERR' );
 
 That is not possible:
 
-    my $log = Log::Handler::Logger::File->new( filename => '*FH' );
+    my $log = Log::Handler::Output::File->new( filename => '*FH' );
 
 Note that if you set a GLOBREF to C<filename> some options will be forced (overwritten)
 and you have to control the handles yourself. The forced options are
 
-    fileopen => 1
-    filelock => 0
-    reopen   => 0
+    fileopen => 1   # don't close
+    filelock => 0   # don't lock
+    reopen   => 0   # and don't reopen
+
+The reason is simple: if you set C<*STDOUT> as filename it would be very bad if it would
+be closed or locked.
 
 =head2 filelock
 
@@ -122,7 +139,7 @@ To write your code independent you should control it:
 
     my $os_is_win = $^O =~ /win/i ? 0 : 1;
 
-    my $log = Log::Handler::Logger::File->new(
+    my $log = Log::Handler::Output::File->new(
        filename => 'file.log',
        mode     => 'append',
        fileopen => $os_is_win
@@ -228,24 +245,29 @@ SUCH DAMAGES.
 
 =cut
 
-package Log::Handler::Logger::File;
+package Log::Handler::Output::File;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_02';
+our $VERSION = '0.00_03';
 our $ERRSTR  = '';
 
 use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
+use File::Spec;
 use Params::Validate;
 
 sub new {
-    my $class = shift;
-    my $self  = $class->_new_file(@_);
+    my $class   = shift;
+    my $options = $class->_validate(@_);
+    my $self    = bless $options, $class;
+    my $fileref = ref($self->{filename});
 
     # it's possible to set *STDOUT and *STDERR as string
     # or pass a GLOB as filename
-    if (ref($self->{filename}) eq 'GLOB') {
+    if ($fileref eq 'GLOB') {
         $self->{fh} = $self->{filename};
+    } elsif ($fileref eq 'ARRAY') {
+        $self->{filename} = File::Spec->catfile(@{$self->{filename}});
     } elsif ($self->{filename} eq '*STDOUT') {
         $self->{fh} = \*STDOUT;
     } elsif ($self->{filename} eq '*STDERR') {
@@ -289,7 +311,7 @@ sub new {
     return $self;
 }
 
-sub write {
+sub log {
     my $self    = shift;
     my $message = ();
 
@@ -404,13 +426,13 @@ sub _unlock {
     return 1;
 }
 
-sub _new_file {
+sub _validate {
     my $class   = shift;
     my $bool_rx = qr/^[10]\z/;
 
     my %options = Params::Validate::validate(@_, {
         filename => {
-            type => Params::Validate::SCALAR | Params::Validate::GLOBREF,
+            type => Params::Validate::SCALAR | Params::Validate::GLOBREF | Params::Validate::ARRAYREF,
             default => '*STDOUT',
         },
         filelock => {
@@ -450,7 +472,7 @@ sub _new_file {
         },
     });
 
-    return bless \%options, $class;
+    return \%options;
 }
 
 sub _raise_error {

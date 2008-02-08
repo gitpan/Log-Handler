@@ -39,11 +39,12 @@ This module makes it possible to load the configuration from a file.
 
 =head2 config()
 
-=head2 Config structure
+With this method it's possible to load a configuration for your outputs. Note that
+a special structure is needed to load the configuration successfully.
 
-With this method it's possible to load a configuration for your logger. Note that
-a special configuration is needed to load it successfully. For each logger it must
-exist a own section. Here a hash example:
+=head3 Config structure
+
+For each output object it must exist a own section. Here a example as hash:
 
     my %config = (
 
@@ -78,44 +79,49 @@ exist a own section. Here a hash example:
     );
 
 You can store your configuration to a file and loads it. There are different
-config styles available.
+config plugins available.
 
-=head2 A default section
+=head3 A default section
 
 If your configuration contains a C<default> section then this parameters are used
 for all other sections. Example:
 
-    <file>
-        <default>
-            mode = append
-        </default>
+    my %config = (
 
-        <my_first_log>
-            filename = file1.log
-            maxlevel = info
-            minlevel = warn
-        </my_first_log>
+        # the configuration for a file
 
-        <my_second_log>
-            filename = file2.log
-        </my_second_log>
-
-        <my_third_log>
-            filename = file3.log
-            maxlevel = debug
-            minlevel = debug
-            mode     = trunc
-        </my_third_log>
-    </file>
+        file => {
+            default => {
+                mode     => 'append',
+            },
+            foo => {
+                filename => 'file1.log',
+                maxlevel => 'info',
+                minlevel => 'warn',
+            },
+            bar => {
+                filename => 'file2.log',
+                maxlevel => 'error',
+                minlevel => 'emergency',
+            },
+            baz => {
+                filename => 'file3.log',
+                maxlevel => 'debug',
+                minlevel => 'debug',
+                mode     => 'trunc',
+            },
+        }
 
 The option C<mode> is set to C<append> for the log file C<file1.log> and C<file2.log>.
 For C<file3.log> it's overwritten and set to C<trunc>.
 
-=head3 filename
+=head1 OPTIONS
+
+=head2 filename
 
 The configuration file.
 
-=head3 plugin
+=head2 plugin
 
 With this option you can set the plugin you want to use. There are 3 plugins
 available at the moment:
@@ -124,12 +130,42 @@ available at the moment:
     Config::Properties
     YAML
 
-=head3 section
+If the option is not set then the file extension is used to determine the
+configuration style:
+
+    Config::General     -   cfg, conf 
+    Config::Properties  -   props, jcfg, jconf
+    YAML                -   yml, yaml
+
+Examples:
+
+    # use file.conf and YAML
+
+    $log->config(
+        filename => 'file.conf',
+        plugin   => 'YAML'
+    );
+
+    # automatically use YAML
+
+    $log->config(
+        filename => 'file.yaml'
+    );
+
+    # automatically use Config::General
+
+    $log->config(
+        filename => 'file.conf'
+    );
+
+If the extension is not defined then C<Config::General> is used by default.
+
+=head2 section
 
 If your configuration is placed in file where you configure your complete program
-you can push your logger configuration into a sub section:
+you can push your output configuration into a sub section:
 
-    <logger>
+    <output>
         <file>
             <mylog>
                 filename = file.log
@@ -137,31 +173,31 @@ you can push your logger configuration into a sub section:
                 maxlevel = 7
             </mylog>
         </file>
-    </logger>
+    </output>
 
     <Another_Script_Config>
         foo = bar
     </Another_Script_Config>
 
-Now your configuration is placed in the C<logger> section. You can load this section with
+Now your configuration is placed in the C<output> section. You can load this section with
 
     $log->config(
         filename => 'file.conf',
-        section  => 'logger',
+        section  => 'output',
     );
 
     # or if you load the configuration yourself
 
     $log->config(
         config  => $config,
-        section => 'logger',
+        section => 'output',
     );
 
     # or just
 
-    $log->config( config => $config->{logger} );
+    $log->config( config => $config->{output} );
 
-=head3 config
+=head2 config
 
 With this option you can pass a configuration that you loaded already but it must
 have the right structure! Take a look to the examples!
@@ -174,12 +210,12 @@ have the right structure! Take a look to the examples!
 
 =head1 EXAMPLES
 
-=head2 Configuration examples
+=head2 Examples for the config plugins
 
 =head3 Config::General
 
     <file>
-        <my_log_file>
+        <mylog>
             fileopen = 1
             reopen = 1
             permissions = 0640
@@ -192,14 +228,14 @@ have the right structure! Take a look to the examples!
             minlevel = warn
             prefix = '%T %H[%P] [%L] %S: '
             newline = 1
-        </my_log_file>
+        </mylog>
     </file>
 
 =head3 YAML
 
     ---
     file:
-      my_log_file:
+      mylog:
         debug_mode: 2
         filename: example.log
         fileopen: 1
@@ -215,24 +251,24 @@ have the right structure! Take a look to the examples!
 
 =head3 Config::Properties
 
-    file.my_log_file.reopen = 1
-    file.my_log_file.fileopen = 1
-    file.my_log_file.maxlevel = info
-    file.my_log_file.permissions = 0640
-    file.my_log_file.mode = append
-    file.my_log_file.timeformat = %b %d %H:%M:%S
-    file.my_log_file.trace = 0
-    file.my_log_file.debug_mode = 2
-    file.my_log_file.minlevel = warn
-    file.my_log_file.filename = example.log
-    file.my_log_file.newline = 1
-    file.my_log_file.prefix = '%T %H[%P] [%L] %S: '
+    file.mylog.reopen = 1
+    file.mylog.fileopen = 1
+    file.mylog.maxlevel = info
+    file.mylog.permissions = 0640
+    file.mylog.mode = append
+    file.mylog.timeformat = %b %d %H:%M:%S
+    file.mylog.trace = 0
+    file.mylog.debug_mode = 2
+    file.mylog.minlevel = warn
+    file.mylog.filename = example.log
+    file.mylog.newline = 1
+    file.mylog.prefix = '%T %H[%P] [%L] %S: '
 
 =head2 Load the config from a certain section
 
 The config (Config::General)
 
-    <logger>
+    <output>
         <file>
             <default>
                 newline     = 1
@@ -265,13 +301,13 @@ The config (Config::General)
                 minlevel    = debug
             </debug>
         </file>
-    </logger>
+    </output>
 
 Load the config
 
     $log->config(
         filename => 'file.conf',
-        section  => 'logger',
+        section  => 'output',
     );
 
 =head2 Simple configuration without a certain section
@@ -353,7 +389,7 @@ Load the config
 
 =head2 Configuration for different outputs
 
-    <logger>
+    <output>
         <file>
             <default>
                 newline     = 1
@@ -410,7 +446,7 @@ Load the config
                 minlevel    = emergency
             </op>
         </email>
-    </logger>
+    </output>
 
 =head1 PREREQUISITES
 
@@ -440,8 +476,8 @@ If you send me a mail then add Log::Handler into the subject.
     
 =head1 TODO
 
-    * Log::Handler::Logger::DBI
-    * Log::Handler::Logger::Socket
+    * Log::Handler::Output::DBI
+    * Log::Handler::Output::Socket
 
 =head1 COPYRIGHT  
 
@@ -479,12 +515,12 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_03';
+our $VERSION = '0.00_04';
 
 use Carp;
+use File::Spec;
 use Params::Validate;
 use UNIVERSAL::require;
-use Log::Handler::Logger;
 
 my %LOADED_PLUGINS = ();
 
@@ -542,7 +578,7 @@ sub _validate {
 
     my %options = Params::Validate::validate(@_, {
         filename => {
-            type => Params::Validate::SCALAR,
+            type => Params::Validate::SCALAR | Params::Validate::ARRAYREF | Params::Validate::GLOBREF,
             default => '',
         },
         config => {
@@ -552,7 +588,7 @@ sub _validate {
         plugin => {
             type => Params::Validate::SCALAR,
             regex => qr/./,
-            default => 'Config::General',
+            default => '',
         },
         section => {
             type => Params::Validate::SCALAR,
@@ -560,7 +596,26 @@ sub _validate {
         },
     });
 
-    $options{plugin} = "Log::Handler::Plugin::$options{plugin}";
+    if (ref($options{filename}) eq 'ARRAY') {
+        $options{filename} = File::Spec->catfile(@{$options{filename}});
+    }
+
+    if ($options{plugin}) {
+        $options{plugin} = "Log::Handler::Plugin::$options{plugin}";
+        return \%options;
+    }
+
+    my ($file_end) = $options{filename} =~ /\.(.+)\z/;
+
+    if (!$file_end) {
+        $options{plugin} = 'Log::Handler::Plugin::Config::General';
+    } elsif ($file_end =~ /^c(?:onf|fg)\z/) {
+        $options{plugin} = 'Log::Handler::Plugin::Config::General';
+    } elsif ($file_end =~ /^ya{0,1}ml\z/) {
+        $options{plugin} = 'Log::Handler::Plugin::YAML';
+    } elsif ($file_end =~ /^(?:props|jc(?:onf|fg))\z/) {
+        $options{plugin} = 'Log::Handler::Plugin::Config::Properties';
+    }
 
     return \%options;
 }

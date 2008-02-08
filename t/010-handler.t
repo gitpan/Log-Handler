@@ -8,8 +8,8 @@ my $rand_num = int(rand(999999));
 my $logfile  = File::Spec->catfile('t', "Log-Handler-$rand_num.log");
 my $log      = Log::Handler->new();
 
-$log->add(File => {
-    filename        => $logfile,
+$log->add(file => {
+    filename        => [ 't', "Log-Handler-$rand_num.log" ],
     fileopen        => 0,
     reopen          => 0,
     filelock        => 0,
@@ -18,12 +18,12 @@ $log->add(File => {
     permissions     => '0664',
     timeformat      => '',
     newline         => 1,
-    prefix          => 'prefix [%L] ',
+    message_layout  => 'prefix [%L] %m',
     maxlevel        => 'debug',
     minlevel        => 'emergency',
     die_on_errors   => 1,
     utf8            => 0,
-    debug           => 0,
+    debug_trace     => 0,
     debug_mode      => 2,
     debug_skip      => 0,
 });
@@ -45,3 +45,7 @@ ok($log->is_alert,     'checking alert');
 ok($log->is_emergency, 'checking emergency');
 ok($log->is_emerg,     'checking emerg');
 ok($log->is_fatal,     'checking fatal');
+
+if (-e $logfile) {
+    unlink($logfile) or die $!;
+}

@@ -1,36 +1,36 @@
 =head1 NAME
 
-Log::Handler::Logger::Forward - Forward messages.
+Log::Handler::Output::Forward - Forward messages.
 
 =head1 SYNOPSIS
 
-    use Log::Handler::Logger::Forward
+    use Log::Handler::Output::Forward;
 
-    my $forwarder = Log::Handler::Logger::Forward->new(
+    my $forwarder = Log::Handler::Output::Forward->new(
         forward_to => [ sub { }, sub { } ],
     );
 
-    $forwarder->write($message);
+    $forwarder->log($message);
 
 =head1 DESCRIPTION
 
-This logger makes it possible to forward messages to sub routines.
+This output module makes it possible to forward messages to sub routines.
 
 =head1 METHODS
 
 =head2 new()
 
-Call C<new()> to create a new Log::Handler::Logger::Forward object.
+Call C<new()> to create a new Log::Handler::Output::Forward object.
 
 The C<new()> method expected the options for the forwarder.
 
-=head2 write()
+=head2 log()
 
-Call C<write()> if you want to forward messages to the subroutines.
+Call C<log()> if you want to forward messages to the subroutines.
 
 Example:
 
-    $forwarder->write('this message will be forwarded to all sub routines');
+    $forwarder->log('this message will be forwarded to all sub routines');
 
 =head2 errstr()
 
@@ -44,7 +44,7 @@ This option excepts a array reference with code references.
 
 =head1 FORWARDED MESSAGE
 
-Note that the messages is forwarded as a hash reference.
+Note that the message will be forwarded as a hash reference.
 
 The hash key C<message> contains the message.
 
@@ -105,7 +105,7 @@ SUCH DAMAGES.
 
 =cut
 
-package Log::Handler::Logger::Forward;
+package Log::Handler::Output::Forward;
 
 use strict;
 use warnings;
@@ -116,20 +116,19 @@ use Carp;
 use Params::Validate;
 
 sub new {
-    my $class = shift;
-    my $self  = $class->_new_forward(@_);
-    return $self;
+    my $class   = shift;
+    my $options = $class->_validate(@_);
+    return bless $options, $class;
 }
 
-sub write {
+sub log {
     my ($self, $message) = @_;
-    my $to = $self->{forward_to};
+    my $coderef = $self->{forward_to};
 
-    foreach my $coderef ( @$to ) {
-        eval { &$coderef($message) };
-        if ($@) {
-            return $self->_raise_error($@);
-        }
+    eval { &$coderef($message) };
+
+    if ($@) {
+        return $self->_raise_error($@);
     }
 
     return 1;
@@ -141,22 +140,16 @@ sub errstr { $ERRSTR }
 # private stuff
 #
 
-sub _new_forward {
+sub _validate {
     my $class   = shift;
 
     my %options = Params::Validate::validate(@_, {
         forward_to => {
-            type => Params::Validate::ARRAYREF,
+            type => Params::Validate::CODEREF,
         },
     });
 
-    foreach my $to ( @{$options{forward_to}} ) {
-        if (ref($to) ne 'CODE') {
-            Carp::croak "not a coderef";
-        }
-    }
-
-    return bless \%options, $class;
+    return \%options;
 }
 
 sub _raise_error {

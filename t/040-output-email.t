@@ -1,18 +1,28 @@
 use strict;
 use warnings;
-use Test::More tests => 3;
-use File::Spec;
-use Log::Handler::Logger::Email;
-$Log::Handler::Logger::Email::TEST = 1;
+use Test::More;
 
-my $log = Log::Handler::Logger::Email->new(
+BEGIN {
+    eval "use Net::SMTP;";
+    if ($@) {
+        plan skip_all => "No Net::SMTP installed";
+        exit(0);
+    } 
+};
+
+plan tests => 3;
+
+use Log::Handler::Output::Email;
+$Log::Handler::Output::Email::TEST = 1;
+
+my $log = Log::Handler::Output::Email->new(
     host     => [ 'bloonix.de' ],
     hello    => 'EHLO bloonix.de',
     timeout  => 60,
     debug    => 1,
     from     => 'jschulz.cpan@bloonix.de',
     to       => 'jschulz.cpan@bloonix.de',
-    subject  => 'Log::Handler::Logger::Email test',
+    subject  => 'Log::Handler::Output::Email test',
     buffer   => 20,
     interval => 0,
 );
@@ -21,9 +31,9 @@ ok(1, 'new');
 
 # checking all log levels for would()
 foreach my $i (1..10) {
-    $log->write("test $i\n") or die $!;
+    $log->log("test $i\n") or die $!;
 }
-ok(1, "checking write()");
+ok(1, "checking log()");
 
 # checking all lines
 my $match_lines = 0;

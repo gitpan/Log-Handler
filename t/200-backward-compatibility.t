@@ -1,13 +1,13 @@
 use strict;
 use warnings;
-use Test::More tests => 40;
+use Test::More tests => 38;
 use File::Spec;
 use Log::Handler;
 
 my $rand_num = int(rand(999999));
 my $logfile  = File::Spec->catfile('t', "Log-Handler-$rand_num.log");
 my $log      = Log::Handler->new(
-    filename     => $logfile,
+    filename     => [ 't', "Log-Handler-$rand_num.log" ],
     permissions  => '0664',
     mode         => 'append',
     autoflush    => 0,
@@ -19,26 +19,23 @@ my $log      = Log::Handler->new(
     reopen       => 1,
     newline      => 1,
     prefix       => 'prefix [%L] ',
-    postfix      => ' postfix',
 );
 
 ok(1, "new");
 
 # checking all parameter
 my $log_params  = $log->{levels}->{DEBUG}->[0];
-my $file_params = $log_params->{logger};
+my $file_params = $log_params->{output};
 
-ok($log_params->{debug} eq "0", "checking param debug");
+ok($log_params->{debug_trace} eq "0", "checking param debug");
 ok($log_params->{debug_mode} eq "1", "checking param debug_mode");
 ok($log_params->{debug_skip} eq "0", "checking param debug_skip");
 ok($log_params->{die_on_errors} eq "1", "checking param die_on_errors");
 ok($log_params->{maxlevel} eq "7", "checking param maxlevel");
 ok($log_params->{minlevel} eq "0", "checking param minlevel");
 ok($log_params->{newline} eq "1", "checking param newline");
-ok($log_params->{prefix} eq "prefix [%L] ", "checking param prefix");
-ok($log_params->{postfix} eq " postfix", "checking param prefix");
-ok(ref($log_params->{prefixes}) eq "ARRAY", "checking param prefixes");
-ok(ref($log_params->{postfixes}) eq "ARRAY", "checking param prefixes");
+ok($log_params->{prefix}, "checking param prefix");
+ok(ref($log_params->{message_order}) eq "ARRAY", "checking param message_order");
 ok($log_params->{timeformat} eq "", "checking param timeformat");
 
 ok($file_params->{autoflush} eq "0", "checking param autoflush");
@@ -77,7 +74,7 @@ open(my $fh, '<', $logfile) or do {
 ok(1, "open logfile");
 
 while (my $line = <$fh>) {
-   next unless $line =~ /^prefix \[([A-Z]+)\] ([a-z]+) postfix$/;
+   next unless $line =~ /^prefix \[([A-Z]+)\] ([a-z]+)$/;
    my ($x, $y) = ($1, $2);
    $x = lc($x);
    next unless $x eq $y;

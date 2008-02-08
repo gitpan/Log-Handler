@@ -2,12 +2,12 @@ use strict;
 use warnings;
 use Test::More tests => 5;
 use File::Spec;
-use Log::Handler::Logger::File;
+use Log::Handler::Output::File;
 
 my $rand_num = int(rand(999999));
 my $logfile  = File::Spec->catfile('t', "Log-Handler-$rand_num.log");
-my $log      = Log::Handler::Logger::File->new(
-    filename     => $logfile,
+my $log      = Log::Handler::Output::File->new(
+    filename     => [ 't', "Log-Handler-$rand_num.log" ],
     permissions  => '0664',
     mode         => 'append',
     autoflush    => 0,
@@ -19,8 +19,8 @@ my $log      = Log::Handler::Logger::File->new(
 ok(1, 'new');
 
 # write a string to the file
-$log->write("test\n") or die $!;
-ok(1, "checking write");
+$log->log("test\n") or die $!;
+ok(1, "checking log()");
 
 # checking if the file is readable
 open(my $fh, '<', $logfile) or do {
