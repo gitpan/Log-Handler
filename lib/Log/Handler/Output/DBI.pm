@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler::Output::DBI - DBI messages.
+Log::Handler::Output::DBI - Log messages to a database.
 
 =head1 SYNOPSIS
 

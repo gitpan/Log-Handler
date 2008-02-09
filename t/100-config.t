@@ -3,8 +3,27 @@ use warnings;
 use Test::More tests => 10;
 use Log::Handler;
 
+my %config = (
+    file => {
+        default => {
+            newline        => 1,
+            permissions    => '0640',
+            timeformat     => '%b %d %H:%M:%S',
+            mode           => 'append',
+            message_layout => '%T %H[%P] [%L] %p: %m',
+            trace          => 0,
+            debug_mode     => 2,
+        },
+        common => {
+            filename    => '*STDOUT',
+            maxlevel    => 'info',
+            minlevel    => 'info',
+        }
+    }
+);
+
 my $log = Log::Handler->new();
-$log->config(filename => \*DATA);
+$log->config(config => \%config);
 $log->info('info');
 
 my $options_handler = shift @{$log->{levels}->{INFO}};
@@ -35,21 +54,3 @@ while (my ($k, $v) = each %compare_handler) {
     my $ret = exists $options_handler->{$k} && $options_handler->{$k} eq $v;
     ok($ret, "checking option $k ($v:$options_handler->{$k})");
 }
-
-__END__
-<file>
-    <default>
-        newline        = 1
-        permissions    = 0640
-        timeformat     = %b %d %H:%M:%S
-        mode           = append
-        message_layout = "%T %H[%P] [%L] %p: %m"
-        trace          = 0
-        debug_mode     = 2
-    </default>
-    <common>
-        filename    = *STDOUT
-        maxlevel    = info
-        minlevel    = info
-    </common>
-</file>

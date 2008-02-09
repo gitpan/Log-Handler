@@ -896,7 +896,7 @@ package Log::Handler;
 
 use strict;
 use warnings;
-our $VERSION = '0.38_08';
+our $VERSION = '0.38_09';
 our $ERRSTR  = '';
 
 use Carp;

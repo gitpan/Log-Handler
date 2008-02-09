@@ -1,4 +1,9 @@
-0.38_08 Released at 2008-02-??.
+0.38_09 Released at 2008-02-09.
+        - Fixed t/100-config.t. Config::General was loaded, but it's not
+          in the prereq list. Kicked GLOBREF from the validate list for
+          config filename in Log::Handler::Config.
+
+0.38_08 Released at 2008-02-08.
         - Kicked eval { } from Log::Handler::Output::DBI.
         - Missed documentation for dbi_params in Log::Handler::Output::DBI.
 

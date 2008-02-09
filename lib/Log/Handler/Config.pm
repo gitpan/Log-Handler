@@ -515,7 +515,7 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_04';
+our $VERSION = '0.00_05';
 
 use Carp;
 use File::Spec;
@@ -578,7 +578,7 @@ sub _validate {
 
     my %options = Params::Validate::validate(@_, {
         filename => {
-            type => Params::Validate::SCALAR | Params::Validate::ARRAYREF | Params::Validate::GLOBREF,
+            type => Params::Validate::SCALAR | Params::Validate::ARRAYREF,
             default => '',
         },
         config => {
@@ -596,7 +596,7 @@ sub _validate {
         },
     });
 
-    if (ref($options{filename}) eq 'ARRAY') {
+    if ($options{filename} && ref($options{filename}) eq 'ARRAY') {
         $options{filename} = File::Spec->catfile(@{$options{filename}});
     }
 
