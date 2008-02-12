@@ -1,37 +1,37 @@
 =head1 NAME
 
-Log::Handler::Output::Forward - Forward messages.
+Log::Handler::Output::Screen - Log messages to the screen.
 
 =head1 SYNOPSIS
 
-    use Log::Handler::Output::Forward;
+    use Log::Handler::Output::Screen;
 
-    my $forwarder = Log::Handler::Output::Forward->new(
-        forward_to => sub { },
-        arguments  => [ 'foo' ],
+    my $screen = Log::Handler::Output::Screen->new(
+        log_to => 'STDERR',
+        dump   => 1,
     );
 
-    $forwarder->log($message);
+    $screen->log($message);
 
 =head1 DESCRIPTION
 
-This output module makes it possible to forward messages to sub routines.
+This output module makes it possible to log messages to your screen.
 
 =head1 METHODS
 
 =head2 new()
 
-Call C<new()> to create a new Log::Handler::Output::Forward object.
+Call C<new()> to create a new Log::Handler::Output::Screen object.
 
-The C<new()> method expected the options for the forwarder.
+The C<new()> method expected the options for the output.
 
 =head2 log()
 
-Call C<log()> if you want to forward messages to the subroutines.
+Call C<log()> if you want to log a message to the screen.
 
 Example:
 
-    $forwarder->log('this message will be forwarded to all sub routines');
+    $screen->log('this message goes to the screen');
 
 =head2 errstr()
 
@@ -39,34 +39,14 @@ This function returns the last error message.
 
 =head1 OPTIONS
 
-=head2 forward_to
+=head2 log_to
 
-This option excepts a array reference with code references.
+Where do you want to log? Possible is: STDOUT and STDERR.
 
-=head2 arguments
+The default is STDOUT.
 
-With this option you can define arguments that will be passed to the sub routine.
+=head2 dump
 
-In the following example the arguments would be passed as a array to C<my_func()>.
-
-    my $forwarder = Log::Handler::Output::Forward->new(
-        forward_to => \&Class::method,
-        arguments  => [ $self, 'foo' ],
-    );
-
-This would call intern:
-
-    Class::method(@arguments, $message);
-
-If this option is not set then the message will be passed as first argument.
-
-=head1 FORWARDED MESSAGE
-
-Note that the message will be forwarded as a hash reference.
-
-If you make changes to the reference it affects all other outputs.
-
-The hash key C<message> contains the message.
 
 =head1 PREREQUISITES
 
@@ -125,15 +105,14 @@ SUCH DAMAGES.
 
 =cut
 
-package Log::Handler::Output::Forward;
+package Log::Handler::Output::Screen;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_04';
-our $ERRSTR  = '';
-
-use Carp;
+use Data::Dumper;
 use Params::Validate;
+our $VERSION  = '0.00_01';
+our $ERRSTR   = '';
 
 sub new {
     my $class   = shift;
@@ -142,17 +121,21 @@ sub new {
 }
 
 sub log {
-    my ($self, $message) = @_;
-    my $coderef = $self->{forward_to};
+    my $self    = shift;
+    my $message = ();
 
-    if ($self->{arguments}) {
-        eval { &$coderef(@{$self->{arguments}}, $message) };
+    if ($self->{dump}) {
+        $message = Dumper(shift);
     } else {
-        eval { &$coderef($message) };
+        $message = shift->{message};
     }
 
-    if ($@) {
-        return $self->_raise_error($@);
+    if ($self->{log_to} eq 'STDOUT') {
+        print STDOUT $message
+            or return $self->_raise_error($!);
+    } else {
+        print STDERR $message
+            or return $self->_raise_error($!);
     }
 
     return 1;
@@ -166,24 +149,22 @@ sub errstr { $ERRSTR }
 
 sub _validate {
     my $class   = shift;
+    my $bool_rx = qr/^[10]\z/;
 
     my %options = Params::Validate::validate(@_, {
-        forward_to => {
-            type => Params::Validate::CODEREF,
+        log_to => {
+            type => Params::Validate::SCALAR,
+            regex => qr/^STD(?:ERR|OUT)\z/,
+            default => 'STDOUT',
         },
-        arguments => {
-            type => Params::Validate::ARRAYREF,
-            default => undef,
+        dump => {
+            type => Params::Validate::SCALAR,
+            regex => qr/^[01]\z/,
+            default => 0,
         },
     });
 
     return \%options;
-}
-
-sub _raise_error {
-    my $self = shift;
-    $ERRSTR = shift;
-    return undef;
 }
 
 1;

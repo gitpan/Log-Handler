@@ -27,6 +27,7 @@ my $build = Module::Build->new(
         'Time::HiRes'        => 0,
         'Sys::Hostname'      => 0,
         'UNIVERSAL::require' => 0,
+        'Data::Dumper'       => 0,
     },
 );
 $build->create_build_script;

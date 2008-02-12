@@ -223,7 +223,7 @@ package Log::Handler::Output::DBI;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_02';
+our $VERSION = '0.00_03';
 our $ERRSTR  = '';
 
 use Carp;

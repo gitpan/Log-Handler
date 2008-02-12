@@ -1,3 +1,7 @@
+0.38_10 Released at 2008-02-13.
+        - Added Log::Handler::Output::Screen.
+        - Added option "priority" to the handler.
+
 0.38_09 Released at 2008-02-09.
         - Fixed t/100-config.t. Config::General was loaded, but it's not
           in the prereq list. Kicked GLOBREF from the validate list for

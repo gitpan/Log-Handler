@@ -1,6 +1,6 @@
 ---
 name: Log-Handler
-version: 0.38_09
+version: 0.38_10
 author:
   - Jonny Schulz
 abstract: Log messages to one or more outputs.
@@ -9,6 +9,7 @@ resources:
   license: http://dev.perl.org/licenses/
 requires:
   Carp: 0
+  Data::Dumper: 0
   Devel::Backtrace: 0.05
   Fcntl: 0
   File::Spec: 0
@@ -27,7 +28,7 @@ recommends:
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.38_09
+    version: 0.38_10
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
     version: 0.00_05
@@ -36,16 +37,19 @@ provides:
     version: 0.00_06
   Log::Handler::Output::DBI:
     file: lib/Log/Handler/Output/DBI.pm
-    version: 0.00_02
+    version: 0.00_03
   Log::Handler::Output::Email:
     file: lib/Log/Handler/Output/Email.pm
-    version: 0.00_03
+    version: 0.00_04
   Log::Handler::Output::File:
     file: lib/Log/Handler/Output/File.pm
-    version: 0.00_03
+    version: 0.00_04
   Log::Handler::Output::Forward:
     file: lib/Log/Handler/Output/Forward.pm
-    version: 0.00_03
+    version: 0.00_04
+  Log::Handler::Output::Screen:
+    file: lib/Log/Handler/Output/Screen.pm
+    version: 0.00_01
   Log::Handler::Plugin::Config::General:
     file: lib/Log/Handler/Plugin/Config/General.pm
     version: 0.00_03

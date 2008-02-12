@@ -180,7 +180,7 @@ package Log::Handler::Output::Email;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_03';
+our $VERSION = '0.00_04';
 our $ERRSTR  = '';
 our $TEST    =  0; # is needed to disable flush() for tests
 

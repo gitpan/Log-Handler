@@ -14,6 +14,25 @@ Log::Handler::Plugin::Config::General - Config loader for Config::General.
 
 Expect the config file name and returns the config as a reference.
 
+=head1 CONFIG STYLE
+
+    <file>
+        <mylog>
+            fileopen = 1
+            reopen = 1
+            permissions = 0640
+            maxlevel = info
+            mode = append
+            timeformat = %b %d %H:%M:%S
+            trace = 0
+            debug_mode = 2
+            filename = example.log
+            minlevel = warn
+            prefix = '%T %H[%P] [%L] %S: '
+            newline = 1
+        </mylog>
+    </file>
+
 =head1 PREREQUISITES
     
     Config::General

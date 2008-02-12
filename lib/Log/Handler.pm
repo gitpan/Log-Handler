@@ -461,6 +461,29 @@ then it would log
 
 Traces will be appended after the complete message.
 
+=head2 priority
+
+With this option you can set the priority of your output objects. This means that messages
+will be logged at first to the outputs with a higher priority. If this option is not set
+then the default priority begins with 10 and will be increased +1 with each output. Example...
+
+We add a output with no priority
+
+    $log->add(file => { filename => 'file.log' });
+
+This output gets the priority of 10. Now we add another output
+
+    $log->add(file => { filename => 'file.log' });
+
+This output gets the priority of 11... and so on.
+
+Messages would be logged at first to priority 10 and then 11. Now you can add another output
+and set the priority to 1.
+
+    $log->add(screen => { dump => 1, priority => 1 });
+
+Messages would be logged now at first to the screen.
+
 =head2 die_on_errors
 
 Set C<die_on_errors> to 0 if you don't want that the handler croaks if normal operations fail.
@@ -811,6 +834,7 @@ Start it or write me a mail if you have questions.
 Prerequisites for all modules:
 
     Carp
+    Data::Dumper
     Devel::Backtrace
     Fcntl
     Net::SMTP
@@ -896,8 +920,9 @@ package Log::Handler;
 
 use strict;
 use warnings;
-our $VERSION = '0.38_09';
-our $ERRSTR  = '';
+our $VERSION  = '0.38_10';
+our $ERRSTR   = '';
+our $PRIORITY = 10;
 
 use Carp;
 use POSIX;
@@ -941,6 +966,7 @@ my %AVAILABLE_OUTPUTS = (
     email   => 'Log::Handler::Output::Email',
     forward => 'Log::Handler::Output::Forward',
     dbi     => 'Log::Handler::Output::DBI',
+    screen  => 'Log::Handler::Output::Screen',
 # planing
 #    socket  => 'Log::Handler::Output::Socket',
 );
@@ -1059,7 +1085,11 @@ sub new {
                     code => sub { $Log::Handler::Output::MESSAGE } },
     );
 
-    my $self = bless { pattern => \%pattern }, $class;
+    my $self = bless {
+        pattern    => \%pattern,
+        priorities => { },
+        levels     => { },
+    }, $class;
 
     if (@_) {
         # for backward compatibilities
@@ -1070,55 +1100,22 @@ sub new {
 }
 
 sub add {
-    my $self    = shift;
-    my $type    = shift;
-    my $args    = @_ > 1 ? {@_} : shift;
-    my $package = ref($type);
-    my ($output, $options);
+    my $self   = shift;
+    my $output = $self->_new_output(@_);
+    my $levels = $self->{levels};
 
-    if ( length($package) ) {
-        $output  = $type;
-        $options = $args;
-    } else {
-        # shift the handler options from $args. the rest in $args
-        # is for the output module
-        $options = $self->_shift_options($args);
-
-        if (exists $AVAILABLE_OUTPUTS{$type}) {
-            $package = $AVAILABLE_OUTPUTS{$type};
-        } elsif ($type =~ /::/) {
-            $package = $type;
+    foreach my $level (keys %{$output->{levels}}) {
+        if ($levels->{$level}) {
+            my @old_order = @{$levels->{$level}};
+            push @old_order, $output;
+            $levels->{$level} = [
+                map  { $_->[0] }
+                sort { $a->[1] <=> $b->[1] }
+                map  { [ $_, $_->{priority} ] } @old_order
+            ];
         } else {
-            $package = 'Log::Handler::Output::' . ucfirst($type);
+            push @{$levels->{$level}}, $output;
         }
-
-        if (!$LOADED_MODULES{$package}) {
-            $package->require;
-            $LOADED_MODULES{$package} = 1;
-        }
-
-        # create a new output object and pass $args
-        $output = $package->new($args) or Carp::croak $package->errstr;
-    }
-
-    my $is_fatal = ();
-    $options = $self->_validate_options($options);
-    $options->{output} = $output;
-    my $new_output = Log::Handler::Output->new($options);
-
-    foreach my $level_num ($options->{minlevel} .. $options->{maxlevel}) {
-        my $level = $LEVEL_BY_NUM[ $level_num ];
-        push @{$self->{levels}->{$level}}, $new_output;
-        next if $is_fatal || $level_num > 3;
-        $is_fatal = 1;
-    }
-
-    if ($is_fatal) {
-        push @{$self->{levels}->{FATAL}}, $new_output;
-    }
-
-    if ($options->{trace}) {
-        push @{$self->{levels}->{TRACE}}, $new_output;
     }
 }
 
@@ -1175,6 +1172,7 @@ sub _shift_options {
         minlevel
         maxlevel
         die_on_errors
+        priority
         debug_trace
         debug_mode
         debug_skip
@@ -1189,9 +1187,47 @@ sub _shift_options {
     return \%output_opts;
 }
 
-sub _validate_options {
+sub _new_output {
     my $self    = shift;
-    my $pattern = $self->{pattern};
+    my $type    = shift;
+    my $args    = @_ > 1 ? {@_} : shift;
+    my $package = ref($type);
+    my ($output, $options);
+
+    if ( length($package) ) {
+        $output  = $type;
+        $options = $args;
+    } else {
+        # shift the handler options from $args. the rest in $args
+        # is for the output module
+        $options = $self->_shift_options($args);
+
+        if (exists $AVAILABLE_OUTPUTS{$type}) {
+            $package = $AVAILABLE_OUTPUTS{$type};
+        } elsif ($type =~ /::/) {
+            $package = $type;
+        } else {
+            $package = 'Log::Handler::Output::' . ucfirst($type);
+        }
+
+        if (!$LOADED_MODULES{$package}) {
+            $package->require;
+            $LOADED_MODULES{$package} = 1;
+        }
+
+        # create a new output object and pass $args
+        $output = $package->new($args) or Carp::croak $package->errstr;
+    }
+
+    $options = $self->_validate_options($options);
+    $options->{output} = $output;
+    return Log::Handler::Output->new($options);
+}
+
+sub _validate_options {
+    my $self     = shift;
+    my $pattern  = $self->{pattern};
+    my $is_fatal = ();
 
     my %options = Params::Validate::validate(@_, {
         timeformat => {
@@ -1234,6 +1270,11 @@ sub _validate_options {
             regex => BOOL_RX,
             default => 1,
         },
+        priority => {
+            type => Params::Validate::SCALAR,
+            regex => qr/^\d+\z/,
+            default => undef,
+        },
         debug_trace => {
             type => Params::Validate::SCALAR,
             regex => BOOL_RX,
@@ -1264,10 +1305,25 @@ sub _validate_options {
         },
     });
 
+    if (!defined $options{priority}) {
+        $options{priority} = $PRIORITY++;
+    }
+
     foreach my $opt (qw/minlevel maxlevel/) {
         next if $options{$opt} =~ /^\d\z/;
         my $level = uc($options{$opt});
         $options{$opt} = $LEVEL_BY_STRING{$level};
+    }
+
+    foreach my $level_num ($options{minlevel} .. $options{maxlevel}) {
+        my $level = $LEVEL_BY_NUM[ $level_num ];
+        $options{levels}{$level} = 1;
+        next if $is_fatal || $level_num > 3;
+        $options{levels}{FATAL} = 1;
+    }
+
+    if ($options{trace}) {
+        $options{levels}{TRACE} = 1;
     }
 
     if ($options{prefix}) {

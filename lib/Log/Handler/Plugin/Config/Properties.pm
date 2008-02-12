@@ -16,6 +16,21 @@ Expect the config file name and returns the config as a reference.
 
 The configuration will be splitted by dot.
 
+=head1 CONFIG STYLE
+
+    file.mylog.reopen = 1
+    file.mylog.fileopen = 1
+    file.mylog.maxlevel = info
+    file.mylog.permissions = 0640
+    file.mylog.mode = append
+    file.mylog.timeformat = %b %d %H:%M:%S
+    file.mylog.trace = 0
+    file.mylog.debug_mode = 2
+    file.mylog.minlevel = warn
+    file.mylog.filename = example.log
+    file.mylog.newline = 1
+    file.mylog.prefix = '%T %H[%P] [%L] %S: '
+
 =head1 PREREQUISITES
     
     Config::Properties

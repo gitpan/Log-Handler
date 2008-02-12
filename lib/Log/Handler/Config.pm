@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler::Config - A simple config loader.
+Log::Handler::Config - The main config loader.
 
 =head1 SYNOPSIS
 

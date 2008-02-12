@@ -14,6 +14,24 @@ Log::Handler::Plugin::Config::YAML - Config loader for YAML.
 
 Expect the config file name and returns the config as a reference.
 
+=head1 CONFIG STYLE
+
+    ---
+    file:
+      mylog:
+        debug_mode: 2
+        filename: example.log
+        fileopen: 1
+        maxlevel: info
+        minlevel: warn
+        mode: append
+        newline: 1
+        permissions: 0640
+        prefix: '%T %H[%P] [%L] %S: '
+        reopen: 1
+        timeformat: '%b %d %H:%M:%S'
+        trace: 0
+
 =head1 PREREQUISITES
     
     YAML

@@ -426,6 +426,29 @@ OUTPUT OPTIONS
 
     Traces will be appended after the complete message.
 
+  priority
+    With this option you can set the priority of your output objects. This
+    means that messages will be logged at first to the outputs with a higher
+    priority. If this option is not set then the default priority begins
+    with 10 and will be increased +1 with each output. Example...
+
+    We add a output with no priority
+
+        $log->add(file => { filename => 'file.log' });
+
+    This output gets the priority of 10. Now we add another output
+
+        $log->add(file => { filename => 'file.log' });
+
+    This output gets the priority of 11... and so on.
+
+    Messages would be logged at first to priority 10 and then 11. Now you
+    can add another output and set the priority to 1.
+
+        $log->add(screen => { dump => 1, priority => 1 });
+
+    Messages would be logged now at first to the screen.
+
   die_on_errors
     Set "die_on_errors" to 0 if you don't want that the handler croaks if
     normal operations fail.
@@ -770,6 +793,7 @@ PREREQUISITES
     Prerequisites for all modules:
 
         Carp
+        Data::Dumper
         Devel::Backtrace
         Fcntl
         Net::SMTP
