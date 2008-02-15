@@ -37,7 +37,7 @@ package Log::Handler::Output;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_06';
+our $VERSION = '0.00_07';
 our $ERRSTR  = '';
 our $CALLER  =  2;
 our $MESSAGE = '';
@@ -72,7 +72,7 @@ sub log {
         }
     }
 
-    if ($self->{message_keys}) {
+    if ($self->{message_pattern}) {
         while ( my ($name, $code) = each %{$self->{pattern}} ) {
             if (ref($code)) {
                 $message->{$name} = &$code($self);

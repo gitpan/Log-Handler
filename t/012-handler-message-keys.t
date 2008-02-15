@@ -21,11 +21,11 @@ my $log = Log::Handler->new();
 
 $log->add(
     forward => {
-        forward_to     => \&check_struct,
-        maxlevel       => 'debug',
-        minlevel       => 'debug',
-        message_layout => '',
-        message_keys   => [ qw/%L %T %D %P %H %C %p %t/ ],
+        forward_to      => \&check_struct,
+        maxlevel        => 'debug',
+        minlevel        => 'debug',
+        message_layout  => '',
+        message_pattern => [ qw/%L %T %D %P %H %C %p %t/ ],
     }
 );
 

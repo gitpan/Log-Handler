@@ -28,10 +28,10 @@ informations that will be logged to one or more outputs.
 
 =head2 More than one output
 
-Since version 0.38_01 the method C<add()> is totaly new. With this method you can add output
-objects as much as you wish, each with its own level range and different other options.
-As example you can add a output object for the levels 0-4 (emergency-warning) and another
-for the levels 4-7 (warning-debug). Each output is handled as a own object.
+Since version 0.40 the method C<add()> is totaly new. With this method you can add outputs
+as much as you wish, each with its own level range and different other options. As example
+you can add a output for the levels 0-4 (emergency-warning) and another output for the
+levels 4-7 (warning-debug). Each output is handled as a own object.
 
 =head2 Log::Handler::Output
 
@@ -44,20 +44,20 @@ There are different output modules available:
     Log::Handler::Output::File
     Log::Handler::Output::Email
     Log::Handler::Output::Forward
+    Log::Handler::Output::Screen
 
-You can add the outputs on different ways. Take a look to the examples.
+You can add the outputs on different ways. Take a look to the further documentation.
 
 =head2 Message layout
 
 Placeholders are now available for the message layout in C<printf()> style. The old style of
 <--LEVEL--> is deprecated and you should use C<%L> instead. The layout can be defined
-with the option C<message_layout>. C<prefix> is deprecated. Take a look to the documentation
-of C<message_layout>.
+with the option C<message_layout>. C<prefix> is deprecated as well.
 
 =head2 Configuration file
 
 Now it's possible to load the configuration from a file. There are 3 configuration
-styles available over plugins:
+plugins available:
 
     Config::General
     Config::Properties
@@ -65,18 +65,35 @@ styles available over plugins:
 
 Take a look into the documentation for L<Log::Handler::Config>.
 
-=head2 Kicked methods
+=head2 New options
 
-The methods C<close()>, C<get_prefix()> and C<set_prefix()> are not available any more.
+    dateformat
+    priority
+    message_pattern
+    trace
+
+=head2 Changed options
+
+    prefix  is now  message_layout
+    debug   is now  debug_trace
 
 =head2 Kicked options
 
-C<rewrite_to_stderr>.
+    rewrite_to_stderr
 
-=head2 Option debug
+=head2 New methods
 
-This option is renamed to C<debug_trace>. The reason that it's better to keep free
-this name for the output modules.
+    add()           - to add new outputs
+    config()        - to load outputs from a configuration file
+    set_pattern()   - to create your own placeholder
+    fatal()         - merged levels: 0-2
+    is_fatal()      - to check if one of the level 0-2 is active
+
+=head2 Kicked methods
+
+    close()
+    get_prefix()
+    set_prefix()
 
 =head2 trace()
 
@@ -86,13 +103,17 @@ It's possible to disable this by set the option C<trace> to 0.
 =head2 Backward compatibilities
 
 As I re-designed the Log::Handler it was my wish to support the old style from version 0.38.
-The exception are that the option C<redirect_to_stderr> and the methods C<set_prefix()> and
-C<get_prefix()> doesn't exist any more. In all other cases you can use all things from 0.38.
+
+    my $log = Log::Handler->new(filename => 'file.log');
+
+That still running fine because the options are forwarded to the file output. The exceptions
+are that the option C<redirect_to_stderr> and the methods C<set_prefix()>, C<get_prefix()>
+and C<close()> doesn't exist any more. In all other cases you can use all things from 0.38.
 
 =head2 Further releases
 
 Extensions and changes are planed. I hope I have enough time to implement my ideas as soon
-as possible!
+as possible! Version 0.40 will be the next full release.
 
 =head1 LOG LEVELS
 
@@ -109,8 +130,6 @@ There are eigth levels available:
 
 C<debug> is the highest and C<emergency> is the lowest level.
 
-C<fatal>
-
 =head1 METHODS
 
 =head2 new()
@@ -123,13 +142,308 @@ Call C<new()> to create a new log handler object.
 
 Call C<add()> to add a new output object.
 
-The method excepts 2 option parts - the options for the handler itself and for the
-output module you want to use. The options for the handler is documented in the
-section OPTIONS of this documentation; the output modules got it's own documentation
+=head3 OPTIONS
+
+=over 4
+
+=item maxlevel and minlevel
+
+With these options it's possible to set the log levels for your program.
+
+Example:
+
+    maxlevel => 'notice'
+    minlevel => 'emergency'
+
+    # or
+
+    maxlevel => 'note'
+    minlevel => 'emerg'
+
+    # or
+
+    maxlevel => 5
+    minlevel => 0
+
+It's possible to set the log level as a string or as number. The default setting for
+C<maxlevel> is C<warning> and the default setting for C<minlevel> is C<emergency>.
+
+Example: If C<maxlevel> is set to C<warn> and C<minlevel> to C<emergency> then the
+levels C<warning>, C<error>, C<critical>, C<alert> and C<emergency> would be logged.
+
+You can set both to 8 or C<nothing> if you want to disable the logging.
+
+=item timeformat
+
+The C<timeformat> is used for the placeholder C<%T>. You can set C<timeformat> with a
+date and time format that will be converted by C<POSIX::strftime>. The default format
+is C<%b %d %H:%M:%S> and looks like
+
+    Feb 01 12:56:31
+
+As example the format "%Y/%m/%d %H:%M:%S" would looks like
+
+    2007/02/01 12:56:31
+
+=item dateformat
+
+The same as C<timeformat>. It's useful if you want to split the date and time:
+
+    $log->add(file => {
+        filename       => 'file.log',
+        dateformat     => '%Y-%m-%d',
+        timeformat     => '%H:%M:%S',
+        message_layout => '%D %T %L %m',
+    });
+
+    $log->error("an error here");
+
+Would log
+
+    2007-02-01 12:56:31 ERROR an error here
+
+This option is not used on default.
+
+=item newline
+
+This helpful option appends a newline to the output message if a newline not exist.
+
+    0 - disable (default)
+    1 - enable - appends a newline to the log message if not exist
+
+=item message_layout
+
+With this option you can define your own message layout with different placeholders
+in C<printf()> style. The available placeholders are:
+
+    %L   Log level
+    %T   Time or full timestamp (option timeformat)
+    %D   Date (option dateformat)
+    %P   PID
+    %H   Hostname
+    %N   Newline
+    %C   Caller - filename and line number
+    %p   Script - the program name
+    %t   Measurement - replaced with the time since the last call of the handler
+    %m   The message.
+
+The default message layout is set to C<%T [%L] %m>.
+
+As example the following code
+
+    $log->alert("foo bar");
+
+would log
+
+    Feb 01 12:56:31 [ALERT] foo bar
+
+If you set C<message_layout> to
+
+    message_layout => '%T foo %L bar %m %C'
+
+and call
+
+    $log->info("baz");
+
+then it would log
+
+    Feb 01 12:56:31 foo INFO bar baz (script.pl, line 40)
+
+Traces will be appended after the complete message.
+
+You can create your own placeholders with the method C<set_pattern()>.
+
+Placeholders are documented in the section L</PLACEHOLDER>.
+
+=item message_pattern
+
+This option is just useful if you want to forward messages with L<Log::Handler::Output::Forward>
+or insert the message with L<Log::Handler::Output::DBI> or dump messages to the screen with
+L<Log::Handler::Output::Screen>.
+
+Possible placeholders/names:
+
+    %L   level
+    %T   time
+    %D   date
+    %P   pid
+    %H   hostname
+    %N   newline
+    %C   caller
+    %p   progname
+    %t   mtime
+    %m   message
+
+The option expects a array reference with a list of placeholders:
+
+    message_pattern => [ qw/%T %L %H %m/ ]
+
+Or with names
+
+    message_pattern => [ qw/time level hostname message/ ]
+
+Here a full code example:
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(forward => {
+        forward_to      => \&my_func,
+        message_pattern => [ qw/%T %L %H %m/ ],
+        message_layout  => '',
+        maxlevel        => 'info',
+    });
+
+    $log->info('a forwarded message');
+
+    # now you can access it
+
+    sub my_func {
+        my $params = shift;
+        print "Timestamp: $params->{time}\n";
+        print "Level:     $params->{level}\n";
+        print "Hostname:  $params->{hostname}\n";
+        print "Message:   $params->{message}\n";
+    }
+
+=item priority
+
+With this option you can set the priority of your output objects. This means that messages
+will be logged at first to the outputs with a higher priority. If this option is not set
+then the default priority begins with 10 and will be increased +1 with each output. Example...
+
+We add a output with no priority
+
+    $log->add(file => { filename => 'file.log' });
+
+This output gets the priority of 10. Now we add another output
+
+    $log->add(file => { filename => 'file.log' });
+
+This output gets the priority of 11... and so on.
+
+Messages would be logged at first to priority 10 and then 11. Now you can add another output
+and set the priority to 1.
+
+    $log->add(screen => { dump => 1, priority => 1 });
+
+Messages would be logged now at first to the screen.
+
+=item die_on_errors
+
+Set C<die_on_errors> to 0 if you don't want that the handler croaks if normal operations fail.
+
+    0 - will not die on errors
+    1 - will die (e.g. croak) on errors
+
+The exception is that the handler croaks in any case if the call of C<new()> fails because
+on missing params or wrong settings.
+
+=item trace
+
+With this options it's possible to disable the tracing for a output. By default this
+option is set to 1 and tracing is enabled.
+
+=item debug_trace
+
+You can activate a simple debugger that writes C<caller()> informations for each log level
+that would logged. The debugger is logging all defined values except C<hints> and C<bitmask>.
+Set C<debug_trace> to 1 to activate the debugger. The debugger is set to 0 by default.
+
+=item debug_mode
+
+There are two debug modes: line(1) and block(2) mode. The default mode is 1.
+
+The block mode looks like this:
+
+    use strict;
+    use warnings;
+    use Log::Handler;
+
+    my $log = Log::Handler->new()
+
+    $log->add(file => {
+        filename    => '*STDOUT',
+        maxlevel    => 'debug',
+        debug_trace => 1,
+        debug_mode  => 1
+    });
+
+    sub test1 { $log->warn() }
+    sub test2 { &test1; }
+
+    &test2;
+
+Output:
+
+    Apr 26 12:54:11 [WARN] 
+       CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
+       CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
+       CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
+       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_write) hasargs(1)
+       CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1022) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
+
+The same code example but the debugger in block mode would looks like this:
+
+       debug_mode => 2
+
+Output:
+
+   Apr 26 12:52:17 [DEBUG] 
+      CALL(4):
+         package     main
+         filename    ./trace.pl
+         line        15
+         subroutine  main::test2
+         hasargs     0
+      CALL(3):
+         package     main
+         filename    ./trace.pl
+         line        13
+         subroutine  main::test1
+         hasargs     0
+      CALL(2):
+         package     main
+         filename    ./trace.pl
+         line        12
+         subroutine  Log::Handler::__ANON__
+         hasargs     1
+      CALL(1):
+         package     Log::Handler
+         filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
+         line        681
+         subroutine  Log::Handler::_write
+         hasargs     1
+      CALL(0):
+         package     Log::Handler
+         filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
+         line        990
+         subroutine  Devel::Backtrace::new
+         hasargs     1
+         wantarray   0
+
+=item debug_skip
+
+This option let skip the C<caller()> informations the count of C<debug_skip>.
+
+    debug_skip => 2
+
+    Apr 26 12:55:07 [DEBUG] 
+       CALL(2): package(main) filename(./trace.pl) line(16) subroutine(main::test2) hasargs(0)
+       CALL(1): package(main) filename(./trace.pl) line(14) subroutine(main::test1) hasargs(0)
+       CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
+
+=back
+
+=head3 How to use add()
+
+The method excepts 2 option parts; the options for the handler itself and for the
+output module you want to use - the output modules got it's own documentation
 for all options.
 
 Okay, now there are different ways to add a new output object to the handler. You can
-first create the output object and pass it with the handler options to C<add()>.
+create the output object yourself and pass it with the handler options to C<add()>.
 
 Example:
 
@@ -137,7 +451,7 @@ Example:
     use Log::Handler::Output::File;
 
     # the handler options - how to handle the output
-    my %output_options = (
+    my %handler_options = (
         timeformat      => '%Y/%m/%d %H:%M:%S',
         newline         => 1,
         message_layout  => '%T [%L] %S: ',
@@ -167,7 +481,7 @@ Example:
 
     # now we add the file object to the handler with the handler options
     my $log = Log::Handler->new();
-    $log->add( $file => \%output_options );
+    $log->add( $file => \%handler_options );
 
 But it can be simplier! You can merge all options and pass them to C<add()>
 in one step, you just need to tell the handler what do you want to add.
@@ -175,7 +489,7 @@ in one step, you just need to tell the handler what do you want to add.
     # merge the options
     my %all_options = (%output_options, %file_options);
 
-    # pass them all and say what you want to add -> a file!
+    # pass all options and say what you want to add -> a file!
     $log->add( file => \%all_options );
 
 The options will be splitted intern and you don't need to split it yourself,
@@ -264,10 +578,10 @@ are just shortcuts.
 
 =head2 fatal(), is_fatal()
 
-This are special methods that can be used for CRITICAL, ALERT and EMERGENCY messages.
+Fatal is a extra level that can be used for CRITICAL, ALERT and EMERGENCY messages.
 A lot of people like to use just DEBUG, INFO, WARN, ERROR and FATAL. For this reason
-I though to implement it. You just have to set C<minlevel> to C<critical>, C<alert>
-or C<emergency> to use it.
+I though to implement it. You just have to set minlevel to critical, alert or emergency
+to activate this level.
 
 =head2 trace()
 
@@ -281,6 +595,8 @@ option C<debug_trace>. Example:
     $log->add(file => { filename => '*STDOUT' });
     $log->trace("caller informations:");
 
+Output:
+
     Jun 05 21:20:32 [TRACE] caller informations
        CALL(2): package(main) filename(./log-handler-test.pl) line(22) subroutine(Log::Handler::trace) hasargs(1)
        CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_write) hasargs(1)
@@ -290,8 +606,7 @@ Maybe you like to forward C<caller()> informations to all outputs if an unexpect
 
     $SIG{__DIE__} = sub { $log->trace(@_) };
 
-Take a look at the examples of the options C<debug_trace>, C<debug_mode> and C<debug_skip>
-for more informations.
+If you want to disable tracing to a output you can use the option C<trace> for it.
 
 =head2 errstr()
 
@@ -316,6 +631,7 @@ Or
 
     unless ( $log->info("Hello World!") ) {
         $error_string = $log->errstr;
+        # do something with $error_string
     }
 
 The exception is that the handler croaks in any case if the call of C<new()> or C<add()>
@@ -323,15 +639,42 @@ fails because on missing or wrong settings!
 
 =head2 config()
 
-With this method it's possible to load your log configuration from a file.
+With this method it's possible to load your output configuration from a file.
 
     $log->config(filename => 'file.conf');
+
+Or
+
+    $log->config(config => {
+        file => {
+            default => {
+                newline       => 1,
+                debug_mode    => 2,
+                die_on_errors => 0
+            },
+            error_log => {
+                filename      => 'error.log',
+                maxlevel      => 'warn',
+                minlevel      => 'emerg',
+                priority      => 1
+            },
+            common_log => {
+                filename      => 'common.log',
+                maxlevel      => 'info',
+                minlevel      => 'emerg',
+                priority      => 2
+            },
+        }
+    });
+
+The default section - I call it section here - can be used to define default parameters
+for all file outputs.
 
 Take a look into the documentation of L<Log::Handler::Config> for more informations.
 
 =head2 set_pattern()
 
-With this option you can set your own placeholder. Example:
+With this option you can set your own placeholders. Example:
 
     $log->set_pattern('%X', 'name', sub { });
 
@@ -341,302 +684,10 @@ With this option you can set your own placeholder. Example:
 
 Then you can use this pattern:
 
-    $log->add(file => {
-        filename       => 'file.log',
-        message_layout => '%X %m',
-        message_keys   => [ qw/%X/ ],
-    });
-
-=head1 OUTPUT OPTIONS
-
-=head2 maxlevel and minlevel
-
-With these options it's possible to set the log levels for your program.
-
-Example:
-
-    maxlevel => 'notice'
-    minlevel => 'emergency'
-
-    # or
-
-    maxlevel => 'note'
-    minlevel => 'emergency'
-
-    # or
-
-    maxlevel => 5
-    minlevel => 0
-
-It's possible to set the log level as a string or as number. The default setting for
-C<maxlevel> is C<warning> and the default setting for C<minlevel> is C<emergency>.
-
-Example: If C<maxlevel> is set to C<warn> and C<minlevel> to C<emergency> then the
-levels C<warning>, C<error>, C<critical>, C<alert> and C<emergency> would be logged.
-
-You can set both to 8 or C<nothing> if you want to deactivate the logging.
-
-=head2 timeformat
-
-The C<timeformat> is used for the placeholder C<%T>. You can set C<timeformat> with a
-date and time format that will be coverted by C<POSIX::strftime>. The default format
-is C<%b %d %H:%M:%S> and looks like
-
-    Feb 01 12:56:31
-
-As example the format "%Y/%m/%d %H:%M:%S" would looks like
-
-    2007/02/01 12:56:31
-
-=head2 dateformat
-
-The same as C<timeformat>. It's useful if you want to split the date and time and
-forward it:
-
     $log->add(forward => {
-        forward_to => \&my_func,
-        dateformat => '%Y-%m-%d',
-        timeformat => '%H:%M:%S',
-        message_keys => [ qw/%D %T %L/ ],
+        filename        => 'file.log',
+        message_layout  => '%X %m',
     });
-
-    sub my_func {
-        my $m = shift;
-        print "$m->{date} $m->{time} $m->{level} $m->{message}\n";
-    }
-
-    $log->error("an error here");
-
-Would print
-
-    2007-02-01 12:56:31 ERROR an error here
-
-The default of C<dateformat> is C<%b %d %Y>.
-
-=head2 newline
-
-This helpful option appends a newline to the log message if it not exist.
-
-    0 - inactive (default)
-    1 - active - appends a newline to the log message if not exist
-
-=head2 message_layout
-
-It's possible to define a message layout with different placeholders for this option.
-
-The available placeholders are:
-
-    %L   Log level
-    %T   Time or full timestamp (option timeformat)
-    %D   Date (option dateformat)
-    %P   PID
-    %H   Hostname
-    %N   Newline
-    %C   Caller - filename and line number
-    %p   Script - the program name
-    %t   Measurement - replaced with the time since the last call of the handler
-    %m   The message.
-
-The default message layout is set to C<%T [%L] %m>.
-
-As example the following code
-
-    $log->alert("foo bar");
-
-would log
-
-    Feb 01 12:56:31 [ALERT] foo bar
-
-If you set C<message_layout> to
-
-    message_layout => '%T foo %L bar %m %C'
-
-and call
-
-    $log->info("baz");
-
-then it would log
-
-    Feb 01 12:56:31 foo INFO bar baz (script.pl, line 40)
-
-Traces will be appended after the complete message.
-
-=head2 priority
-
-With this option you can set the priority of your output objects. This means that messages
-will be logged at first to the outputs with a higher priority. If this option is not set
-then the default priority begins with 10 and will be increased +1 with each output. Example...
-
-We add a output with no priority
-
-    $log->add(file => { filename => 'file.log' });
-
-This output gets the priority of 10. Now we add another output
-
-    $log->add(file => { filename => 'file.log' });
-
-This output gets the priority of 11... and so on.
-
-Messages would be logged at first to priority 10 and then 11. Now you can add another output
-and set the priority to 1.
-
-    $log->add(screen => { dump => 1, priority => 1 });
-
-Messages would be logged now at first to the screen.
-
-=head2 die_on_errors
-
-Set C<die_on_errors> to 0 if you don't want that the handler croaks if normal operations fail.
-
-    0 - will not die on errors
-    1 - will die (e.g. croak) on errors
-
-The exception is that the handler croaks in any case if the call of C<new()> fails because
-on missing params or wrong settings.
-
-=head2 message_keys
-
-This option is just useful if you want to forward messages with L<Log::Handler::Output::Forward>.
-
-It expects a array reference with a list of placeholders or the key names:
-
-    message_keys => [ qw/%T %L %H %m/ ]
-
-    # or
-
-    message_keys => [ qw/time level hostname message/ ]
-
-Then a hash is builded and the placeholders are replaced with real names as hash keys:
-
-    %L   level
-    %T   time
-    %D   date
-    %P   pid
-    %H   hostname
-    %N   newline
-    %C   caller
-    %p   progname
-    %t   mtime
-    %m   message
-
-The hash will be passed as a reference to the forwarders. Here a code example:
-
-    use Log::Handler;
-
-    my $log = Log::Handler->new();
-
-    $log->add(forward => {
-        forward_to     => [ \&my_func ],
-        message_keys   => [ qw/%T %L %H %m/ ],
-        message_layout => '',
-        maxlevel       => 'info',
-    });
-
-    $log->info('a forwarded message');
-
-    # now the message is passed as a hash reference to my_func()
-
-    sub my_func {
-        my $params = shift;
-        print "Timestamp: $params->{timestamp}\n";
-        print "Level:     $params->{level}\n";
-        print "Hostname:  $params->{hostname}\n";
-        print "Message:   $params->{message}\n";
-    }
-
-=head2 trace
-
-With this options it's possible to disable the tracing for a output. By default this
-option is set to 1 and tracing is enabled.
-
-=head2 debug_trace
-
-You can activate a simple debugger that writes C<caller()> informations for each log level
-that would logged. The debugger is logging all defined values except C<hints> and C<bitmask>.
-Set C<debug_trace> to 1 to activate the debugger. The debugger is set to 0 by default.
-
-=head2 debug_mode
-
-There are two debug modes: line(1) and block(2) mode. The default mode is 1.
-
-The block mode looks like this:
-
-    use strict;
-    use warnings;
-    use Log::Handler;
-
-    my $log = Log::Handler->new()
-
-    $log->add(file => {
-        filename    => '*STDOUT',
-        maxlevel    => 'debug',
-        debug_trace => 1,
-        debug_mode  => 1
-    });
-
-    sub test1 { $log->warn() }
-    sub test2 { &test1; }
-
-    &test2;
-
-Output:
-
-    Apr 26 12:54:11 [WARN] 
-       CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
-       CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
-       CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
-       CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(713) subroutine(Log::Handler::_write) hasargs(1)
-       CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1022) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
-
-The same code example but the debugger in block mode would looks like this:
-
-       debug_mode => 2
-
-Output:
-
-   Apr 26 12:52:17 [DEBUG] 
-      CALL(4):
-         package     main
-         filename    ./trace.pl
-         line        15
-         subroutine  main::test2
-         hasargs     0
-      CALL(3):
-         package     main
-         filename    ./trace.pl
-         line        13
-         subroutine  main::test1
-         hasargs     0
-      CALL(2):
-         package     main
-         filename    ./trace.pl
-         line        12
-         subroutine  Log::Handler::__ANON__
-         hasargs     1
-      CALL(1):
-         package     Log::Handler
-         filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
-         line        681
-         subroutine  Log::Handler::_write
-         hasargs     1
-      CALL(0):
-         package     Log::Handler
-         filename    /usr/local/share/perl/5.8.8/Log/Handler.pm
-         line        990
-         subroutine  Devel::Backtrace::new
-         hasargs     1
-         wantarray   0
-
-=head2 debug_skip
-
-This option let skip the C<caller()> informations the count of C<debug_skip>.
-
-    debug_skip => 2
-
-    Apr 26 12:55:07 [DEBUG] 
-       CALL(2): package(main) filename(./trace.pl) line(16) subroutine(main::test2) hasargs(0)
-       CALL(1): package(main) filename(./trace.pl) line(14) subroutine(main::test1) hasargs(0)
-       CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
 
 =head1 EXAMPLES
 
@@ -739,10 +790,10 @@ Would log
     my $log = Log::Handler->new();
 
     $log->add(forward => {
-        forward_to     => \&my_func,
-        message_keys   => [ qw/%L %T %P %H %C %p %t/ ],
-        message_layout => '',
-        maxlevel       => 'info',
+        forward_to      => \&my_func,
+        message_pattern => [ qw/%L %T %P %H %C %p %t/ ],
+        message_layout  => '',
+        maxlevel        => 'info',
     });
 
     $log->info('Hello World!');
@@ -920,7 +971,7 @@ package Log::Handler;
 
 use strict;
 use warnings;
-our $VERSION  = '0.38_10';
+our $VERSION  = '0.38_11';
 our $ERRSTR   = '';
 our $PRIORITY = 10;
 
@@ -1167,7 +1218,7 @@ sub _shift_options {
         timeformat
         prefix
         message_layout
-        message_keys
+        message_pattern
         newline
         minlevel
         maxlevel
@@ -1246,8 +1297,8 @@ sub _validate_options {
             type => Params::Validate::SCALAR,
             default => '%T [%L] %m',
         },
-        message_keys => {
-            type => Params::Validate::SCALAR,
+        message_pattern => {
+            type => Params::Validate::SCALAR | Params::Validate::ARRAYREF,
             optional => 1,
         },
         newline => {
@@ -1295,10 +1346,6 @@ sub _validate_options {
             regex => BOOL_RX,
             default => 1,
         },
-        message_keys => {
-            type => Params::Validate::ARRAYREF,
-            default => '',
-        },
         placeholder => {
             type => Params::Validate::HASHREF,
             default => '',
@@ -1340,8 +1387,12 @@ sub _validate_options {
         }
     }
 
-    if ($options{message_keys}) {
-        foreach (@{$options{message_keys}}) {
+    if ($options{message_pattern}) {
+        my @pattern = ();
+        if (!ref($options{message_pattern})) {
+            $options{message_pattern} = [ split /\s+/, $options{message_pattern} ];
+        }
+        foreach (@{$options{message_pattern}}) {
             if ( !exists $pattern->{$_} ) {
                 croak "placeholder '$_' does not exists";
             }

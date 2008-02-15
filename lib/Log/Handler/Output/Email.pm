@@ -32,8 +32,68 @@ Net::SMTP is from Graham Barr and it does it's job very well.
 
 Call C<new()> to create a new Log::Handler::Output::Email object.
 
-The C<new()> method expects all options. Take a look to the OPTIONS
-section for more informations.
+=head3 OPTIONS
+
+=over 4
+
+=item host
+
+With this option you has to define the SMTP host to connect to.
+
+    host => 'mx.host.com'
+
+    # or
+
+    host => [ 'mx.host.example', 'mx.host-backup.example' ]
+
+=item hello
+
+Identify yourself with a HELO. The default is set to C<EHLO BELO>.
+
+=item timeout
+
+With this option you can set the maximum time in seconds to wait for a response
+from the SMTP server. The default is set to 120 seconds.
+
+=item from
+
+The sender address (MAIL FROM).
+
+=item to
+
+The receipient address (RCPT TO).
+
+=item subject
+
+The subject of the mail.
+
+If no subject is set then the first 100 character of the message is used.
+
+=item buffer and interval
+
+Both options exists only for security. The thing is that it would be very bad if
+something wents wrong in your program and hundreds of mails would be send. For this
+reason you can set a buffer and a interval to take care.
+
+With the buffer you can set the maximum size of the buffer in lines. If you set
+
+    buffer => 10
+
+then 10 messages would be buffered.
+
+With the interval you can set the interval in seconds to flush the buffer. "flush"
+means to send the complete buffer as one email.
+
+Note that if the buffer is full and the interval is not expired then all further
+lines get lost - as a matter of course - because we don't want to blow our memory
+away. To flush the buffer every time if it's full you can set the interval to 0.
+
+=item debug
+
+With this option it's possible to enable debugging. The informations can be
+intercepted with $SIG{__WARN__}.
+
+=back
 
 =head2 log()
 
@@ -58,65 +118,6 @@ This function returns the last error message.
 =head1 DESTROY
 
 C<DESTROY> is defined and called C<flush()>.
-
-=head1 OPTIONS
-
-=head2 host
-
-With this option you has to define the SMTP host to connect to.
-
-    host => 'mx.host.com'
-
-    # or
-
-    host => [ 'mx.host.example', 'mx.host-backup.example' ]
-
-=head2 hello
-
-Identify yourself with a HELO. The default is set to C<EHLO BELO>.
-
-=head2 timeout
-
-With this option you can set the maximum time in seconds to wait for a response
-from the SMTP server. The default is set to 120 seconds.
-
-=head2 from
-
-The sender address (MAIL FROM).
-
-=head2 to
-
-The receipient address (RCPT TO).
-
-=head2 subject
-
-The subject of the mail.
-
-If no subject is set then the first 100 character of the message is used.
-
-=head2 buffer and interval
-
-Both options exists only for security. The thing is that it would be very bad if
-something wents wrong in your program and hundreds of mails would be send. For this
-reason you can set a buffer and a interval to take care.
-
-With the buffer you can set the maximum size of the buffer in lines. If you set
-
-    buffer => 10
-
-then 10 messages would be buffered.
-
-With the interval you can set the interval in seconds to flush the buffer. "flush"
-means to send the complete buffer as one email.
-
-Note that if the buffer is full and the interval is not expired then all further
-lines get lost - as a matter of course - because we don't want to blow our memory
-away. To flush the buffer every time if it's full you can set the interval to 0.
-
-=head2 debug
-
-With this option it's possible to enable debugging. The informations can be
-intercepted with $SIG{__WARN__}.
 
 =head1 PREREQUISITES
 
@@ -180,7 +181,7 @@ package Log::Handler::Output::Email;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_04';
+our $VERSION = '0.00_05';
 our $ERRSTR  = '';
 our $TEST    =  0; # is needed to disable flush() for tests
 

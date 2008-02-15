@@ -5,12 +5,24 @@ Log::Handler::Config - The main config loader.
 =head1 SYNOPSIS
 
     use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->config(
+        filename => 'file.conf',
+        plugin   => 'YAML',
+        section  => 'section-name',
+    );
+
+Or
+
+    use Log::Handler;
     use Log::Handler::Config;
 
     my $conf = Log::Handler::Config->config(
         filename => 'file.conf',
         plugin   => 'YAML',
-        section  => 'Log::Handler',
+        section  => 'section-name',
     );
 
     my $log = Log::Handler->new();
@@ -18,18 +30,6 @@ Log::Handler::Config - The main config loader.
     while ( my ($type, $config) = each %$conf ) {
         $log->add($type => $config);
     }
-
-    # or
-
-    use Log::Handler;
-
-    my $log = Log::Handler->new();
-
-    $log->config(
-        filename => 'file.conf',
-        plugin   => 'YAML',
-        section  => 'Log::Handler',
-    );
 
 =head1 DESCRIPTION
 
@@ -41,6 +41,97 @@ This module makes it possible to load the configuration from a file.
 
 With this method it's possible to load a configuration for your outputs. Note that
 a special structure is needed to load the configuration successfully.
+
+=head3 OPTIONS
+
+=over 4
+
+=item filename
+
+The configuration file.
+
+=item plugin
+
+With this option you can set the plugin you want to use. There are 3 plugins
+available at the moment:
+
+    Config::General
+    Config::Properties
+    YAML
+
+If the option is not set then the file extension is used to determine the
+configuration style:
+
+    Config::General     -   cfg, conf 
+    Config::Properties  -   props, jcfg, jconf
+    YAML                -   yml, yaml
+
+Examples:
+
+    # use file.conf and YAML
+
+    $log->config(
+        filename => 'file.conf',
+        plugin   => 'YAML'
+    );
+
+    # automatically use YAML
+
+    $log->config(
+        filename => 'file.yaml'
+    );
+
+    # automatically use Config::General
+
+    $log->config(
+        filename => 'file.conf'
+    );
+
+If the extension is not defined then C<Config::General> is used by default.
+
+=item section
+
+If your configuration is placed in file where you configure your complete program
+you can push your output configuration into a sub section:
+
+    <output>
+        <file>
+            <mylog>
+                filename = file.log
+                minlevel = 0
+                maxlevel = 7
+            </mylog>
+        </file>
+    </output>
+
+    <Another_Script_Config>
+        foo = bar
+    </Another_Script_Config>
+
+Now your configuration is placed in the C<output> section. You can load this section with
+
+    $log->config(
+        filename => 'file.conf',
+        section  => 'output',
+    );
+
+    # or if you load the configuration yourself to $config
+
+    $log->config(
+        config  => $config,
+        section => 'output',
+    );
+
+    # or just
+
+    $log->config( config => $config->{output} );
+
+=item config
+
+With this option you can pass a configuration that you loaded already but it must
+have the correct hash structure! Take a look to the examples!
+
+=back
 
 =head3 Config structure
 
@@ -87,9 +178,7 @@ If your configuration contains a C<default> section then this parameters are use
 for all other sections. Example:
 
     my %config = (
-
         # the configuration for a file
-
         file => {
             default => {
                 mode     => 'append',
@@ -110,97 +199,15 @@ for all other sections. Example:
                 minlevel => 'debug',
                 mode     => 'trunc',
             },
+        },
+        # the configuration for dbi
+        dbi => {
+            ...
         }
+    );
 
 The option C<mode> is set to C<append> for the log file C<file1.log> and C<file2.log>.
-For C<file3.log> it's overwritten and set to C<trunc>.
-
-=head1 OPTIONS
-
-=head2 filename
-
-The configuration file.
-
-=head2 plugin
-
-With this option you can set the plugin you want to use. There are 3 plugins
-available at the moment:
-
-    Config::General
-    Config::Properties
-    YAML
-
-If the option is not set then the file extension is used to determine the
-configuration style:
-
-    Config::General     -   cfg, conf 
-    Config::Properties  -   props, jcfg, jconf
-    YAML                -   yml, yaml
-
-Examples:
-
-    # use file.conf and YAML
-
-    $log->config(
-        filename => 'file.conf',
-        plugin   => 'YAML'
-    );
-
-    # automatically use YAML
-
-    $log->config(
-        filename => 'file.yaml'
-    );
-
-    # automatically use Config::General
-
-    $log->config(
-        filename => 'file.conf'
-    );
-
-If the extension is not defined then C<Config::General> is used by default.
-
-=head2 section
-
-If your configuration is placed in file where you configure your complete program
-you can push your output configuration into a sub section:
-
-    <output>
-        <file>
-            <mylog>
-                filename = file.log
-                minlevel = 0
-                maxlevel = 7
-            </mylog>
-        </file>
-    </output>
-
-    <Another_Script_Config>
-        foo = bar
-    </Another_Script_Config>
-
-Now your configuration is placed in the C<output> section. You can load this section with
-
-    $log->config(
-        filename => 'file.conf',
-        section  => 'output',
-    );
-
-    # or if you load the configuration yourself
-
-    $log->config(
-        config  => $config,
-        section => 'output',
-    );
-
-    # or just
-
-    $log->config( config => $config->{output} );
-
-=head2 config
-
-With this option you can pass a configuration that you loaded already but it must
-have the right structure! Take a look to the examples!
+The configuration for C<file3.log> will be set to C<trunc>.
 
 =head1 PLUGINS
 
@@ -515,7 +522,7 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_05';
+our $VERSION = '0.00_06';
 
 use Carp;
 use File::Spec;

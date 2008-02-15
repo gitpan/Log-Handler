@@ -41,7 +41,7 @@ Log::Handler::Output::DBI - Log messages to a database.
 
 =head1 DESCRIPTION
 
-This output module makes it possible to forward messages to sub routines.
+With this output you can insert messages to a database table.
 
 =head1 METHODS
 
@@ -49,39 +49,35 @@ This output module makes it possible to forward messages to sub routines.
 
 Call C<new()> to create a new Log::Handler::Output::DBI object.
 
-=head2 log()
+=head3 OPTIONS
 
-=head2 errstr()
+=over 4
 
-This function returns the last error message.
-
-=head1 OPTIONS
-
-=head2 database
+=item database
 
 Pass the database name.
 
-=head2 driver
+=item driver
 
 Pass the database driver.
 
-=head2 user
+=item user
 
 Pass the database user for the connect.
 
-=head2 password
+=item password
 
 Pass the users password.
 
-=head2 host
+=item host
 
 Pass the hostname where the database is running.
 
-=head2 port
+=item port
 
 Pass the port where the database is listened.
 
-=head2 table and columns
+=item table and columns
 
 With this options you can pass the table name for the insert and the columns.
 You can pass the columns as string or as array. Example:
@@ -95,19 +91,19 @@ You can pass the columns as string or as array. Example:
     # columns as array
     columns => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
 
-The statement would look like:
+The statement would created as follows
 
     insert into message (level, ctime, cdate, pid, hostname, caller, progname, mtime, message)
                  values (?,?,?,?,?,?,?,?,?)
 
-=head2 statement
+=item statement
 
-With this option you can pass your own statement instead with the options C<table> and C<columns>.
+With this option you can pass your own statement if you don't want to you the options C<table> and C<columns>.
 
     statement => 'insert into message (level, ctime, cdate, pid, hostname, caller, progname, mtime, message)'
                  .' values (?,?,?,?,?,?,?,?,?)'
 
-=head2 values
+=item values
 
 With this option you have to set the values for the insert.
 
@@ -118,7 +114,7 @@ With this option you have to set the values for the insert.
         values => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
 
 The placeholders are identical with the pattern names that you have to pass with
-the option C<message_keys>.
+the option C<message_pattern>.
 
     %L   level
     %T   time
@@ -131,16 +127,19 @@ the option C<message_keys>.
     %t   mtime
     %m   message
 
-Take a look to the patter documentation in L<Log::Handler>.
+Take a look to the documentation of L<Log::Handler> for all possible patterns.
 
-=head2 persistent and reconnect
+=item persistent and reconnect
 
 With this option you can enable or disable a persistent database connection and re-connect
 if the connection was lost.
 
+If you use persistent connections then a ping is send to the database before each insert.
+If the ping fails then a re-connect is executed.
+
 Both options are set to 1 on default.
 
-=head2 dbi_params
+=item dbi_params
 
 This option is useful if you want to pass arguments to L<DBI>. The default is set to
 
@@ -155,10 +154,18 @@ You can pass your own arguments - and overwrite it - with
 
     dbi_params => { PrintError => 1, AutoCommit => 0 }
 
-=head2 debug
+=item debug
 
 With this option it's possible to enable debugging. The informations can be
-intercepted with $SIG{__WARN__}, otherwise they will be printed to STDERR.
+intercepted with C<$SIG{__WARN__}>.
+
+=back
+
+=head2 log()
+
+=head2 errstr()
+
+This function returns the last error message.
 
 =head1 PREREQUISITES
 
@@ -223,7 +230,7 @@ package Log::Handler::Output::DBI;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_03';
+our $VERSION = '0.00_04';
 our $ERRSTR  = '';
 
 use Carp;

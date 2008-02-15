@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler::Output::Forward - Forward messages.
+Log::Handler::Output::Forward - Forward messages to routines.
 
 =head1 SYNOPSIS
 
@@ -23,27 +23,15 @@ This output module makes it possible to forward messages to sub routines.
 
 Call C<new()> to create a new Log::Handler::Output::Forward object.
 
-The C<new()> method expected the options for the forwarder.
+=head3 OPTIONS
 
-=head2 log()
+=over 4
 
-Call C<log()> if you want to forward messages to the subroutines.
+=item forward_to
 
-Example:
+This option excepts a code reference.
 
-    $forwarder->log('this message will be forwarded to all sub routines');
-
-=head2 errstr()
-
-This function returns the last error message.
-
-=head1 OPTIONS
-
-=head2 forward_to
-
-This option excepts a array reference with code references.
-
-=head2 arguments
+=item arguments
 
 With this option you can define arguments that will be passed to the sub routine.
 
@@ -59,6 +47,20 @@ This would call intern:
     Class::method(@arguments, $message);
 
 If this option is not set then the message will be passed as first argument.
+
+=back
+
+=head2 log()
+
+Call C<log()> if you want to forward messages to the subroutines.
+
+Example:
+
+    $forwarder->log('this message will be forwarded to all sub routines');
+
+=head2 errstr()
+
+This function returns the last error message.
 
 =head1 FORWARDED MESSAGE
 
@@ -129,7 +131,7 @@ package Log::Handler::Output::Forward;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_04';
+our $VERSION = '0.00_05';
 our $ERRSTR  = '';
 
 use Carp;

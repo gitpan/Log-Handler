@@ -28,11 +28,11 @@ $log->set_pattern('%Y', 'yname', sub { 'yvalue' });
 
 $log->add(
     forward => {
-        forward_to     => \&check_struct,
-        maxlevel       => 'debug',
-        minlevel       => 'debug',
-        message_layout => '%m',
-        message_keys   => [ qw/%X %Y/ ],
+        forward_to      => \&check_struct,
+        maxlevel        => 'debug',
+        minlevel        => 'debug',
+        message_layout  => '%m',
+        message_pattern => [ qw/%X %Y/ ],
     }
 );
 

@@ -29,25 +29,11 @@ Log messages to a file.
 
 Call C<new()> to create a new Log::Handler::Output::File object.
 
-The C<new()> method expected the options for the log file. Each option will
-be set to a default value if not set. If this method is called with no options
-then it creates an object to log to STDOUT with all default values.
+=head3 OPTIONS
 
-=head2 log()
+=over 4
 
-Call C<log()> if you want to log messages to the log file.
-
-Example:
-
-    $log->log('this message goes to the logfile');
-
-=head2 errstr()
-
-This function returns the last error message.
-
-=head1 OPTIONS
-
-=head2 filename
+=item filename
 
 With C<filename> you can set a file name as a string or as a array reference.
 If you set a array reference then the parts will be concat with C<catfile> from
@@ -63,10 +49,10 @@ Set a array reference:
     my $log = Log::Handler::Output::File->new(
 
         # foo/bar/baz.log
-        filename => [ 'foo', 'bar', 'baz.log' ]
+        filename => [ 'foo', 'bar', 'baz.log' ],
 
         # /foo/bar/baz.log
-        filename => [ '', 'foo', 'bar', 'baz.log' ]
+        filename => [ '', 'foo', 'bar', 'baz.log' ],
 
     );
 
@@ -107,7 +93,7 @@ and you have to control the handles yourself. The forced options are
 The reason is simple: if you set C<*STDOUT> as filename it would be very bad if it would
 be closed or locked.
 
-=head2 filelock
+=item filelock
 
 Maybe it's desirable to lock the log file by each write operation because a lot of processes
 write at the same time to the log file. You can set the option C<filelock> to 0 or 1.
@@ -115,7 +101,7 @@ write at the same time to the log file. You can set the option C<filelock> to 0 
     0 - no file lock
     1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each write operation (default)
 
-=head2 fileopen
+=item fileopen
 
 Open a log file transient or permanent.
 
@@ -123,14 +109,14 @@ Open a log file transient or permanent.
     1 - open the logfile if C<new()> called and try to reopen the
         file if C<reopen> is set to 1 and the inode of the file has changed (default)
 
-=head2 reopen
+=item reopen
 
 This option works only if option C<fileopen> is set to 1.
 
     0 - deactivated
     1 - try to reopen the log file if the inode changed (default)
 
-=head2 fileopen and reopen
+=item fileopen and reopen
 
 Please note that it's better to set C<reopen> and C<fileopen> to 0 on Windows
 because Windows unfortunately haven't the faintest idea of inodes.
@@ -147,7 +133,7 @@ To write your code independent you should control it:
 
 If you set C<fileopen> to 0 then it implies that C<reopen> has no importance.
 
-=head2 mode
+=item mode
 
 There are three possible modes to open a log file.
 
@@ -166,12 +152,12 @@ to use this option.
 
 Take a look to the documentation of C<sysopen()> to get more informations.
 
-=head2 autoflush
+=item autoflush
 
     0 - autoflush off
     1 - autoflush on (default)
 
-=head2 permissions
+=item permissions
 
 The option C<permissions> sets the permission of the file if it creates and must
 be set as a octal value. The permission need to be in octal and are modified
@@ -184,9 +170,23 @@ All other users got no access.
 
 Take a look to the documentation of C<sysopen()> to get more informations.
 
-=head2 utf8
+=item utf8
 
 If this option is set to 1 then UTF-8 will be set with C<binmode()> on the output filehandle.
+
+=back
+
+=head2 log()
+
+Call C<log()> if you want to log messages to the log file.
+
+Example:
+
+    $log->log('this message goes to the logfile');
+
+=head2 errstr()
+
+This function returns the last error message.
 
 =head1 PREREQUISITES
 
@@ -249,7 +249,7 @@ package Log::Handler::Output::File;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_04';
+our $VERSION = '0.00_05';
 our $ERRSTR  = '';
 
 use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );

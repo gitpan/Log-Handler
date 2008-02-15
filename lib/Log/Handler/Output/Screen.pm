@@ -23,7 +23,22 @@ This output module makes it possible to log messages to your screen.
 
 Call C<new()> to create a new Log::Handler::Output::Screen object.
 
-The C<new()> method expected the options for the output.
+=head3 OPTIONS
+
+=over 4
+
+=item log_to
+
+Where do you want to log? Possible is: STDOUT and STDERR.
+
+The default is STDOUT.
+
+=item dump
+
+Set this option to 1 if you want that the message will be dumped with
+C<Data::Dumper> to the screen.
+
+=back
 
 =head2 log()
 
@@ -37,20 +52,10 @@ Example:
 
 This function returns the last error message.
 
-=head1 OPTIONS
-
-=head2 log_to
-
-Where do you want to log? Possible is: STDOUT and STDERR.
-
-The default is STDOUT.
-
-=head2 dump
-
-
 =head1 PREREQUISITES
 
     Carp
+    Data::Dumper
     Params::Validate
 
 =head1 EXPORTS
@@ -111,7 +116,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Params::Validate;
-our $VERSION  = '0.00_01';
+our $VERSION  = '0.00_03';
 our $ERRSTR   = '';
 
 sub new {
@@ -149,7 +154,6 @@ sub errstr { $ERRSTR }
 
 sub _validate {
     my $class   = shift;
-    my $bool_rx = qr/^[10]\z/;
 
     my %options = Params::Validate::validate(@_, {
         log_to => {

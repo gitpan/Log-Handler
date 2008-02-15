@@ -1,3 +1,8 @@
+0.38_11 Released at 2008-02-15.
+        - Changed option message_keys to message_pattern.
+          I hope that was the last change of this name :/
+        - Fixed POD typos and improved the documentation.
+
 0.38_10 Released at 2008-02-13.
         - Added Log::Handler::Output::Screen.
         - Added option "priority" to the handler.
