@@ -1,7 +1,8 @@
 Build.PL
 ChangeLog
-examples/example.cfg
-examples/example.pl
+examples/example-1.cfg
+examples/example-1.pl
+examples/example-2.pl
 INSTALL
 lib/Log/Handler.pm
 lib/Log/Handler/Config.pm
@@ -23,7 +24,7 @@ t/001-pod.t
 t/002-pod-coverage.t
 t/010-handler.t
 t/011-handler-set-pattern.t
-t/012-handler-message-keys.t
+t/012-handler-message-pattern.t
 t/013-handler-priority.t
 t/020-output-forward.t
 t/030-output-file.t

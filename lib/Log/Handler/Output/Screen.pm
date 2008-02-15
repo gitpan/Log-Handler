@@ -23,17 +23,17 @@ This output module makes it possible to log messages to your screen.
 
 Call C<new()> to create a new Log::Handler::Output::Screen object.
 
-=head3 OPTIONS
+The following options are possible:
 
 =over 4
 
-=item log_to
+=item B<log_to>
 
 Where do you want to log? Possible is: STDOUT and STDERR.
 
 The default is STDOUT.
 
-=item dump
+=item B<dump>
 
 Set this option to 1 if you want that the message will be dumped with
 C<Data::Dumper> to the screen.
@@ -116,7 +116,7 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Params::Validate;
-our $VERSION  = '0.00_03';
+our $VERSION  = '0.00_04';
 our $ERRSTR   = '';
 
 sub new {

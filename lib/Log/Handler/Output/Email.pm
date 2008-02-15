@@ -32,11 +32,11 @@ Net::SMTP is from Graham Barr and it does it's job very well.
 
 Call C<new()> to create a new Log::Handler::Output::Email object.
 
-=head3 OPTIONS
+The following options are possible:
 
 =over 4
 
-=item host
+=item B<host>
 
 With this option you has to define the SMTP host to connect to.
 
@@ -46,30 +46,30 @@ With this option you has to define the SMTP host to connect to.
 
     host => [ 'mx.host.example', 'mx.host-backup.example' ]
 
-=item hello
+=item B<hello>
 
 Identify yourself with a HELO. The default is set to C<EHLO BELO>.
 
-=item timeout
+=item B<timeout>
 
 With this option you can set the maximum time in seconds to wait for a response
 from the SMTP server. The default is set to 120 seconds.
 
-=item from
+=item B<from>
 
 The sender address (MAIL FROM).
 
-=item to
+=item B<to>
 
 The receipient address (RCPT TO).
 
-=item subject
+=item B<subject>
 
 The subject of the mail.
 
 If no subject is set then the first 100 character of the message is used.
 
-=item buffer and interval
+=item B<buffer> and B<interval>
 
 Both options exists only for security. The thing is that it would be very bad if
 something wents wrong in your program and hundreds of mails would be send. For this
@@ -88,7 +88,7 @@ Note that if the buffer is full and the interval is not expired then all further
 lines get lost - as a matter of course - because we don't want to blow our memory
 away. To flush the buffer every time if it's full you can set the interval to 0.
 
-=item debug
+=item B<debug>
 
 With this option it's possible to enable debugging. The informations can be
 intercepted with $SIG{__WARN__}.
@@ -181,7 +181,7 @@ package Log::Handler::Output::Email;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_05';
+our $VERSION = '0.00_06';
 our $ERRSTR  = '';
 our $TEST    =  0; # is needed to disable flush() for tests
 

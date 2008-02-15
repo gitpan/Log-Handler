@@ -22,7 +22,7 @@ Log::Handler - Log messages to one or more outputs.
 
 This module is just a simple object oriented log handler and very easy to use.
 It's possible to define a log level for your programs and control the amount of
-informations that will be logged to one or more outputs.
+informations that are logged to one or more outputs.
 
 =head1 WHAT IS NEW, WHAT IS DEPRECATED
 
@@ -142,11 +142,11 @@ Call C<new()> to create a new log handler object.
 
 Call C<add()> to add a new output object.
 
-=head3 OPTIONS
+The following options are possible for the handler:
 
 =over 4
 
-=item maxlevel and minlevel
+=item B<maxlevel> and B<minlevel>
 
 With these options it's possible to set the log levels for your program.
 
@@ -173,7 +173,7 @@ levels C<warning>, C<error>, C<critical>, C<alert> and C<emergency> would be log
 
 You can set both to 8 or C<nothing> if you want to disable the logging.
 
-=item timeformat
+=item B<timeformat>
 
 The C<timeformat> is used for the placeholder C<%T>. You can set C<timeformat> with a
 date and time format that will be converted by C<POSIX::strftime>. The default format
@@ -185,7 +185,7 @@ As example the format "%Y/%m/%d %H:%M:%S" would looks like
 
     2007/02/01 12:56:31
 
-=item dateformat
+=item B<dateformat>
 
 The same as C<timeformat>. It's useful if you want to split the date and time:
 
@@ -204,14 +204,14 @@ Would log
 
 This option is not used on default.
 
-=item newline
+=item B<newline>
 
 This helpful option appends a newline to the output message if a newline not exist.
 
     0 - disable (default)
     1 - enable - appends a newline to the log message if not exist
 
-=item message_layout
+=item B<message_layout>
 
 With this option you can define your own message layout with different placeholders
 in C<printf()> style. The available placeholders are:
@@ -255,13 +255,13 @@ You can create your own placeholders with the method C<set_pattern()>.
 
 Placeholders are documented in the section L</PLACEHOLDER>.
 
-=item message_pattern
+=item B<message_pattern>
 
 This option is just useful if you want to forward messages with L<Log::Handler::Output::Forward>
 or insert the message with L<Log::Handler::Output::DBI> or dump messages to the screen with
 L<Log::Handler::Output::Screen>.
 
-Possible placeholders/names:
+Possible placeholders:
 
     %L   level
     %T   time
@@ -278,11 +278,8 @@ The option expects a array reference with a list of placeholders:
 
     message_pattern => [ qw/%T %L %H %m/ ]
 
-Or with names
-
-    message_pattern => [ qw/time level hostname message/ ]
-
-Here a full code example:
+The patterns are replaced with the pattern names as hash keys and the hash is passed
+as reference to the output. Here a full code example:
 
     use Log::Handler;
 
@@ -290,8 +287,8 @@ Here a full code example:
 
     $log->add(forward => {
         forward_to      => \&my_func,
-        message_pattern => [ qw/%T %L %H %m/ ],
-        message_layout  => '',
+        message_pattern => [ qw/%T %L %H/ ],
+        message_layout  => '%m',
         maxlevel        => 'info',
     });
 
@@ -307,7 +304,7 @@ Here a full code example:
         print "Message:   $params->{message}\n";
     }
 
-=item priority
+=item B<priority>
 
 With this option you can set the priority of your output objects. This means that messages
 will be logged at first to the outputs with a higher priority. If this option is not set
@@ -330,7 +327,7 @@ and set the priority to 1.
 
 Messages would be logged now at first to the screen.
 
-=item die_on_errors
+=item B<die_on_errors>
 
 Set C<die_on_errors> to 0 if you don't want that the handler croaks if normal operations fail.
 
@@ -340,18 +337,18 @@ Set C<die_on_errors> to 0 if you don't want that the handler croaks if normal op
 The exception is that the handler croaks in any case if the call of C<new()> fails because
 on missing params or wrong settings.
 
-=item trace
+=item B<trace>
 
 With this options it's possible to disable the tracing for a output. By default this
 option is set to 1 and tracing is enabled.
 
-=item debug_trace
+=item B<debug_trace>
 
 You can activate a simple debugger that writes C<caller()> informations for each log level
 that would logged. The debugger is logging all defined values except C<hints> and C<bitmask>.
 Set C<debug_trace> to 1 to activate the debugger. The debugger is set to 0 by default.
 
-=item debug_mode
+=item B<debug_mode>
 
 There are two debug modes: line(1) and block(2) mode. The default mode is 1.
 
@@ -423,7 +420,7 @@ Output:
          hasargs     1
          wantarray   0
 
-=item debug_skip
+=item B<debug_skip>
 
 This option let skip the C<caller()> informations the count of C<debug_skip>.
 
@@ -436,7 +433,7 @@ This option let skip the C<caller()> informations the count of C<debug_skip>.
 
 =back
 
-=head3 How to use add()
+=head2 How to use add()
 
 The method excepts 2 option parts; the options for the handler itself and for the
 output module you want to use - the output modules got it's own documentation
@@ -454,7 +451,7 @@ Example:
     my %handler_options = (
         timeformat      => '%Y/%m/%d %H:%M:%S',
         newline         => 1,
-        message_layout  => '%T [%L] %S: ',
+        message_layout  => '%T [%L] %S: %m',
         maxlevel        => 'debug',
         minlevel        => 'emergency',
         die_on_errors   => 1,
@@ -500,27 +497,27 @@ Further examples:
     $log->add( email   => \%all_options );
     $log->add( forward => \%all_options );
 
-Take a look to the section EXAMPLES for more informations.
+Take a look to the section L</EXAMPLES> for more informations.
 
 =head2 Log level methods
 
 =over 4
 
-=item debug()
+=item B<debug()>
 
-=item info()
+=item B<info()>
 
-=item notice(), note()
+=item B<notice()>, B<note()>
 
-=item warning(), warn()
+=item B<warning()>, B<warn()>
 
-=item error(), err()
+=item B<error()>, B<err()>
 
-=item critical(), crit()
+=item B<critical()>, B<crit()>
 
-=item alert()
+=item B<alert()>
 
-=item emergency(), emerg()
+=item B<emergency()>, B<emerg()>
 
 =back
 
@@ -540,21 +537,21 @@ Both calls would log - if the level INFO is active:
 
 =over 4
 
-=item is_debug()
+=item B<is_debug()>
 
-=item is_info()
+=item B<is_info()>
 
-=item is_notice(), is_note()
+=item B<is_notice()>, B<is_note()>
 
-=item is_warning(), is_warn()
+=item B<is_warning()>, B<is_warn()>
 
-=item is_error(), is_err()
+=item B<is_error()>, B<is_err()>
 
-=item is_critical(), is_crit()
+=item B<is_critical()>, B<is_crit()>
 
-=item is_alert()
+=item B<is_alert()>
 
-=item is_emergency(), is_emerg()
+=item B<is_emergency()>, B<is_emerg()>
 
 =back
 
@@ -792,7 +789,7 @@ Would log
     $log->add(forward => {
         forward_to      => \&my_func,
         message_pattern => [ qw/%L %T %P %H %C %p %t/ ],
-        message_layout  => '',
+        message_layout  => '%m',
         maxlevel        => 'info',
     });
 
@@ -802,6 +799,22 @@ Would log
         my $params = shift;
         print Dumper($params);
     }
+
+=head2 LOG VIA SCREEN
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(forward => {
+        log_to          => 'STDERR',
+        dump            => 1,
+        message_pattern => [ qw/%L %T %P %H %C %p %t/ ],
+        message_layout  => '%m',
+        maxlevel        => 'info',
+    });
+
+    $log->info('Hello World!');
 
 =head2 DIFFERENT OUTPUTS
 
@@ -971,7 +984,7 @@ package Log::Handler;
 
 use strict;
 use warnings;
-our $VERSION  = '0.38_11';
+our $VERSION  = '0.38_12';
 our $ERRSTR   = '';
 our $PRIORITY = 10;
 
@@ -1395,6 +1408,8 @@ sub _validate_options {
         foreach (@{$options{message_pattern}}) {
             if ( !exists $pattern->{$_} ) {
                 croak "placeholder '$_' does not exists";
+            } elsif ( $_ eq '%m' ) {
+                next; # the message is builded ever
             }
             my $name = $pattern->{$_}->{name};
             my $code = $pattern->{$_}->{code};

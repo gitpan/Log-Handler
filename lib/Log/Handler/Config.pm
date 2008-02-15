@@ -39,18 +39,17 @@ This module makes it possible to load the configuration from a file.
 
 =head2 config()
 
-With this method it's possible to load a configuration for your outputs. Note that
-a special structure is needed to load the configuration successfully.
+With this method it's possible to load the configuration for your outputs.
 
-=head3 OPTIONS
+The following options are valid:
 
 =over 4
 
-=item filename
+=item B<filename>
 
 The configuration file.
 
-=item plugin
+=item B<plugin>
 
 With this option you can set the plugin you want to use. There are 3 plugins
 available at the moment:
@@ -89,7 +88,7 @@ Examples:
 
 If the extension is not defined then C<Config::General> is used by default.
 
-=item section
+=item B<section>
 
 If your configuration is placed in file where you configure your complete program
 you can push your output configuration into a sub section:
@@ -126,14 +125,22 @@ Now your configuration is placed in the C<output> section. You can load this sec
 
     $log->config( config => $config->{output} );
 
-=item config
+=item B<config>
 
 With this option you can pass a configuration that you loaded already but it must
 have the correct hash structure! Take a look to the examples!
 
 =back
 
-=head3 Config structure
+=head1 PLUGINS
+
+    Config::General     -  inspired by the well known apache config format
+    Config::Properties  -  Java-style property files
+    YAML                -  optimized for human readability
+
+=head1 EXAMPLES
+
+=head2 Config structure
 
 For each output object it must exist a own section. Here a example as hash:
 
@@ -172,7 +179,7 @@ For each output object it must exist a own section. Here a example as hash:
 You can store your configuration to a file and loads it. There are different
 config plugins available.
 
-=head3 A default section
+=head2 A default section
 
 If your configuration contains a C<default> section then this parameters are used
 for all other sections. Example:
@@ -208,14 +215,6 @@ for all other sections. Example:
 
 The option C<mode> is set to C<append> for the log file C<file1.log> and C<file2.log>.
 The configuration for C<file3.log> will be set to C<trunc>.
-
-=head1 PLUGINS
-
-    Config::General     -  inspired by the well known apache config format
-    Config::Properties  -  Java-style property files
-    YAML                -  optimized for human readability
-
-=head1 EXAMPLES
 
 =head2 Examples for the config plugins
 

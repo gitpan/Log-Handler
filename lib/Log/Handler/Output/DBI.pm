@@ -49,35 +49,35 @@ With this output you can insert messages to a database table.
 
 Call C<new()> to create a new Log::Handler::Output::DBI object.
 
-=head3 OPTIONS
+The following options are possible:
 
 =over 4
 
-=item database
+=item B<database>
 
 Pass the database name.
 
-=item driver
+=item B<driver>
 
 Pass the database driver.
 
-=item user
+=item B<user>
 
 Pass the database user for the connect.
 
-=item password
+=item B<password>
 
 Pass the users password.
 
-=item host
+=item B<host>
 
 Pass the hostname where the database is running.
 
-=item port
+=item B<port>
 
 Pass the port where the database is listened.
 
-=item table and columns
+=item B<table> and B<columns>
 
 With this options you can pass the table name for the insert and the columns.
 You can pass the columns as string or as array. Example:
@@ -96,14 +96,14 @@ The statement would created as follows
     insert into message (level, ctime, cdate, pid, hostname, caller, progname, mtime, message)
                  values (?,?,?,?,?,?,?,?,?)
 
-=item statement
+=item B<statement>
 
 With this option you can pass your own statement if you don't want to you the options C<table> and C<columns>.
 
     statement => 'insert into message (level, ctime, cdate, pid, hostname, caller, progname, mtime, message)'
                  .' values (?,?,?,?,?,?,?,?,?)'
 
-=item values
+=item B<values>
 
 With this option you have to set the values for the insert.
 
@@ -129,7 +129,7 @@ the option C<message_pattern>.
 
 Take a look to the documentation of L<Log::Handler> for all possible patterns.
 
-=item persistent and reconnect
+=item B<persistent> and B<reconnect>
 
 With this option you can enable or disable a persistent database connection and re-connect
 if the connection was lost.
@@ -139,7 +139,7 @@ If the ping fails then a re-connect is executed.
 
 Both options are set to 1 on default.
 
-=item dbi_params
+=item B<dbi_params>
 
 This option is useful if you want to pass arguments to L<DBI>. The default is set to
 
@@ -154,7 +154,7 @@ You can pass your own arguments - and overwrite it - with
 
     dbi_params => { PrintError => 1, AutoCommit => 0 }
 
-=item debug
+=item B<debug>
 
 With this option it's possible to enable debugging. The informations can be
 intercepted with C<$SIG{__WARN__}>.
@@ -230,7 +230,7 @@ package Log::Handler::Output::DBI;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_04';
+our $VERSION = '0.00_05';
 our $ERRSTR  = '';
 
 use Carp;

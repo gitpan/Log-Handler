@@ -23,15 +23,15 @@ This output module makes it possible to forward messages to sub routines.
 
 Call C<new()> to create a new Log::Handler::Output::Forward object.
 
-=head3 OPTIONS
+The following options are possible:
 
 =over 4
 
-=item forward_to
+=item B<forward_to>
 
 This option excepts a code reference.
 
-=item arguments
+=item B<arguments>
 
 With this option you can define arguments that will be passed to the sub routine.
 
@@ -131,7 +131,7 @@ package Log::Handler::Output::Forward;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_05';
+our $VERSION = '0.00_06';
 our $ERRSTR  = '';
 
 use Carp;

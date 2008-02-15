@@ -29,11 +29,11 @@ Log messages to a file.
 
 Call C<new()> to create a new Log::Handler::Output::File object.
 
-=head3 OPTIONS
+The following options are possible:
 
 =over 4
 
-=item filename
+=item B<filename>
 
 With C<filename> you can set a file name as a string or as a array reference.
 If you set a array reference then the parts will be concat with C<catfile> from
@@ -93,7 +93,7 @@ and you have to control the handles yourself. The forced options are
 The reason is simple: if you set C<*STDOUT> as filename it would be very bad if it would
 be closed or locked.
 
-=item filelock
+=item B<filelock>
 
 Maybe it's desirable to lock the log file by each write operation because a lot of processes
 write at the same time to the log file. You can set the option C<filelock> to 0 or 1.
@@ -101,7 +101,7 @@ write at the same time to the log file. You can set the option C<filelock> to 0 
     0 - no file lock
     1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each write operation (default)
 
-=item fileopen
+=item B<fileopen>
 
 Open a log file transient or permanent.
 
@@ -109,14 +109,14 @@ Open a log file transient or permanent.
     1 - open the logfile if C<new()> called and try to reopen the
         file if C<reopen> is set to 1 and the inode of the file has changed (default)
 
-=item reopen
+=item B<reopen>
 
 This option works only if option C<fileopen> is set to 1.
 
     0 - deactivated
     1 - try to reopen the log file if the inode changed (default)
 
-=item fileopen and reopen
+=item B<fileopen> and B<reopen>
 
 Please note that it's better to set C<reopen> and C<fileopen> to 0 on Windows
 because Windows unfortunately haven't the faintest idea of inodes.
@@ -133,7 +133,7 @@ To write your code independent you should control it:
 
 If you set C<fileopen> to 0 then it implies that C<reopen> has no importance.
 
-=item mode
+=item B<mode>
 
 There are three possible modes to open a log file.
 
@@ -152,12 +152,12 @@ to use this option.
 
 Take a look to the documentation of C<sysopen()> to get more informations.
 
-=item autoflush
+=item B<autoflush>
 
     0 - autoflush off
     1 - autoflush on (default)
 
-=item permissions
+=item B<permissions>
 
 The option C<permissions> sets the permission of the file if it creates and must
 be set as a octal value. The permission need to be in octal and are modified
@@ -170,7 +170,7 @@ All other users got no access.
 
 Take a look to the documentation of C<sysopen()> to get more informations.
 
-=item utf8
+=item B<utf8>
 
 If this option is set to 1 then UTF-8 will be set with C<binmode()> on the output filehandle.
 
@@ -249,7 +249,7 @@ package Log::Handler::Output::File;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_05';
+our $VERSION = '0.00_06';
 our $ERRSTR  = '';
 
 use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
