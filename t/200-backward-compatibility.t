@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 38;
+use Test::More tests => 36;
 use File::Spec;
 use Log::Handler;
 
@@ -53,9 +53,7 @@ ok($file_params->{utf8} eq "0", "checking param utf8");
 ok($log->debug("debug"), "checking debug") if $log->is_debug;
 ok($log->info("info"), "checking info") if $log->is_info;
 ok($log->notice("notice"), "checking notice") if $log->is_notice;
-ok($log->note("notice"), "checking note") if $log->is_note;
 ok($log->warning("warning"), "checking warning") if $log->is_warning;
-ok($log->warn("warning"), "checking warn") if $log->is_warning;
 ok($log->error("error"), "checking error") if $log->is_error;
 ok($log->err("error"), "checking err") if $log->is_err;
 ok($log->critical("critical"), "checking critical") if $log->is_critical;
@@ -83,10 +81,10 @@ while (my $line = <$fh>) {
 
 close $fh;
 
-if ($lines == 13) {
-   ok(1, "checking logfile ($lines)");
+if ($lines == 11) {
+   ok(1, "checking logfile (11:$lines)");
 } else {
-   ok(0, "checking logfile ($lines)");
+   ok(0, "checking logfile (11:$lines)");
 }
 
 close($file_params->{fh}) or die $!;

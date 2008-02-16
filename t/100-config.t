@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 10;
+use Test::More tests => 9;
 use Log::Handler;
 
 my %config = (
@@ -11,7 +11,6 @@ my %config = (
             timeformat     => '%b %d %H:%M:%S',
             mode           => 'append',
             message_layout => '%T %H[%P] [%L] %p: %m',
-            trace          => 0,
             debug_mode     => 2,
         },
         common => {
@@ -39,7 +38,6 @@ my %compare_handler = (
     newline         => 1,
     timeformat      => '%b %d %H:%M:%S',
     message_layout  => '%T %H[%P] [%L] %p: %m',
-    trace           => 0,
     debug_mode      => 2,
     maxlevel        => 6,
     minlevel        => 6,

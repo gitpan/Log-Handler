@@ -116,7 +116,7 @@ This option works only if option C<fileopen> is set to 1.
     0 - deactivated
     1 - try to reopen the log file if the inode changed (default)
 
-=item B<fileopen> and B<reopen>
+=item How to use B<fileopen> and B<reopen>
 
 Please note that it's better to set C<reopen> and C<fileopen> to 0 on Windows
 because Windows unfortunately haven't the faintest idea of inodes.

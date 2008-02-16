@@ -24,7 +24,6 @@ The configuration will be splitted by dot.
     file.mylog.permissions = 0640
     file.mylog.mode = append
     file.mylog.timeformat = %b %d %H:%M:%S
-    file.mylog.trace = 0
     file.mylog.debug_mode = 2
     file.mylog.minlevel = warn
     file.mylog.filename = example.log

@@ -6,6 +6,7 @@ examples/example-2.pl
 INSTALL
 lib/Log/Handler.pm
 lib/Log/Handler/Config.pm
+lib/Log/Handler/Levels.pm
 lib/Log/Handler/Output.pm
 lib/Log/Handler/Output/DBI.pm
 lib/Log/Handler/Output/Email.pm

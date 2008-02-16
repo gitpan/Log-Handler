@@ -30,7 +30,6 @@ Expect the config file name and returns the config as a reference.
         prefix: '%T %H[%P] [%L] %S: '
         reopen: 1
         timeformat: '%b %d %H:%M:%S'
-        trace: 0
 
 =head1 PREREQUISITES
     

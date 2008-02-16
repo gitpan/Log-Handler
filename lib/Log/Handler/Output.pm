@@ -37,11 +37,12 @@ package Log::Handler::Output;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_07';
-our $ERRSTR  = '';
-our $CALLER  =  2;
-our $MESSAGE = '';
-our $LEVEL   = '';
+our $VERSION   = '0.00_08';
+our $ERRSTR    = '';
+our $CALLER    =  2;
+our $TRACE     =  0;
+our $MESSAGE   = '';
+our $LEVEL     = '';
 
 use Carp;
 use Devel::Backtrace;
@@ -82,8 +83,8 @@ sub log {
         }
     }
 
-    if ($self->{debug} || $LEVEL eq 'TRACE') {
-        $self->_add_trace($self, $message);
+    if ($self->{debug_trace} || $LEVEL eq 'TRACE' || $TRACE) {
+        $self->_add_trace($message);
     } elsif ($self->{newline} && $message->{message} =~ /.\z|^\z/) {
         $message->{message} .= "\n";
     }

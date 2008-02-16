@@ -228,7 +228,6 @@ The configuration for C<file3.log> will be set to C<trunc>.
             maxlevel = info
             mode = append
             timeformat = %b %d %H:%M:%S
-            trace = 0
             debug_mode = 2
             filename = example.log
             minlevel = warn
@@ -253,7 +252,6 @@ The configuration for C<file3.log> will be set to C<trunc>.
         prefix: '%T %H[%P] [%L] %S: '
         reopen: 1
         timeformat: '%b %d %H:%M:%S'
-        trace: 0
 
 =head3 Config::Properties
 
@@ -263,7 +261,6 @@ The configuration for C<file3.log> will be set to C<trunc>.
     file.mylog.permissions = 0640
     file.mylog.mode = append
     file.mylog.timeformat = %b %d %H:%M:%S
-    file.mylog.trace = 0
     file.mylog.debug_mode = 2
     file.mylog.minlevel = warn
     file.mylog.filename = example.log
@@ -284,7 +281,6 @@ The config (Config::General)
                 reopen      = 1
                 mode        = append
                 prefix      = "%T %H[%P] [%L] %S: "
-                trace       = 0
                 debug_mode  = 2
             </default>
 
@@ -298,7 +294,6 @@ The config (Config::General)
                 filename    = example-error.log
                 maxlevel    = warn
                 minlevel    = emergency
-                trace       = 1
             </error>
 
             <debug>
@@ -329,7 +324,6 @@ The config (Config::General)
             reopen      = 1
             mode        = append
             prefix      = "%T %H[%P] [%L] %S: "
-            trace       = 0
             debug_mode  = 2
         </default>
 
@@ -343,7 +337,6 @@ The config (Config::General)
             filename    = example-error.log
             maxlevel    = warn
             minlevel    = emergency
-            trace       = 1
         </error>
 
         <debug>
@@ -370,7 +363,6 @@ Load the config
                     reopen      => 1,
                     mode        => 'append
                     prefix      => '%T %H[%P] [%L] %S: ',
-                    trace       => 0,
                     debug_mode  => 2,
                 },
                 common => {
@@ -382,7 +374,6 @@ Load the config
                     filename    => 'example-error.log',
                     maxlevel    => 'warn',
                     minlevel    => 'emergency',
-                    trace       => 1,
                 },
                 debug => {
                     filename    => 'example-debug.log',
@@ -405,7 +396,6 @@ Load the config
                 reopen      = 1
                 mode        = append
                 prefix      = "%T %H[%P] [%L] %S: "
-                trace       = 0
                 debug_mode  = 2
             </default>
 
@@ -419,7 +409,6 @@ Load the config
                 filename    = example-error.log
                 maxlevel    = warn
                 minlevel    = emergency
-                trace       = 1
             </error>
         </file>
 
@@ -431,7 +420,6 @@ Load the config
                 buffer      = 100
                 interval    = 300
                 prefix      = "%T %H[%P] [%L] %S: "
-                trace       = 0
                 debug_mode  = 2
             </default>
 
@@ -441,7 +429,6 @@ Load the config
                 to          = you@foo.example
                 maxlevel    = error
                 minlevel    = emergency
-                trace       = 1
             </admin>
 
             <op>
@@ -521,7 +508,7 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_06';
+our $VERSION = '0.00_07';
 
 use Carp;
 use File::Spec;

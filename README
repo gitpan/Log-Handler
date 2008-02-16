@@ -10,7 +10,7 @@ SYNOPSIS
             filename => 'file.log',
             mode     => 'append',
             maxlevel => 'debug',
-            minlevel => 'warn',
+            minlevel => 'warning',
             newline  => 1,
         });
 
@@ -38,6 +38,7 @@ WHAT IS NEW, WHAT IS DEPRECATED
     There are different output modules available:
 
         Log::Handler::Output::File
+        Log::Handler::Output::DBI
         Log::Handler::Output::Email
         Log::Handler::Output::Forward
         Log::Handler::Output::Screen
@@ -65,7 +66,6 @@ WHAT IS NEW, WHAT IS DEPRECATED
         dateformat
         priority
         message_pattern
-        trace
 
   Changed options
         prefix  is now  message_layout
@@ -78,28 +78,30 @@ WHAT IS NEW, WHAT IS DEPRECATED
         add()           - to add new outputs
         config()        - to load outputs from a configuration file
         set_pattern()   - to create your own placeholder
-        fatal()         - merged levels: 0-2
-        is_fatal()      - to check if one of the level 0-2 is active
+
+  New level methods
+    Please take a look to Log::Handler::Levels because the list is very
+    long.
 
   Kicked methods
+        note()
         close()
         get_prefix()
         set_prefix()
 
-  trace()
-    The method "trace()" writes "caller()" informations to all outputs by
-    default. It's possible to disable this by set the option "trace" to 0.
+  Changed methods
+        trace()  replaced with trace methods for each level
+        warn()   still exist but is a replacement vor carp() now
 
   Backward compatibilities
-    As I re-designed the Log::Handler it was my wish to support the old
-    style from version 0.38.
+    As I re-designed the Log::Handler it was my wish to support the most
+    things from version 0.38.
 
         my $log = Log::Handler->new(filename => 'file.log');
 
-    That still running fine because the options are forwarded to the file
-    output. The exceptions are that the option "redirect_to_stderr" and the
-    methods "set_prefix()", "get_prefix()" and "close()" doesn't exist any
-    more. In all other cases you can use all things from 0.38.
+    That still running fine because the options are passed as a file output.
+    The exceptions that you should take a look the the kicked/changed
+    methods and options.
 
   Further releases
     Extensions and changes are planed. I hope I have enough time to
@@ -111,8 +113,8 @@ LOG LEVELS
 
         7   debug
         6   info
-        5   notice, note
-        4   warning, warn
+        5   notice
+        4   warning
         3   error, err
         2   critical, crit
         1   alert
@@ -137,33 +139,33 @@ METHODS
 
         Example:
 
-            maxlevel => 'notice'
+            maxlevel => 'error'
             minlevel => 'emergency'
 
             # or
 
-            maxlevel => 'note'
+            maxlevel => 'err'
             minlevel => 'emerg'
 
             # or
 
-            maxlevel => 5
+            maxlevel => 3
             minlevel => 0
 
-        It's possible to set the log level as a string or as number. The
+        It's possible to set the log level as string or as number. The
         default setting for "maxlevel" is "warning" and the default setting
         for "minlevel" is "emergency".
 
-        Example: If "maxlevel" is set to "warn" and "minlevel" to
+        Example: If "maxlevel" is set to "warning" and "minlevel" to
         "emergency" then the levels "warning", "error", "critical", "alert"
         and "emergency" would be logged.
 
         You can set both to 8 or "nothing" if you want to disable the
-        logging.
+        logging machine.
 
     timeformat
         The "timeformat" is used for the placeholder %T. You can set
-        "timeformat" with a date and time format that will be converted by
+        "timeformat" with a date and time format that is converted with
         "POSIX::strftime". The default format is "%b %d %H:%M:%S" and looks
         like
 
@@ -174,8 +176,8 @@ METHODS
             2007/02/01 12:56:31
 
     dateformat
-        The same as "timeformat". It's useful if you want to split the date
-        and time:
+        The same like "timeformat". It's useful if you want to split the
+        date and time:
 
             $log->add(file => {
                 filename       => 'file.log',
@@ -211,8 +213,8 @@ METHODS
             %H   Hostname
             %N   Newline
             %C   Caller - filename and line number
-            %p   Script - the program name
-            %t   Measurement - replaced with the time since the last call of the handler
+            %p   Program name
+            %t   Time measurement - replaced with the time since the last call of the handler
             %m   The message.
 
         The default message layout is set to "%T [%L] %m".
@@ -227,7 +229,7 @@ METHODS
 
         If you set "message_layout" to
 
-            message_layout => '%T foo %L bar %m %C'
+            message_layout => '%T foo %L bar %m (%C)'
 
         and call
 
@@ -319,25 +321,26 @@ METHODS
         Messages would be logged now at first to the screen.
 
     die_on_errors
-        Set "die_on_errors" to 0 if you don't want that the handler croaks
-        if normal operations fail.
+        Set "die_on_errors" to 0 if you don't want that the handler die on
+        failed write operations.
 
             0 - will not die on errors
             1 - will die (e.g. croak) on errors
 
-        The exception is that the handler croaks in any case if the call of
-        "new()" fails because on missing params or wrong settings.
+        If you set "die_on_errors" to 0 then you have to controll it
+        yourself.
 
-    trace
-        With this options it's possible to disable the tracing for a output.
-        By default this option is set to 1 and tracing is enabled.
+            $log->info('info message') or die $log->errstr();
+
+            # or Log::Handler->errstr()
+            # or Log::Handler::errstr()
+            # or $Log::Handler::ERRSTR
 
     debug_trace
-        You can activate a simple debugger that writes "caller()"
-        informations for each log level that would logged. The debugger is
-        logging all defined values except "hints" and "bitmask". Set
-        "debug_trace" to 1 to activate the debugger. The debugger is set to
-        0 by default.
+        You can activate a debugger that writes "caller()" informations for
+        each log level that would logged. The debugger is logging all
+        defined values except "hints" and "bitmask". Set "debug_trace" to 1
+        to activate the debugger. The debugger is set to 0 by default.
 
     debug_mode
         There are two debug modes: line(1) and block(2) mode. The default
@@ -358,7 +361,7 @@ METHODS
                 debug_mode  => 1
             });
 
-            sub test1 { $log->warn() }
+            sub test1 { $log->warning() }
             sub test2 { &test1; }
 
             &test2;
@@ -424,12 +427,12 @@ METHODS
                CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
 
   How to use add()
-    The method excepts 2 option parts; the options for the handler itself
+    The method "add()" excepts 2 option parts; the options for the handler
     and for the output module you want to use - the output modules got it's
     own documentation for all options.
 
-    Okay, now there are different ways to add a new output object to the
-    handler. You can create the output object yourself and pass it with the
+    There are different ways to add a new output to the handler. The one way
+    is that you create the output object yourself and pass it with the
     handler options to "add()".
 
     Example:
@@ -445,7 +448,6 @@ METHODS
             maxlevel        => 'debug',
             minlevel        => 'emergency',
             die_on_errors   => 1,
-            trace           => 1,
             debug_trace     => 0,
             debug_mode      => 2,
             debug_skip      => 0,
@@ -466,8 +468,10 @@ METHODS
         # we creating the file object
         my $file = Log::Handler::Output::File->new( \%file_options );
 
-        # now we add the file object to the handler with the handler options
+        # creating a new handler object
         my $log = Log::Handler->new();
+
+        # now we add the file object to the handler with the handler options
         $log->add( $file => \%handler_options );
 
     But it can be simplier! You can merge all options and pass them to
@@ -487,14 +491,15 @@ METHODS
 
         $log->add( email   => \%all_options );
         $log->add( forward => \%all_options );
+        # and so on ...
 
     Take a look to the section "EXAMPLES" for more informations.
 
   Log level methods
     debug()
     info()
-    notice(), note()
-    warning(), warn()
+    notice()
+    warning()
     error(), err()
     critical(), crit()
     alert()
@@ -515,8 +520,8 @@ METHODS
   is_* methods
     is_debug()
     is_info()
-    is_notice(), is_note()
-    is_warning(), is_warn()
+    is_notice()
+    is_warning()
     is_error(), is_err()
     is_critical(), is_crit()
     is_alert()
@@ -538,40 +543,14 @@ METHODS
 
     Now we dump the hash only if the current log level would log it.
 
-    The methods "is_note()", "is_warn()", "is_err()", "is_crit()" and
-    "is_emerg()" are just shortcuts.
+    The methods "is_err()", "is_crit()" and "is_emerg()" are just shortcuts.
 
   fatal(), is_fatal()
     Fatal is a extra level that can be used for CRITICAL, ALERT and
     EMERGENCY messages. A lot of people like to use just DEBUG, INFO, WARN,
     ERROR and FATAL. For this reason I though to implement it. You just have
-    to set minlevel to critical, alert or emergency to activate this level.
-
-  trace()
-    This method is a special log level and very useful if you want to log
-    "caller()" informations. In contrast to the log level methods this
-    method forces "caller()" informations to all outputs and you don't need
-    to activate the debugger with the option "debug_trace". Example:
-
-        my $log = Log::Handler->new();
-
-        $log->add(file => { filename => '*STDOUT' });
-        $log->trace("caller informations:");
-
-    Output:
-
-        Jun 05 21:20:32 [TRACE] caller informations
-           CALL(2): package(main) filename(./log-handler-test.pl) line(22) subroutine(Log::Handler::trace) hasargs(1)
-           CALL(1): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(941) subroutine(Log::Handler::_write) hasargs(1)
-           CALL(0): package(Log::Handler) filename(/usr/local/share/perl/5.8.8/Log/Handler.pm) line(1097) subroutine(Devel::Backtrace::new) hasargs(1) wantarray(0)
-
-    Maybe you like to forward "caller()" informations to all outputs if an
-    unexpected error occurs.
-
-        $SIG{__DIE__} = sub { $log->trace(@_) };
-
-    If you want to disable tracing to a output you can use the option
-    "trace" for it.
+    to set "minlevel" to "critical", "alert" or "emergency" to activate this
+    level.
 
   errstr()
     Call "errstr()" if you want to get the last error message. This is
@@ -619,7 +598,7 @@ METHODS
                 },
                 error_log => {
                     filename      => 'error.log',
-                    maxlevel      => 'warn',
+                    maxlevel      => 'warning',
                     minlevel      => 'emerg',
                     priority      => 1
                 },
@@ -647,12 +626,33 @@ METHODS
 
         $log->set_pattern('%X', 'name', 'value');
 
-    Then you can use this pattern:
+    Then you can use this pattern in your message layout:
 
         $log->add(forward => {
             filename        => 'file.log',
             message_layout  => '%X %m',
         });
+
+CARP, CROAK, DIE, WARN, EXIT (and so on)
+    A long time I was thinking about to implement the functionality to
+    "carp()", "croak()", "exit()" or whatever over the logger. The one big
+    adventage would be that the programer don't need to think about selfmade
+    implementations and could use pre-defined methods like
+
+        $log->error_and_die()
+        # or
+        $log->fatal_and_croak()
+        # or
+        $log->info_and_exit()
+        # and so on
+
+    The list would be very, very long to show all possibilities... but would
+    these methods really bring an advantage? I think not! If you really want
+    to snap all errors and warnings - maybe from a other module you use -
+    then there is no way except you write your own die or warn handler:
+
+        $SIG{__WARN__} = sub { $log->warn(@_) }
+        $SIG{__DIE__}  = sub { $log->error(@_) }
 
 EXAMPLES
   LOG VIA FILE
@@ -671,9 +671,7 @@ EXAMPLES
         $log->debug("this is a debug message");
         $log->info("this is a info message");
         $log->notice("this is a notice");
-        $log->note("this is a notice as well");
         $log->warning("this is a warning");
-        $log->warn("this is a warning as well");
         $log->error("this is a error message");
         $log->err("this is a error message as well");
         $log->critical("this is a critical message");
@@ -687,8 +685,6 @@ EXAMPLES
         Feb 01 12:56:31 [DEBUG] this is a debug message
         Feb 01 12:56:31 [INFO] this is a info message
         Feb 01 12:56:31 [NOTICE] this is a notice
-        Feb 01 12:56:31 [NOTICE] this is a notice as well
-        Feb 01 12:56:31 [WARNING] this is a warning
         Feb 01 12:56:31 [WARNING] this is a warning
         Feb 01 12:56:31 [ERROR] this is a error message
         Feb 01 12:56:31 [ERROR] this is a error message as well
@@ -789,7 +785,6 @@ EXAMPLES
             mode     => 'append',
             maxlevel => 7,
             minlevel => 7,
-            trace    => 1,
         });
 
         $log->add(file => {
@@ -797,7 +792,6 @@ EXAMPLES
             mode     => 'append',
             maxlevel => 6,
             minlevel => 5,
-            trace    => 0,
         });
 
         $log->add(file => {
@@ -805,7 +799,6 @@ EXAMPLES
             mode     => 'append',
             maxlevel => 4,
             minlevel => 0,
-            trace    => 1,
         });
 
         # log to debug.log
@@ -814,11 +807,9 @@ EXAMPLES
         # log to common.log
         $log->info("this is a info message");
         $log->notice("this is a notice");
-        $log->note("this is a notice as well");
 
         # log to error.log
         $log->warning("this is a warning");
-        $log->warn("this is a warning as well");
         $log->error("this is a error message");
         $log->err("this is a error message as well");
         $log->critical("this is a critical message");
@@ -826,9 +817,6 @@ EXAMPLES
         $log->alert("this is a alert message");
         $log->emergency("this is a emergency message");
         $log->emerg("this is a emergency message as well");
-
-        # force caller() informations just to error.log and debug.log
-        $log->trace("trace this call");
 
   is_* example:
         use Log::Handler;
@@ -898,7 +886,6 @@ QUESTIONS
 TODO
     Maybe; don't know
 
-        * Log::Handler::Output::DBI
         * Log::Handler::Output::Socket
 
 COPYRIGHT

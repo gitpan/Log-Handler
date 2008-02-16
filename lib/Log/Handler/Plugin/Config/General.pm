@@ -24,7 +24,6 @@ Expect the config file name and returns the config as a reference.
             maxlevel = info
             mode = append
             timeformat = %b %d %H:%M:%S
-            trace = 0
             debug_mode = 2
             filename = example.log
             minlevel = warn
