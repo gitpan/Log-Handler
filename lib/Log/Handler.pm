@@ -576,12 +576,11 @@ Now we dump the hash only if the current log level would log it.
 
 The methods C<is_err()>, C<is_crit()> and C<is_emerg()> are just shortcuts.
 
-=head2 fatal(), is_fatal()
+=head2 Other level methods
 
-Fatal is a extra level that can be used for CRITICAL, ALERT and EMERGENCY messages.
-A lot of people like to use just DEBUG, INFO, WARN, ERROR and FATAL. For this reason
-I though to implement it. You just have to set C<minlevel> to C<critical>, C<alert>
-or C<emergency> to activate this level.
+There exists a lot of other level methods.
+
+For a full list take a look into the documentation of L<Log::Handler::Level>.
 
 =head2 errstr()
 
@@ -663,28 +662,6 @@ Then you can use this pattern in your message layout:
         filename        => 'file.log',
         message_layout  => '%X %m',
     });
-
-=head1 CARP, CROAK, DIE, WARN, EXIT (and so on)
-
-A long time I was thinking about to implement the functionality to C<carp()>,
-C<croak()>, C<exit()> or whatever over the logger. The one big adventage would
-be that the programer don't need to think about selfmade implementations and could
-use pre-defined methods like
-
-    $log->error_and_die()
-    # or
-    $log->fatal_and_croak()
-    # or
-    $log->info_and_exit()
-    # and so on
-
-The list would be very, very long to show all possibilities... but would these
-methods really bring an advantage? I think not! If you really want to snap
-all errors and warnings - maybe from a other module you use - then there is no
-way except you write your own die or warn handler:
-
-    $SIG{__WARN__} = sub { $log->warn(@_) }
-    $SIG{__DIE__}  = sub { $log->error(@_) }
 
 =head1 EXAMPLES
 
@@ -971,7 +948,7 @@ package Log::Handler;
 
 use strict;
 use warnings;
-our $VERSION  = '0.38_13';
+our $VERSION  = '0.38_14';
 our $ERRSTR   = '';
 our $PRIORITY = 10;
 

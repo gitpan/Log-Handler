@@ -1,9 +1,14 @@
-0.38_12 Released at 2008-02-16.
-        - Released with a lot of POD, code and example improvements.
+0.38_14 Released at 2008-02-17.
+        - Forget to delete some POD parts - sorry :/
+
+0.38_13 Released at 2008-02-17.
         - Kicked trace() and option "trace".
         - Added trace methods for each level.
         - Added croak, carp, die and warn methods for different levels.
         - Log::Handler::Levels is now the base class for all level methods.
+
+0.38_12 Released at 2008-02-16.
+        - Released with a lot of POD, code and example improvements.
 
 0.38_11 Released at 2008-02-15.
         - Changed option message_keys to message_pattern.

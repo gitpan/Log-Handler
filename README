@@ -545,12 +545,11 @@ METHODS
 
     The methods "is_err()", "is_crit()" and "is_emerg()" are just shortcuts.
 
-  fatal(), is_fatal()
-    Fatal is a extra level that can be used for CRITICAL, ALERT and
-    EMERGENCY messages. A lot of people like to use just DEBUG, INFO, WARN,
-    ERROR and FATAL. For this reason I though to implement it. You just have
-    to set "minlevel" to "critical", "alert" or "emergency" to activate this
-    level.
+  Other level methods
+    There exists a lot of other level methods.
+
+    For a full list take a look into the documentation of
+    Log::Handler::Level.
 
   errstr()
     Call "errstr()" if you want to get the last error message. This is
@@ -632,27 +631,6 @@ METHODS
             filename        => 'file.log',
             message_layout  => '%X %m',
         });
-
-CARP, CROAK, DIE, WARN, EXIT (and so on)
-    A long time I was thinking about to implement the functionality to
-    "carp()", "croak()", "exit()" or whatever over the logger. The one big
-    adventage would be that the programer don't need to think about selfmade
-    implementations and could use pre-defined methods like
-
-        $log->error_and_die()
-        # or
-        $log->fatal_and_croak()
-        # or
-        $log->info_and_exit()
-        # and so on
-
-    The list would be very, very long to show all possibilities... but would
-    these methods really bring an advantage? I think not! If you really want
-    to snap all errors and warnings - maybe from a other module you use -
-    then there is no way except you write your own die or warn handler:
-
-        $SIG{__WARN__} = sub { $log->warn(@_) }
-        $SIG{__DIE__}  = sub { $log->error(@_) }
 
 EXAMPLES
   LOG VIA FILE
