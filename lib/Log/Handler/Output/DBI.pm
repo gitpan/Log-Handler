@@ -98,7 +98,8 @@ The statement would created as follows
 
 =item B<statement>
 
-With this option you can pass your own statement if you don't want to you the options C<table> and C<columns>.
+With this option you can pass your own statement if you don't want to you the
+options C<table> and C<columns>.
 
     statement => 'insert into message (level, ctime, cdate, pid, hostname, caller, progname, mtime, message)'
                  .' values (?,?,?,?,?,?,?,?,?)'
@@ -113,8 +114,8 @@ With this option you have to set the values for the insert.
 
         values => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
 
-The placeholders are identical with the pattern names that you have to pass with
-the option C<message_pattern>.
+The placeholders are identical with the pattern names that you have to pass
+with the option C<message_pattern>.
 
     %L   level
     %T   time
@@ -131,24 +132,26 @@ Take a look to the documentation of L<Log::Handler> for all possible patterns.
 
 =item B<persistent> and B<reconnect>
 
-With this option you can enable or disable a persistent database connection and re-connect
-if the connection was lost.
+With this option you can enable or disable a persistent database connection and
+re-connect if the connection was lost.
 
-If you use persistent connections then a ping is send to the database before each insert.
-If the ping fails then a re-connect is executed.
+If you use persistent connections then a ping is send to the database before
+each insert. If the ping fails then a re-connect is executed.
 
 Both options are set to 1 on default.
 
 =item B<dbi_params>
 
-This option is useful if you want to pass arguments to L<DBI>. The default is set to
+This option is useful if you want to pass arguments to L<DBI>. The default is
+set to
 
     {
         PrintError => 0,
         AutoCommit => 1
     }
 
-C<PrintError> is deactivated because this would print error messages as warnings to STDERR.
+C<PrintError> is deactivated because this would print error messages as
+warnings to STDERR.
 
 You can pass your own arguments - and overwrite it - with
 
@@ -201,36 +204,13 @@ Copyright (C) 2007 by Jonny Schulz. All rights reserved.
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
-=head1 DISCLAIMER OF WARRANTY
-
-BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
-FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
-OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
-PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
-EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
-ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
-YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-NECESSARY SERVICING, REPAIR, OR CORRECTION.
-
-IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
-LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
-OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
-THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
-RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
-FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
-SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGES.
-
 =cut
 
 package Log::Handler::Output::DBI;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_05';
+our $VERSION = '0.00_06';
 our $ERRSTR  = '';
 
 use Carp;

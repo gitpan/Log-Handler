@@ -72,8 +72,8 @@ Set STDOUT or STDERR
     # or
     my $log = Log::Handler::Output::File->new( filename => \*STDERR );
 
-If the option C<filename> is set in a config file and you want to debug to your screen then
-you can set C<*STDOUT> or C<*STDERR> as a string.
+If the option C<filename> is set in a config file and you want to debug to your
+screen then you can set C<*STDOUT> or C<*STDERR> as a string.
 
     my $log = Log::Handler::Output::File->new( filename => '*STDOUT' );
     # or
@@ -83,20 +83,22 @@ That is not possible:
 
     my $log = Log::Handler::Output::File->new( filename => '*FH' );
 
-Note that if you set a GLOBREF to C<filename> some options will be forced (overwritten)
-and you have to control the handles yourself. The forced options are
+Note that if you set a GLOBREF to C<filename> some options will be forced
+(overwritten) and you have to control the handles yourself. The forced options
+are
 
     fileopen => 1   # don't close
     filelock => 0   # don't lock
     reopen   => 0   # and don't reopen
 
-The reason is simple: if you set C<*STDOUT> as filename it would be very bad if it would
-be closed or locked.
+The reason is simple: if you set C<*STDOUT> as filename it would be very bad
+if it would be closed or locked.
 
 =item B<filelock>
 
-Maybe it's desirable to lock the log file by each write operation because a lot of processes
-write at the same time to the log file. You can set the option C<filelock> to 0 or 1.
+Maybe it's desirable to lock the log file by each write operation because a lot
+of processes write at the same time to the log file. You can set the option
+C<filelock> to 0 or 1.
 
     0 - no file lock
     1 - exclusive lock (LOCK_EX) and unlock (LOCK_UN) by each write operation (default)
@@ -159,20 +161,21 @@ Take a look to the documentation of C<sysopen()> to get more informations.
 
 =item B<permissions>
 
-The option C<permissions> sets the permission of the file if it creates and must
-be set as a octal value. The permission need to be in octal and are modified
-by your process's current "umask".
+The option C<permissions> sets the permission of the file if it creates and
+must be set as a octal value. The permission need to be in octal and are
+modified by your process's current "umask".
 
 That means that you have to use the unix style permissions such as C<chmod>.
-C<0640> is the default permission for this option. That means that the owner got
-read and write permissions and users in the same group got only read permissions.
-All other users got no access.
+C<0640> is the default permission for this option. That means that the owner
+got read and write permissions and users in the same group got only read
+permissions. All other users got no access.
 
 Take a look to the documentation of C<sysopen()> to get more informations.
 
 =item B<utf8>
 
-If this option is set to 1 then UTF-8 will be set with C<binmode()> on the output filehandle.
+If this option is set to 1 then UTF-8 will be set with C<binmode()> on the
+output filehandle.
 
 =back
 
@@ -220,36 +223,13 @@ Copyright (C) 2007 by Jonny Schulz. All rights reserved.
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
-=head1 DISCLAIMER OF WARRANTY
-
-BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
-FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
-OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
-PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
-EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
-ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
-YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-NECESSARY SERVICING, REPAIR, OR CORRECTION.
-
-IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
-LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
-OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
-THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
-RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
-FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
-SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGES.
-
 =cut
 
 package Log::Handler::Output::File;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_06';
+our $VERSION = '0.00_07';
 our $ERRSTR  = '';
 
 use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );

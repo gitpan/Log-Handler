@@ -22,7 +22,8 @@ Log::Handler::Output::Email - Log messages as email (via Net::SMTP).
 
 =head1 DESCRIPTION
 
-With this output module it's possible to log messages via email and it use Net::SMTP to do it.
+With this output module it's possible to log messages via email and it used
+Net::SMTP to do it.
 
 Net::SMTP is from Graham Barr and it does it's job very well.
 
@@ -52,8 +53,8 @@ Identify yourself with a HELO. The default is set to C<EHLO BELO>.
 
 =item B<timeout>
 
-With this option you can set the maximum time in seconds to wait for a response
-from the SMTP server. The default is set to 120 seconds.
+With this option you can set the maximum time in seconds to wait for a
+response from the SMTP server. The default is set to 120 seconds.
 
 =item B<from>
 
@@ -71,9 +72,9 @@ If no subject is set then the first 100 character of the message is used.
 
 =item B<buffer> and B<interval>
 
-Both options exists only for security. The thing is that it would be very bad if
-something wents wrong in your program and hundreds of mails would be send. For this
-reason you can set a buffer and a interval to take care.
+Both options exists only for security. The thing is that it would be very bad
+if something wents wrong in your program and hundreds of mails would be send.
+For this reason you can set a buffer and a interval to take care.
 
 With the buffer you can set the maximum size of the buffer in lines. If you set
 
@@ -81,12 +82,13 @@ With the buffer you can set the maximum size of the buffer in lines. If you set
 
 then 10 messages would be buffered.
 
-With the interval you can set the interval in seconds to flush the buffer. "flush"
-means to send the complete buffer as one email.
+With the interval you can set the interval in seconds to flush the buffer.
+C<flush> means to send the complete buffer as one email.
 
-Note that if the buffer is full and the interval is not expired then all further
-lines get lost - as a matter of course - because we don't want to blow our memory
-away. To flush the buffer every time if it's full you can set the interval to 0.
+Note that if the buffer is full and the interval is not expired then all
+further lines get lost - as a matter of course - because we don't want to blow
+our memory away. To flush the buffer every time if it's full you can set the
+interval to 0.
 
 =item B<debug>
 
@@ -152,36 +154,13 @@ Copyright (C) 2007 by Jonny Schulz. All rights reserved.
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
-=head1 DISCLAIMER OF WARRANTY
-
-BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
-FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
-OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
-PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
-EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
-ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
-YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-NECESSARY SERVICING, REPAIR, OR CORRECTION.
-
-IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
-LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
-OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
-THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
-RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
-FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
-SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGES.
-
 =cut
 
 package Log::Handler::Output::Email;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_06';
+our $VERSION = '0.00_07';
 our $ERRSTR  = '';
 our $TEST    =  0; # is needed to disable flush() for tests
 

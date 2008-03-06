@@ -90,8 +90,8 @@ If the extension is not defined then C<Config::General> is used by default.
 
 =item B<section>
 
-If your configuration is placed in file where you configure your complete program
-you can push your output configuration into a sub section:
+If your configuration is placed in file where you configure your complete
+program you can push your output configuration into a sub section:
 
     <output>
         <file>
@@ -107,7 +107,8 @@ you can push your output configuration into a sub section:
         foo = bar
     </Another_Script_Config>
 
-Now your configuration is placed in the C<output> section. You can load this section with
+Now your configuration is placed in the C<output> section. You can load this
+section with
 
     $log->config(
         filename => 'file.conf',
@@ -127,8 +128,8 @@ Now your configuration is placed in the C<output> section. You can load this sec
 
 =item B<config>
 
-With this option you can pass a configuration that you loaded already but it must
-have the correct hash structure! Take a look to the examples!
+With this option you can pass a configuration that you loaded already but it
+must have the correct hash structure! Take a look to the examples!
 
 =back
 
@@ -181,8 +182,8 @@ config plugins available.
 
 =head2 A default section
 
-If your configuration contains a C<default> section then this parameters are used
-for all other sections. Example:
+If your configuration contains a C<default> section then this parameters are
+used for all other sections. Example:
 
     my %config = (
         # the configuration for a file
@@ -213,8 +214,8 @@ for all other sections. Example:
         }
     );
 
-The option C<mode> is set to C<append> for the log file C<file1.log> and C<file2.log>.
-The configuration for C<file3.log> will be set to C<trunc>.
+The option C<mode> is set to C<append> for the log file C<file1.log> and
+C<file2.log>. The configuration for C<file3.log> will be set to C<trunc>.
 
 =head2 Examples for the config plugins
 
@@ -479,36 +480,13 @@ Copyright (C) 2007 by Jonny Schulz. All rights reserved.
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
-=head1 DISCLAIMER OF WARRANTY
-
-BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
-FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
-OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
-PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
-EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
-ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
-YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-NECESSARY SERVICING, REPAIR, OR CORRECTION.
-
-IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
-LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
-OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
-THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
-RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
-FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
-SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGES.
-
 =cut
 
 package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_07';
+our $VERSION = '0.00_08';
 
 use Carp;
 use File::Spec;

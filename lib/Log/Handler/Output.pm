@@ -37,7 +37,7 @@ package Log::Handler::Output;
 
 use strict;
 use warnings;
-our $VERSION   = '0.00_08';
+our $VERSION   = '0.00_09';
 our $ERRSTR    = '';
 our $CALLER    =  2;
 our $TRACE     =  0;
@@ -89,9 +89,17 @@ sub log {
         $message->{message} .= "\n";
     }
 
+    if ($self->{prepare_message}) {
+        my $prepare_messaged_message = $self->_prepare_message(%$message)
+            or return $self->_raise_error($output->errstr);
+        $output->log($prepare_messaged_message)
+            or return $self->_raise_error($output->errstr);
+    } else {
+        $output->log($message)
+            or return $self->_raise_error($output->errstr);
+    }
 
-    $output->log($message)
-        or return $self->_raise_error($output->errstr);
+    return 1;
 }
 
 sub errstr { $ERRSTR }
@@ -122,6 +130,14 @@ sub _add_trace {
         }
         $message->{message} .= "\n";
     }
+}
+
+sub _prepare_message {
+    my $self    = shift;
+    my $message = {@_};
+    my $code    = $self->{prepare_message};
+    eval { &$code($message) };
+    return $@ ? $self->_raise_error($@) : $message;
 }
 
 sub _measurement {

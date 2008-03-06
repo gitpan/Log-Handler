@@ -1,0 +1,265 @@
+=head1 NAME
+
+Log::Handler::Examples - Output examples.
+
+=head1 LOG VIA FILE
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(file => {
+        filename => 'file1.log',
+        mode     => 'append',
+        newline  => 1,
+        maxlevel => 7,
+        minlevel => 0
+    });
+
+    $log->debug("this is a debug message");
+    $log->info("this is a info message");
+    $log->notice("this is a notice");
+    $log->warning("this is a warning");
+    $log->error("this is a error message");
+    $log->err("this is a error message as well");
+    $log->critical("this is a critical message");
+    $log->crit("this is a critical message as well");
+    $log->alert("this is a alert message");
+    $log->emergency("this is a emergency message");
+    $log->emerg("this is a emergency message as well");
+
+Would log to C<file1.log>
+
+    Feb 01 12:56:31 [DEBUG] this is a debug message
+    Feb 01 12:56:31 [INFO] this is a info message
+    Feb 01 12:56:31 [NOTICE] this is a notice
+    Feb 01 12:56:31 [WARNING] this is a warning
+    Feb 01 12:56:31 [ERROR] this is a error message
+    Feb 01 12:56:31 [ERROR] this is a error message as well
+    Feb 01 12:56:31 [CRITICAL] this is a critical message
+    Feb 01 12:56:31 [CRITICAL] this is a critial message as well
+    Feb 01 12:56:31 [ALERT] this is a alert message
+    Feb 01 12:56:31 [EMERGENCY] this is a emergency message
+    Feb 01 12:56:31 [EMERGENCY] this is a emergency message as well
+
+=head1 LOG VIA DBI
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(dbi => {
+        # database connection
+        database   => 'database',
+        driver     => 'mysql',
+        user       => 'user',
+        password   => 'password',
+        host       => '127.0.0.1',
+        port       => 3306,
+        debug      => 1,
+        table      => 'messages',
+        columns    => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
+        values     => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
+        persistent => 1,
+        reconnect  => 1,
+        maxlevel   => 'error',
+        minlevel   => 'emerg'
+    });
+
+    $log->error("this error goes to the database");
+
+=head1 LOG VIA EMAIL
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(email => {
+        host     => 'mx.bar.example',
+        hello    => 'EHLO my.domain.example',
+        timeout  => 120,
+        debug    => 1,
+        from     => 'bar@foo.example',
+        to       => 'foo@bar.example',
+        subject  => 'your subject',
+        buffer   => 100,
+        interval => 60,
+        maxlevel => 'error',
+        minlevel => 'emerg',
+    });
+
+    $log->error($message);
+
+=head1 LOG VIA FORWARD
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(forward => {
+        forward_to      => \&my_func,
+        message_pattern => [ qw/%L %T %P %H %C %p %t/ ],
+        message_layout  => '%m',
+        maxlevel        => 'info',
+    });
+
+    $log->info('Hello World!');
+
+    sub my_func {
+        my $params = shift;
+        print Dumper($params);
+    }
+
+=head1 LOG VIA SCREEN
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(forward => {
+        log_to          => 'STDERR',
+        dump            => 1,
+        message_pattern => [ qw/%L %T %P %H %C %p %t/ ],
+        message_layout  => '%m',
+        maxlevel        => 'info',
+    });
+
+    $log->info('Hello World!');
+
+=head1 DIFFERENT OUTPUTS
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(file => {
+        filename => 'common.log',
+        mode     => 'append',
+        maxlevel => 6,
+        minlevel => 5,
+    });
+
+    $log->add(file => {
+        filename => 'error.log',
+        mode     => 'append',
+        maxlevel => 4,
+        minlevel => 0,
+    });
+
+    $log->add(email => {
+        host     => 'mx.bar.example',
+        hello    => 'EHLO my.domain.example',
+        timeout  => 120,
+        debug    => 1,
+        from     => 'bar@foo.example',
+        to       => 'foo@bar.example',
+        subject  => 'your subject',
+        buffer   => 100,
+        interval => 60,
+        maxlevel => 'error',
+        minlevel => 'emerg',
+    });
+
+    # log to common.log
+    $log->info("this is a info message");
+    $log->notice("this is a notice");
+
+    # log to error.log
+    $log->warning("this is a warning");
+
+    # log to error.log and to foo@bar.example
+    $log->error("this is a error message");
+    $log->err("this is a error message as well");
+    $log->critical("this is a critical message");
+    $log->crit("this is a critical message as well");
+    $log->alert("this is a alert message");
+    $log->emergency("this is a emergency message");
+    $log->emerg("this is a emergency message as well");
+
+=head1 CONFIG
+
+File: my_app_log.conf
+
+    <file>
+        <default>
+            newline     = 1
+            permissions = 0640
+            timeformat  = %b %d %H:%M:%S
+            fileopen    = 1
+            reopen      = 1
+            mode        = append
+            prefix      = "%T %H[%P] [%L] %S: "
+            debug_mode  = 2
+        </default>
+
+        <common>
+            filename    = example.log
+            maxlevel    = info
+            minlevel    = warn
+        </common>
+
+        <error>
+            filename    = example-error.log
+            maxlevel    = warn
+            minlevel    = emergency
+        </error>
+
+        <debug>
+            filename    = example-debug.log
+            maxlevel    = debug
+            minlevel    = debug
+        </debug>
+    </file>
+
+    <screen>
+        <foo>
+            log_to      = STDERR
+            dump        = 1
+            maxlevel    = debug
+            minlevel    = debug
+        </foo>
+    </screen>
+
+Script:
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->config(filename => 'my_app_log.conf');
+
+=head1 CHECK FOR ACTIVE LEVELS
+
+It can be very useful if you want to check if a level is active.
+
+    use Log::Handler;
+    use Data::Dumper;
+
+    my $log = Log::Handler->new();
+
+    $log->add(file => {
+       filename   => 'file1.log',
+       mode       => 'append',
+       maxlevel   => 4,
+    });
+
+    my %hash = (foo => 1, bar => 2);
+
+Now you want to dump the hash, but not in any case.
+
+    if ( $log->is_debug ) {
+        my $dump = Dumper(\%hash);
+        $log->debug($dump);
+    }
+
+This would dump the hash only if the level debug is active.
+
+=head1 REPORT BUGS
+
+Please report all bugs to <jschulz.cpan(at)bloonix.de>.
+
+=head1 AUTHOR
+
+Jonny Schulz <jschulz.cpan(at)bloonix.de>.
+
+=cut

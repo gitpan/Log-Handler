@@ -1,6 +1,6 @@
 ---
 name: Log-Handler
-version: 0.38_14
+version: 0.38_15
 author:
   - Jonny Schulz
 abstract: Log messages to one or more outputs.
@@ -28,31 +28,31 @@ recommends:
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.38_14
+    version: 0.38_15
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
-    version: 0.00_07
+    version: 0.00_08
   Log::Handler::Levels:
     file: lib/Log/Handler/Levels.pm
-    version: 0.00_01
+    version: 0.00_03
   Log::Handler::Output:
     file: lib/Log/Handler/Output.pm
-    version: 0.00_08
+    version: 0.00_09
   Log::Handler::Output::DBI:
     file: lib/Log/Handler/Output/DBI.pm
-    version: 0.00_05
+    version: 0.00_06
   Log::Handler::Output::Email:
     file: lib/Log/Handler/Output/Email.pm
-    version: 0.00_06
+    version: 0.00_07
   Log::Handler::Output::File:
     file: lib/Log/Handler/Output/File.pm
-    version: 0.00_06
+    version: 0.00_07
   Log::Handler::Output::Forward:
     file: lib/Log/Handler/Output/Forward.pm
-    version: 0.00_06
+    version: 0.00_07
   Log::Handler::Output::Screen:
     file: lib/Log/Handler/Output/Screen.pm
-    version: 0.00_04
+    version: 0.00_05
   Log::Handler::Plugin::Config::General:
     file: lib/Log/Handler/Plugin/Config/General.pm
     version: 0.00_03
