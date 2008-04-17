@@ -90,10 +90,10 @@ If the extension is not defined then C<Config::General> is used by default.
 
 =item B<section>
 
-If your configuration is placed in file where you configure your complete
-program you can push your output configuration into a sub section:
+If you want to write the configuration into a global configuration file
+then you can create a own section for the logger:
 
-    <output>
+    <logger>
         <file>
             <mylog>
                 filename = file.log
@@ -101,30 +101,36 @@ program you can push your output configuration into a sub section:
                 maxlevel = 7
             </mylog>
         </file>
-    </output>
+    </logger>
 
-    <Another_Script_Config>
+    <another_script_config>
         foo = bar
-    </Another_Script_Config>
+        bar = baz
+        baz = foo
+    </another_script_config>
 
 Now your configuration is placed in the C<output> section. You can load this
 section with
 
     $log->config(
         filename => 'file.conf',
-        section  => 'output',
+        section  => 'logger',
     );
 
     # or if you load the configuration yourself to $config
 
     $log->config(
         config  => $config,
-        section => 'output',
+        section => 'logger',
     );
 
     # or just
 
-    $log->config( config => $config->{output} );
+    $log->config( config => $config->{logger} );
+
+Note that the section C<mylog> is used as an C<alias>. Later you get it with
+
+    my $file_output = $log->get_logger('mylog');
 
 =item B<config>
 
@@ -486,7 +492,7 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_08';
+our $VERSION = '0.00_09';
 
 use Carp;
 use File::Spec;
@@ -532,7 +538,7 @@ sub config {
         while ( my ($name, $log_config) = each %$type_config ) {
             $class->_is_hash($name, $log_config);
             next if $name eq 'default';
-            my %new_config = (%default, %$log_config);
+            my %new_config = (%default, %$log_config, alias => $name);
             push @{$all_configs{$type}}, \%new_config;
         }
     }

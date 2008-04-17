@@ -6,7 +6,7 @@ Log::Handler::Output::DBI - Log messages to a database.
 
     use Log::Handler::Output::DBI;
 
-    my $log = Log::Handler::Output::DBI->new(
+    my $db = Log::Handler::Output::DBI->new(
         # database connection
         database   => 'database',
         driver     => 'mysql',
@@ -37,7 +37,7 @@ Log::Handler::Output::DBI - Log messages to a database.
         reconnect  => 1,
     );
 
-    $db_output->log(\%message);
+    $db->log(\%message);
 
 =head1 DESCRIPTION
 
@@ -166,6 +166,36 @@ intercepted with C<$SIG{__WARN__}>.
 
 =head2 log()
 
+Log a message to the database.
+
+    my $db = Log::Handler::Output::DBI->new(
+        database   => 'database',
+        driver     => 'mysql',
+        user       => 'user',
+        password   => 'password',
+        host       => '127.0.0.1',
+        port       => 3306,
+        table      => 'messages',
+        columns    => [ qw/level ctime message/ ],
+        values     => [ qw/%level %time %message/ ],
+        persistent => 1,
+        reconnect  => 1,
+    );
+
+    $db->log(
+        message => 'your message',
+        level   => 'INFO',
+        time    => '2008-10-10 10:12:23',
+    );
+
+=head2 connect()
+
+Connect to the database.
+
+=head2 disconnect()
+
+Disconnect from the database.
+
 =head2 errstr()
 
 This function returns the last error message.
@@ -210,7 +240,7 @@ package Log::Handler::Output::DBI;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_06';
+our $VERSION = '0.00_07';
 our $ERRSTR  = '';
 
 use Carp;
@@ -226,26 +256,27 @@ sub new {
 
     if ($self->{persistent}) {
         warn "Peristent connections is set to true" if $self->{debug};
-        $self->_connect or return undef;
+        $self->connect or return undef;
     }
 
     return $self;
 }
 
 sub log {
-    my ($self, $message) = @_;
+    my $self = shift;
+    my $message = @_ > 1 ? {@_} : shift;
 
     #if (!$self->{persistent} || ($self->{dbh} && !$self->{dbh}->ping)) {
-    #    $self->_connect or return undef;
+    #    $self->connect or return undef;
     #}
 
     if ($self->{persistent}) {
         warn "ping the database" if $self->{debug};
         if (!$self->{dbh}->ping) {
-            $self->_connect or return undef;
+            $self->connect or return undef;
         }
     } else {
-        $self->_connect or return undef;
+        $self->connect or return undef;
     }
 
     warn "prepare: $self->{statement}" if $self->{debug};
@@ -274,19 +305,13 @@ sub log {
         or return $self->_raise_error("DBI finish error: ".$sth->errstr);
 
     if (!$self->{persistent}) {
-        $self->_disconnect or return undef;
+        $self->disconnect or return undef;
     }
 
     return 1;
 }
 
-sub errstr { $ERRSTR }
-
-#
-# private stuff
-#
-
-sub _connect {
+sub connect {
     my $self = shift;
 
     warn "Connect to the database: $self->{cstr}->[0] ..." if $self->{debug};
@@ -299,7 +324,7 @@ sub _connect {
     return 1;
 }
 
-sub _disconnect {
+sub disconnect {
     my $self = shift;
     warn "Disconnect from database" if $self->{debug};
     $self->{dbh}->disconnect
@@ -307,6 +332,12 @@ sub _disconnect {
     delete $self->{dbh};
     return 1;
 }
+
+sub errstr { $ERRSTR }
+
+#
+# private stuff
+#
 
 sub _validate {
     my $class = shift;

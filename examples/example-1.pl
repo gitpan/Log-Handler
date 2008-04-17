@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use Log::Handler;
 
-my $log = Log::Handler->new;
+my $log = Log::Handler->new();
 
 $log->config(filename => 'example-1.cfg');
 $log->info('info message');

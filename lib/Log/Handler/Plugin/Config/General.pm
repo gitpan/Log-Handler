@@ -61,7 +61,7 @@ package Log::Handler::Plugin::Config::General;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_03';
+our $VERSION = '0.00_04';
 use Config::General;
 
 sub get_config {

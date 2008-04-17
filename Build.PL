@@ -15,6 +15,7 @@ my $build = Module::Build->new(
         'YAML'               => 0,
         'DBI'                => 0,
         'Net::SMTP'          => 0,
+        'IO::Socket'         => 0,
     },
     requires => {
         'Carp'               => 0,

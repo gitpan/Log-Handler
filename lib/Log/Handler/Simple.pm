@@ -4,21 +4,26 @@ Log::Handler::Simple - A simple handler to log messages to a log file.
 
 =head1 SYNOPSIS
 
-    use Log::Handler::Simple;
+    use Log::Handler;
 
-    my $log = Log::Handler::Simple->new();
+    # if you pass any options to new() then a
+    # Log::Handler::Simple object is created
+
+    my $log = Log::Handler->new(filename => '*STDOUT');
+
+    # is the same like
+
+    my $log = Log::Handler::Simple->new(filename => '*STDOUT');
 
     $log->alert("foo bar");
 
 =head1 DESCRIPTION
 
-This module is just a simple object oriented log file handler and very easy to use.
-It's possible to define a log level for your programs and control the amount of
-informations that will be logged to the log file. In addition it's possible to configure
-how you wish to open the log file - transient or permanent - and lock and unlock the
-log file by each write operation. If you wish you can assign the handler to check the
-inode of the log file (not on Windows). That could be very useful if a rotate
-mechanism moves and zip the log file.
+Maybe you are wondering why this module exists besides C<Log::Handler::Output::File>.
+
+This module is just for backward compatibilities to the old C<Log::Handler> - version 0.38.
+If you install the current version of C<Log::Handler> you don't need to rewrite your
+programs. You can use the old style if you wish.
 
 =head1 METHODS
 

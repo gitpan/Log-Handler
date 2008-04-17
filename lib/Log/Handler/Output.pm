@@ -37,12 +37,13 @@ package Log::Handler::Output;
 
 use strict;
 use warnings;
-our $VERSION   = '0.00_09';
-our $ERRSTR    = '';
-our $CALLER    =  2;
-our $TRACE     =  0;
-our $MESSAGE   = '';
-our $LEVEL     = '';
+our $VERSION = '0.00_10';
+our $ERRSTR  = '';
+our $CALLER  =  2;
+our $TRACE   =  0;
+our $MESSAGE = '';
+our $LEVEL   = '';
+our $OBJECT  = undef;
 
 use Carp;
 use Devel::Backtrace;
@@ -62,11 +63,12 @@ sub log {
     my $message    = {message => ''};
     local $LEVEL   = shift;
     local $MESSAGE = join(' ', @_);
+    local $OBJECT  = $self;
 
     if ($self->{message_order}) {
         foreach my $p ( @{$self->{message_order}} ) {
             if (ref($p)) {
-                $message->{message} .= &$p($self);
+                $message->{message} .= &$p;
             } else {
                 $message->{message} .= $p;
             }
@@ -89,10 +91,16 @@ sub log {
         $message->{message} .= "\n";
     }
 
+    if ($self->{filter}) {
+        $self->_filter_ok($message) or return 1;
+    }
+
     if ($self->{prepare_message}) {
-        my $prepare_messaged_message = $self->_prepare_message(%$message)
+        # each output can have an own prepare function. for this reason
+        # the message is passed as hash and not as a reference.
+        my $prepare_message = $self->_prepare_message(%$message)
             or return $self->_raise_error($output->errstr);
-        $output->log($prepare_messaged_message)
+        $output->log($prepare_message)
             or return $self->_raise_error($output->errstr);
     } else {
         $output->log($message)
@@ -150,6 +158,27 @@ sub _measurement {
     my $cur_time = $new_time - $self->{timeofday};
     $self->{timeofday} = $new_time;
     return sprintf('%.6f', $cur_time);
+}
+
+sub _filter_ok {
+    my ($self, $message) = @_;
+    my $filter = $self->{filter};
+    my $result = $filter->{result};
+    my $code   = $filter->{code};
+    my $return = ();
+
+    if (!$filter->{condition}) {
+        $return = &$code($message) || 0;
+    } else {
+        foreach my $match ( keys %$result ) {
+            #print STDERR "$match: $message->{message} =~ $filter->{$match}\n";
+            $result->{$match} =
+                $message->{message} =~ /$filter->{$match}/ || 0;
+        }
+        $return = &$code($result);
+    }
+
+    return $return;
 }
 
 sub _raise_error {

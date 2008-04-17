@@ -10,12 +10,13 @@ lib/Log/Handler/Config.pm
 lib/Log/Handler/Examples.pod
 lib/Log/Handler/Levels.pm
 lib/Log/Handler/Output.pm
-lib/Log/Handler/Output/.Screen.pm.swp
 lib/Log/Handler/Output/DBI.pm
 lib/Log/Handler/Output/Email.pm
 lib/Log/Handler/Output/File.pm
 lib/Log/Handler/Output/Forward.pm
 lib/Log/Handler/Output/Screen.pm
+lib/Log/Handler/Output/Socket.pm
+lib/Log/Handler/Pattern.pm
 lib/Log/Handler/Plugin/Config/General.pm
 lib/Log/Handler/Plugin/Config/Properties.pm
 lib/Log/Handler/Plugin/YAML.pm
@@ -32,9 +33,12 @@ t/011-handler-set-pattern.t
 t/012-handler-message-pattern.t
 t/013-handler-priority.t
 t/014-handler-prepare.t
+t/015-handler-filter.t
+t/016-handler-alias.t
 t/020-output-forward.t
 t/030-output-file.t
 t/040-output-email.t
 t/050-output-dbi.t
+t/060-output-socket.t
 t/100-config.t
 t/200-backward-compatibility.t

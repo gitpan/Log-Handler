@@ -40,7 +40,7 @@ With this option you can define arguments that will be passed to the sub
 routine.
 
 In the following example the arguments would be passed as a array to
-C<my_func()>.
+C<Class::method()>.
 
     my $forwarder = Log::Handler::Output::Forward->new(
         forward_to => \&Class::method,
@@ -113,7 +113,7 @@ package Log::Handler::Output::Forward;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_07';
+our $VERSION = '0.00_08';
 our $ERRSTR  = '';
 
 use Carp;
@@ -126,13 +126,13 @@ sub new {
 }
 
 sub log {
-    my ($self, $message) = @_;
+    my $self = shift;
     my $coderef = $self->{forward_to};
 
     if ($self->{arguments}) {
-        eval { &$coderef(@{$self->{arguments}}, $message) };
+        eval { &$coderef(@{$self->{arguments}}, @_) };
     } else {
-        eval { &$coderef($message) };
+        eval { &$coderef(@_) };
     }
 
     if ($@) {

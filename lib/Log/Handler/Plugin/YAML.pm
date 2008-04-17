@@ -60,7 +60,7 @@ package Log::Handler::Plugin::Config::YAML;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_04';
+our $VERSION = '0.00_05';
 use YAML;
 
 sub get_config {

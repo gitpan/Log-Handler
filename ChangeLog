@@ -1,3 +1,12 @@
+0.38_16 Released at 2008-04-17.
+        - Kicked all <level>_and_exit() methods - to bloated.
+        - Added Log::Handler::Pattern.pm.
+        - Added Log::Handler::Output::Socket.pm.
+        - Added option filter and alias to the handler.
+        - Added close() to Log::Handler::Output::File.
+        - Added connect() and disconnect() to Log::Handler::Output::DBI.
+        - Added connect() and disconnect() to Log::Handler::Output::Socket.
+
 0.38_15 Released at 2008-03-06.
         - The old style of Log::Handler version 0.38 is now implemented as
           Log::Handler::Simple.
@@ -48,8 +57,6 @@
           into the Log::Handler object.
         - Changed option debug to debug_trace. The reason is that the
           option debug can be used for output objects.
-        - 
-        - 
 
 0.38_06 Released at 2008-01-20.
         - POD improved and a lot of POD typos fixed.

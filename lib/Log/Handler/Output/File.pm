@@ -189,7 +189,12 @@ Example:
 
 =head2 errstr()
 
-This function returns the last error message.
+Call C<errstr()> to get the last error message.
+
+=head2 close()
+
+Call C<close()> to close the log file yourself - normally you don't need
+to use it, because the log file will be opened and closed automatically.
 
 =head1 PREREQUISITES
 
@@ -229,7 +234,7 @@ package Log::Handler::Output::File;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_07';
+our $VERSION = '0.00_08';
 our $ERRSTR  = '';
 
 use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
@@ -325,11 +330,16 @@ sub log {
     return 1;
 }
 
+sub close {
+    my $self = shift;
+    return $self->_close;
+}
+
 sub errstr { $ERRSTR }
 
 sub DESTROY {
     my $self = shift;
-    close($self->{fh})
+    CORE::close($self->{fh})
         if $self->{fh}
         && !ref($self->{filename})
         && $self->{filename} !~ /^\*STDOUT\z|^\*STDERR\z/;
@@ -362,10 +372,12 @@ sub _open {
 sub _close {
     my $self = shift;
 
-    close($self->{fh})
-        or return $self->_raise_error("unable to close logfile $self->{filename}: $!");
+    if ($self->{fh}) {
+        CORE::close($self->{fh})
+            or return $self->_raise_error("unable to close logfile $self->{filename}: $!");
+        delete $self->{fh};
+    }
 
-    delete $self->{fh};
     return 1;
 }
 

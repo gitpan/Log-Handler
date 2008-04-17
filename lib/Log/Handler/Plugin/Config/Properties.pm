@@ -59,7 +59,7 @@ package Log::Handler::Plugin::Config::Properties;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_04';
+our $VERSION = '0.00_05';
 use Config::Properties;
 
 sub get_config {

@@ -21,6 +21,7 @@ There are different output modules available:
     Log::Handler::Output::Email
     Log::Handler::Output::Forward
     Log::Handler::Output::Screen
+    Log::Handler::Output::Socket
 
 You can add the outputs on different ways. Take a look to the further
 documentation of L<Log::Handler>.
@@ -29,8 +30,9 @@ documentation of L<Log::Handler>.
 
 Placeholders are now available for the message layout in C<printf()> style.
 The old style of <--LEVEL--> is deprecated and you should use C<%L> instead.
-The layout can be defined with the option C<message_layout>. C<prefix> is
-deprecated as well.
+The layout can be defined with the option C<message_layout>.
+
+The option C<prefix> is deprecated.
 
 =head2 Configuration file
 
@@ -48,6 +50,9 @@ Take a look into the documentation for L<Log::Handler::Config>.
     dateformat
     priority
     message_pattern
+    prepare_message
+    filter
+    alias
 
 =head2 Changed options
 
@@ -63,6 +68,7 @@ Take a look into the documentation for L<Log::Handler::Config>.
     add()           to add new outputs
     config()        to load outputs from a configuration file
     set_pattern()   to create your own placeholder
+    get_output()    to get a output object with an alias
 
 =head2 New level methods
 
@@ -87,8 +93,8 @@ version 0.38.
 
     my $log = Log::Handler->new(filename => 'file.log');
 
-This is still running fine, but deprecated. It creates a C<Log::Handler::Simple>
-object with all features of C<Log::Handler> in version 0.38.
+This is still running fine. It creates a C<Log::Handler::Simple>
+object with all features of C<Log::Handler> from version 0.38.
 
 =head2 Further releases
 

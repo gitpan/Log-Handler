@@ -100,45 +100,6 @@ Or maybe you just want to know who called who
 
 =back
 
-=head2 Log and exit
-
-The default exit code is 1
-
-    $log->error_and_exit('an error happends')
-
-Pass the exit code yourself
-
-    $log->error_and_exit(9 => 'an error happends')
-
-    # or
-
-    $log->info_and_exit(0 => 'program stopped')
-
-Note that if the first argument is a number then this number is used
-as exit code.
-
-=over
-
-=item B<debug_and_exit()>
-
-=item B<info_and_exit()>
-
-=item B<notice_and_exit()>
-
-=item B<warning_and_exit()>
-
-=item B<error_and_exit()>, B<err_and_exit()>
-
-=item B<critical_and_exit()>, B<crit_and_exit()>
-
-=item B<alert_and_exit()>
-
-=item B<emergency_and_exit()>, B<emerg_and_exit()>
-
-=item B<fatal_and_exit()>
-
-=back
-
 =head2 Log and die
 
 These methods log the message to the output and then call C<Carp::croak()>.
@@ -221,7 +182,7 @@ package Log::Handler::Levels;
 
 use strict;
 use warnings;
-our $VERSION  = '0.00_03';
+our $VERSION  = '0.00_04';
 use Carp qw();
 
 my %LEVELS_BY_ROUTINE = (
@@ -283,20 +244,6 @@ while ( my ($routine, $level) = each %LEVELS_BY_ROUTINE ) {
             my $self = shift;
             local $Log::Handler::Output::TRACE = 1;
             return $self->$routine(@_);
-        };
-
-        # --------------------------------------------------------------
-        # Creating the <level>_and_exit methods
-        # --------------------------------------------------------------
-
-        *{"${routine}_and_exit"} = sub {
-            my $self = shift;
-            my $exit_code;
-            if (@_) {
-                $exit_code = $_[0] =~ /^\d+\z/ ? shift : 1;
-                $self->{exit_level}(@_);
-            }
-            exit $exit_code;
         };
 
         # --------------------------------------------------------------

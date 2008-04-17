@@ -126,6 +126,57 @@ Would log to C<file1.log>
 
     $log->info('Hello World!');
 
+=head1 LOG VIA SOCKET
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(socket => {
+        peeraddr => '127.0.0.1',
+        peerport => 44444,
+        newline  => 1,
+        maxlevel => 'info',
+        die_on_errors => 0,
+    });
+
+    while ( 1 ) {
+        $log->info('test')
+            or warn "unable to send message: ", $log->errstr;
+        sleep 1;
+    }
+
+=head2 SIMPLE SOCKET SERVER (TCP)
+
+    use strict;
+    use warnings;
+    use IO::Socket::INET;
+    use Log::Handler::Output::File;
+
+    my $sock = IO::Socket::INET->new(
+        LocalAddr => '127.0.0.1',
+        LocalPort => 44444,
+        Listen    => 1,
+    ) or die $!;
+
+    my $file = Log::Handler::Output::File->new(
+        filename => 'file.log',
+        mode     => 'append',
+        fileopen => 1,
+        reopen   => 1,
+    );
+
+    while ( 1 ) {
+        $file->log("waiting for next connection\n");
+
+        while (my $request = $sock->accept) {
+            my $ipaddr = sprintf('%-15s', $request->peerhost);
+            while (my $message = <$request>) {
+                $file->log("$ipaddr - $message");
+            }
+        }
+    }
+
 =head1 DIFFERENT OUTPUTS
 
     use Log::Handler;
@@ -175,6 +226,41 @@ Would log to C<file1.log>
     $log->alert("this is a alert message");
     $log->emergency("this is a emergency message");
     $log->emerg("this is a emergency message as well");
+
+=head1 FILTER
+
+    my $log = Log::Handler->new();
+
+    $log->add(screen => {
+        newline  => 1,
+        maxlevel => 6,
+        filter   => {
+            match1    => 'foo',
+            match2    => 'bar',
+            match3    => 'baz',
+            condition => '(match1 && match2) && !match3'
+        }
+    });
+
+    $log->info('foo');
+    $log->info('foo bar');
+    $log->info('foo baz');
+
+=head2 ANOTHER FILTER
+
+    filter => 'as string'
+
+    filter => qr/as regexp/
+
+    filter => sub { shift->{message} =~ /as code ref/ }
+
+    # or with conditions
+
+    filter => {
+        match1    => 'as string',
+        match2    => qr/as regexp/',
+        condition => 'match1 || match2',
+    }
 
 =head1 CONFIG
 
@@ -253,6 +339,40 @@ Now you want to dump the hash, but not in any case.
     }
 
 This would dump the hash only if the level debug is active.
+
+=head1 GLOBAL LOG HANDLER
+
+A long time I was thinking about to provide a global log mechanism like
+
+    use Log::Handler myapp => 'LOG';
+    LOG->config(filename => 'myapp.conf');
+
+and then just call the handler into all the modules of your project and
+use a global logger like:
+
+    use Log::Handler 'myapp';
+    LOG->info('an info here');
+
+I through away this idea because it would come with a lot of problems.
+
+If you want to use a feature like this then you can write your own thing. As example:
+
+    package MyAPP::Util;
+    use strict;
+    use warning;
+    use Log::Handler;
+    use constant LOG => Log::Handler->new();
+    require Exporter;
+    our @ISA = qw(Exporter);
+    our @EXPORT = qw(LOG);
+    LOG->config(filename => 'myapp.conf');
+    1;
+
+Now you can include C<MyAPP::Util> into all the modules of your project and access
+the logger with
+
+    use MyAPP::Util;
+    LOG->info('an info here');
 
 =head1 REPORT BUGS
 

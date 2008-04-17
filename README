@@ -127,6 +127,7 @@ METHODS
             %H   Hostname
             %N   Newline
             %C   Caller - filename and line number
+            %c   Caller - package, filename and line number
             %p   Program name
             %t   Time measurement - replaced with the time since the last call of the handler
             %m   The message.
@@ -175,6 +176,7 @@ METHODS
             %H   hostname
             %N   newline
             %C   caller
+            %c   caller
             %p   progname
             %t   mtime
             %m   message
@@ -249,6 +251,74 @@ METHODS
             # or Log::Handler->errstr()
             # or Log::Handler::errstr()
             # or $Log::Handler::ERRSTR
+
+    filter
+        With this option it's possible to define a filter. If the filter is
+        set than only messages will be logged that match the filter. You can
+        pass a regexp, a code reference or a simple string. Example:
+
+            $log->add(file => {
+                filename => 'file.log',
+                mode     => 'append',
+                newline  => 1,
+                maxlevel => 6,
+                filter   => qr/log this/, # log only messages that contain 'log this'
+            });
+
+            $log->info('log this');
+            $log->info('but not that');
+
+        If you pass a code reference then you the message is passed as a
+        hash reference as first argument. Example:
+
+            $log->add(file => {
+                filename => 'file.log',
+                mode     => 'append',
+                newline  => 1,
+                maxlevel => 6,
+                filter   => \&my_filter
+            });
+
+            sub my_filter {
+                my $m = shift;
+                $m->{message} =~ /your filter/;
+            }
+
+        Also it's possible to define a simple condition with matches. You
+        just have to pass a hash reference with the optione "matchN" and
+        "condition". Example:
+
+            $log->add(file => {
+                filename => 'file.log',
+                mode     => 'append',
+                newline  => 1,
+                maxlevel => 6,
+                filter   => {
+                    match1    => 'log this',
+                    match2    => qr/with that/,
+                    match3    => '(?:or this|or that)',
+                    condition => '(match1 && match2) || match3',
+                }
+            });
+
+        NOTE that re-eval in regexes are not valid! Something like
+
+            match1 => '(?{unlink("file.txt")})'
+
+        would cause an error.
+
+    alias
+        You can set an alias if you want to get the output object later.
+        Example:
+
+            my $log = Log::Handler->new();
+
+            $log->add(screen => {
+                maxlevel => 7,
+                alias    => 'error',
+            });
+
+            my $output_object = $log->get_output('error');
 
     debug_trace
         You can activate a debugger that writes "caller()" informations for
@@ -358,7 +428,7 @@ METHODS
         my %handler_options = (
             timeformat      => '%Y/%m/%d %H:%M:%S',
             newline         => 1,
-            message_layout  => '%T [%L] %S: %m',
+            message_layout  => '%T [%L] %p: %m',
             maxlevel        => 'debug',
             minlevel        => 'emergency',
             die_on_errors   => 1,
@@ -464,6 +534,10 @@ METHODS
 
     For a full list take a look into the documentation of
     Log::Handler::Levels.
+
+  get_output()
+    Call "get_output($alias)" to get the output object that you added with
+    the option "alias".
 
   errstr()
     Call "errstr()" if you want to get the last error message. This is
@@ -598,7 +672,7 @@ QUESTIONS
 TODO
     Maybe; don't know
 
-        * Log::Handler::Output::Socket
+        * Log::Handler::Filter
 
 COPYRIGHT
     Copyright (C) 2007 by Jonny Schulz. All rights reserved.
