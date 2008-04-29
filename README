@@ -14,7 +14,7 @@ SYNOPSIS
             newline  => 1,
         });
 
-        $log->alert("foo bar");
+        $log->warning("a warinng here");
 
 DESCRIPTION
     This module is just a simple object oriented log handler and very easy
@@ -78,7 +78,7 @@ METHODS
         logging machine.
 
     timeformat
-        The "timeformat" is used for the placeholder %T. You can set
+        The option "timeformat" is used for the placeholder %T. You can set
         "timeformat" with a date and time format that is converted with
         "POSIX::strftime". The default format is "%b %d %H:%M:%S" and looks
         like
@@ -90,8 +90,8 @@ METHODS
             2007/02/01 12:56:31
 
     dateformat
-        The same like "timeformat". It's useful if you want to split the
-        date and time:
+        This options works like "timeformat". It's useful if you want to
+        split the date and time:
 
             $log->add(file => {
                 filename       => 'file.log',
@@ -106,14 +106,14 @@ METHODS
 
             2007-02-01 12:56:31 ERROR an error here
 
-        This option is not used on default.
+        This option is not used by default.
 
     newline
         This helpful option appends a newline to the output message if a
         newline not exist.
 
-            0 - disable (default)
-            1 - enable - appends a newline to the log message if not exist
+            0 - to disable it (default)
+            1 - to enable it
 
     message_layout
         With this option you can define your own message layout with
@@ -126,11 +126,16 @@ METHODS
             %P   PID
             %H   Hostname
             %N   Newline
+            %S   Program name
+            %R   Runtime in seconds since program start
             %C   Caller - filename and line number
-            %c   Caller - package, filename and line number
-            %p   Program name
+            %p   Caller - package name
+            %f   Caller - file name
+            %l   Caller - line number
+            %s   Caller - subroutine name
             %t   Time measurement - replaced with the time since the last call of the handler
-            %m   The message.
+            %m   Message
+            %%   Procent
 
         The default message layout is set to "%T [%L] %m".
 
@@ -159,15 +164,21 @@ METHODS
         You can create your own placeholders with the method
         "set_pattern()".
 
-        Placeholders are documented in the section "PLACEHOLDER".
-
     message_pattern
-        This option is just useful if you want to forward messages with
-        Log::Handler::Output::Forward or insert the message with
-        Log::Handler::Output::DBI or dump messages to the screen with
+        This option is just useful if you want to forward messages to output
+        modules that needs the parts of a message as a hash reference - as
+        example Log::Handler::Output::Forward, Log::Handler::Output::DBI or
         Log::Handler::Output::Screen.
 
-        Possible placeholders:
+        The option expects a list of placeholders:
+
+            # as a array reference
+            message_pattern => [ qw/%T %L %H %m/ ]
+
+            # or as a string
+            message_pattern => '%T %L %H %m'
+ 
+        The patterns will be replaced with real names as hash keys.
 
             %L   level
             %T   time
@@ -175,19 +186,17 @@ METHODS
             %P   pid
             %H   hostname
             %N   newline
+            %R   runtime
             %C   caller
-            %c   caller
-            %p   progname
+            %p   package
+            %f   filename
+            %l   line
+            %s   subroutine
+            %S   progname
             %t   mtime
             %m   message
 
-        The option expects a array reference with a list of placeholders:
-
-            message_pattern => [ qw/%T %L %H %m/ ]
-
-        The patterns are replaced with the pattern names as hash keys and
-        the hash is passed as reference to the output. Here a full code
-        example:
+        Here a full code example:
 
             use Log::Handler;
 
@@ -195,7 +204,7 @@ METHODS
 
             $log->add(forward => {
                 forward_to      => \&my_func,
-                message_pattern => [ qw/%T %L %H/ ],
+                message_pattern => [ qw/%T %L %H %m/ ],
                 message_layout  => '%m',
                 maxlevel        => 'info',
             });
@@ -205,11 +214,11 @@ METHODS
             # now you can access it
 
             sub my_func {
-                my $params = shift;
-                print "Timestamp: $params->{time}\n";
-                print "Level:     $params->{level}\n";
-                print "Hostname:  $params->{hostname}\n";
-                print "Message:   $params->{message}\n";
+                my $msg = shift;
+                print "Timestamp: $msg->{time}\n";
+                print "Level:     $msg->{level}\n";
+                print "Hostname:  $msg->{hostname}\n";
+                print "Message:   $msg->{message}\n";
             }
 
     priority
@@ -217,7 +226,7 @@ METHODS
         This means that messages will be logged at first to the outputs with
         a higher priority. If this option is not set then the default
         priority begins with 10 and will be increased +1 with each output.
-        Example...
+        Example:
 
         We add a output with no priority
 
@@ -229,19 +238,20 @@ METHODS
 
         This output gets the priority of 11... and so on.
 
-        Messages would be logged at first to priority 10 and then 11. Now
-        you can add another output and set the priority to 1.
+        Messages would be logged at first to the output with the priority of
+        10 and to the output with the priority of 11. Now you can add
+        another output and set the priority to 1.
 
             $log->add(screen => { dump => 1, priority => 1 });
 
         Messages would be logged now at first to the screen.
 
     die_on_errors
-        Set "die_on_errors" to 0 if you don't want that the handler die on
+        Set "die_on_errors" to 0 if you don't want that the handler dies on
         failed write operations.
 
-            0 - will not die on errors
-            1 - will die (e.g. croak) on errors
+            0 - to disable it
+            1 - to enable it
 
         If you set "die_on_errors" to 0 then you have to controll it
         yourself.
@@ -253,9 +263,10 @@ METHODS
             # or $Log::Handler::ERRSTR
 
     filter
-        With this option it's possible to define a filter. If the filter is
-        set than only messages will be logged that match the filter. You can
-        pass a regexp, a code reference or a simple string. Example:
+        With this option it's possible to set a filter for the outputs. If
+        the filter is set then only messages will be logged that match the
+        filter. You can pass a regexp, a code reference or a simple string.
+        Example:
 
             $log->add(file => {
                 filename => 'file.log',
@@ -268,8 +279,8 @@ METHODS
             $log->info('log this');
             $log->info('but not that');
 
-        If you pass a code reference then you the message is passed as a
-        hash reference as first argument. Example:
+        If you pass your own code then you have to check the message
+        yourself.
 
             $log->add(file => {
                 filename => 'file.log',
@@ -279,14 +290,15 @@ METHODS
                 filter   => \&my_filter
             });
 
+            # return TRUE if you want to log the message, FALSE if not
             sub my_filter {
-                my $m = shift;
-                $m->{message} =~ /your filter/;
+                my $msg = shift;
+                $msg->{message} =~ /your filter/;
             }
 
-        Also it's possible to define a simple condition with matches. You
-        just have to pass a hash reference with the optione "matchN" and
-        "condition". Example:
+        It's also possible to define a simple condition with matches. Just
+        pass a hash reference with the options "matchN" and "condition".
+        Example:
 
             $log->add(file => {
                 filename => 'file.log',
@@ -301,11 +313,11 @@ METHODS
                 }
             });
 
-        NOTE that re-eval in regexes are not valid! Something like
+        NOTE that re-eval in regexes is not valid! Something like
 
             match1 => '(?{unlink("file.txt")})'
 
-        would cause an error.
+        would cause an error!
 
     alias
         You can set an alias if you want to get the output object later.
@@ -315,10 +327,16 @@ METHODS
 
             $log->add(screen => {
                 maxlevel => 7,
-                alias    => 'error',
+                alias    => 'screen-out',
             });
 
-            my $output_object = $log->get_output('error');
+            my $screen = $log->output('screen-out');
+
+            $screen->log('foo');
+
+            # or in one step
+
+            $log->output('screen-out')->log(message => 'foo');
 
     debug_trace
         You can activate a debugger that writes "caller()" informations for
@@ -330,7 +348,7 @@ METHODS
         There are two debug modes: line(1) and block(2) mode. The default
         mode is 1.
 
-        The block mode looks like this:
+        The line mode looks like this:
 
             use strict;
             use warnings;
@@ -399,6 +417,13 @@ METHODS
                  hasargs     1
                  wantarray   0
 
+        Another way to enable the debugger very shortly is ...
+
+            {
+                local $Log::Handler::TRACE = 1;
+                $log->info('backtrace');
+            }
+
     debug_skip
         This option let skip the "caller()" informations the count of
         "debug_skip".
@@ -410,14 +435,16 @@ METHODS
                CALL(1): package(main) filename(./trace.pl) line(14) subroutine(main::test1) hasargs(0)
                CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
 
-  How to use add()
-    The method "add()" excepts 2 option parts; the options for the handler
-    and for the output module you want to use - the output modules got it's
-    own documentation for all options.
+  HowTo use add()
+    The method "add()" excepts 2 parts of options; the options for the
+    handler and the options for the output module you want to use. The
+    output modules got it's own documentation for all options. As example if
+    you want to add a file-output then take a look into the documentation of
+    Log::Handler::Output::File.
 
     There are different ways to add a new output to the handler. The one way
-    is that you create the output object yourself and pass it with the
-    handler options to "add()".
+    is to create the output object yourself and pass it with the handler
+    options to "add()".
 
     Example:
 
@@ -428,7 +455,7 @@ METHODS
         my %handler_options = (
             timeformat      => '%Y/%m/%d %H:%M:%S',
             newline         => 1,
-            message_layout  => '%T [%L] %p: %m',
+            message_layout  => '%T [%L] %S: %m',
             maxlevel        => 'debug',
             minlevel        => 'emergency',
             die_on_errors   => 1,
@@ -449,10 +476,10 @@ METHODS
             utf8            => 1,
         );
 
-        # we creating the file object
+        # create the file object
         my $file = Log::Handler::Output::File->new( \%file_options );
 
-        # creating a new handler object
+        # create a new handler object
         my $log = Log::Handler->new();
 
         # now we add the file object to the handler with the handler options
@@ -462,22 +489,38 @@ METHODS
     "add()" in one step, you just need to tell the handler what do you want
     to add.
 
-        # merge the options
-        my %all_options = (%output_options, %file_options);
+        use Log::Handler;
 
-        # pass all options and say what you want to add -> a file!
-        $log->add( file => \%all_options );
+        my $log = Log::Handler->new();
+
+        $log->add(
+            file => { # what do you want to add
+                # handler options
+                timeformat      => '%Y/%m/%d %H:%M:%S',
+                newline         => 1,
+                message_layout  => '%T [%L] %S: %m',
+                maxlevel        => 'debug',
+                minlevel        => 'emergency',
+                die_on_errors   => 1,
+                debug_trace     => 0,
+                debug_mode      => 2,
+                debug_skip      => 0,
+                # file options
+                filename        => 'file.log',
+                filelock        => 1,
+                fileopen        => 1,
+                reopen          => 1,
+                mode            => 'append',
+                autoflush       => 1,
+                permissions     => '0660',
+                utf8            => 1,
+            }
+        );
 
     The options will be splitted intern and you don't need to split it
     yourself, only if you want to do it yourself.
 
-    Further examples:
-
-        $log->add( email   => \%all_options );
-        $log->add( forward => \%all_options );
-        # and so on ...
-
-    Take a look to the section "EXAMPLES" for more informations.
+    Take a look to Log::Handler::Examples for more informations.
 
   Log level methods
     debug()
@@ -512,20 +555,21 @@ METHODS
     is_emergency(), is_emerg()
 
     These thirteen methods could be very useful if you want to kwow if the
-    current log level would output the message. All methods returns TRUE if
-    the current set of "minlevel" and "maxlevel" would log the message and
-    FALSE if not. Example:
+    current level would log the message. All methods returns TRUE if the
+    current set of "minlevel" and "maxlevel" would log the message and FALSE
+    if not.
+
+    The following example would dump the hash in any case and pass it to the
+    log handler:
 
         $log->debug(Dumper(\%hash));
 
-    This example would dump the hash in any case and pass it to the log
-    handler, but that is not that what we really want!
+    But that is not that what we really want! We want to dump the hash only
+    if the current log level would log it.
 
         if ( $log->is_debug ) {
             $log->debug(Dumper(\%hash));
         }
-
-    Now we dump the hash only if the current log level would log it.
 
     The methods "is_err()", "is_crit()" and "is_emerg()" are just shortcuts.
 
@@ -535,15 +579,16 @@ METHODS
     For a full list take a look into the documentation of
     Log::Handler::Levels.
 
-  get_output()
-    Call "get_output($alias)" to get the output object that you added with
-    the option "alias".
+  output()
+    Call "output($alias)" to get the output object that you added with the
+    option "alias".
+
+    For more informations take a look to the option "alias".
 
   errstr()
     Call "errstr()" if you want to get the last error message. This is
-    useful with "die_on_errors". If you set "die_on_errors" to 0 the handler
-    wouldn't croak on failed write operations. Set "die_on_errors" to
-    control it yourself.
+    useful if you set "die_on_errors" to 0 and the handler wouldn't die on
+    failed write operations.
 
         use Log::Handler;
 
@@ -565,7 +610,7 @@ METHODS
             # do something with $error_string
         }
 
-    The exception is that the handler croaks in any case if the call of
+    The exception is that the handler dies in any case if the call of
     "new()" or "add()" fails because on missing or wrong settings!
 
   config()
@@ -598,8 +643,8 @@ METHODS
             }
         });
 
-    The default section - I call it section here - can be used to define
-    default parameters for all file outputs.
+    The key "default" can be used to define default parameters for all file
+    outputs. All other keys ("error_log", "common_log") are used as aliases.
 
     Take a look into the documentation of Log::Handler::Config for more
     informations.
@@ -607,7 +652,7 @@ METHODS
   set_pattern()
     With this option you can set your own placeholders. Example:
 
-        $log->set_pattern('%X', 'name', sub { });
+        $log->set_pattern('%X', 'name', sub { 'value' });
 
         # or
 
@@ -624,7 +669,7 @@ EXAMPLES
     Log::Handler::Examples
 
 EXTENSIONS
-    Start it or write me a mail if you have questions.
+    Send me a mail if you have questions.
 
 PREREQUISITES
     Prerequisites for all modules:
@@ -633,17 +678,19 @@ PREREQUISITES
         Data::Dumper
         Devel::Backtrace
         Fcntl
-        Net::SMTP
         Params::Validate
         POSIX
         Time::HiRes
         Sys::Hostname
         UNIVERSAL::require
 
-    And maybe for the config loader:
+    Recommended modules:
 
         Config::General
         Config::Properties
+        DBI
+        IO::Socket
+        Net::SMTP
         YAML
 
     Just for the test suite:
@@ -670,9 +717,9 @@ QUESTIONS
     If you send me a mail then add Log::Handler into the subject.
 
 TODO
-    Maybe; don't know
+    Maybe;
 
-        * Log::Handler::Filter
+        * Log::Handler::Output::HTML
 
 COPYRIGHT
     Copyright (C) 2007 by Jonny Schulz. All rights reserved.

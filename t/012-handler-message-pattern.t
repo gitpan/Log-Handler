@@ -25,7 +25,7 @@ $log->add(
         maxlevel        => 'debug',
         minlevel        => 'debug',
         message_layout  => '',
-        message_pattern => [ qw/%L %T %D %P %H %C %p %t/ ],
+        message_pattern => [ qw/%L %T %D %P %H %C %S %t/ ],
     }
 );
 

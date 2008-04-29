@@ -6,7 +6,7 @@ use Log::Handler;
 my $ALIAS_CHECK = 0;
 
 sub alias_check {
-    if (shift->{message} =~ /foo/) {
+    if ($_[0] =~ /foo/) {
         $ALIAS_CHECK++
     }
 }
@@ -18,7 +18,5 @@ $log->add(forward => {
     alias => 'test',
 });
 
-my $forward = $log->get_output('test');
-$forward->log('foo');
-
+$log->output('test')->log('foo');
 ok($ALIAS_CHECK, "checking alias");

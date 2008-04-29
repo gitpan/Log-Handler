@@ -11,7 +11,7 @@ Log::Handler::Output::Forward - Forward messages to routines.
         arguments  => [ 'foo' ],
     );
 
-    $forwarder->log($message);
+    $forwarder->log(message => $message);
 
 =head1 DESCRIPTION
 
@@ -113,11 +113,11 @@ package Log::Handler::Output::Forward;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_08';
-our $ERRSTR  = '';
-
 use Carp;
 use Params::Validate;
+
+our $VERSION = '0.00_09';
+our $ERRSTR  = '';
 
 sub new {
     my $class   = shift;
@@ -126,13 +126,14 @@ sub new {
 }
 
 sub log {
-    my $self = shift;
+    my $self    = shift;
     my $coderef = $self->{forward_to};
+    my $message = @_ > 1 ? {@_} : shift;
 
     if ($self->{arguments}) {
-        eval { &$coderef(@{$self->{arguments}}, @_) };
+        eval { &$coderef(@{$self->{arguments}}, $message) };
     } else {
-        eval { &$coderef(@_) };
+        eval { &$coderef($message) };
     }
 
     if ($@) {

@@ -16,7 +16,7 @@ Log::Handler - Log messages to one or more outputs.
         newline  => 1,
     });
 
-    $log->alert("foo bar");
+    $log->warning("a warinng here");
 
 =head1 DESCRIPTION
 
@@ -86,9 +86,9 @@ You can set both to 8 or C<nothing> if you want to disable the logging machine.
 
 =item B<timeformat>
 
-The C<timeformat> is used for the placeholder C<%T>. You can set C<timeformat>
-with a date and time format that is converted with C<POSIX::strftime>. The
-default format is S<"%b %d %H:%M:%S"> and looks like
+The option C<timeformat> is used for the placeholder C<%T>. You can set
+C<timeformat> with a date and time format that is converted with
+C<POSIX::strftime>. The default format is S<"%b %d %H:%M:%S"> and looks like
 
     Feb 01 12:56:31
 
@@ -98,8 +98,8 @@ As example the format S<"%Y/%m/%d %H:%M:%S"> would looks like
 
 =item B<dateformat>
 
-The same like C<timeformat>. It's useful if you want to split the date and
-time:
+This options works like C<timeformat>. It's useful if you want to split the
+date and time:
 
     $log->add(file => {
         filename       => 'file.log',
@@ -114,15 +114,15 @@ Would log
 
     2007-02-01 12:56:31 ERROR an error here
 
-This option is not used on default.
+This option is not used by default.
 
 =item B<newline>
 
 This helpful option appends a newline to the output message if a newline not
 exist.
 
-    0 - disable (default)
-    1 - enable - appends a newline to the log message if not exist
+    0 - to disable it (default)
+    1 - to enable it
 
 =item B<message_layout>
 
@@ -135,11 +135,16 @@ placeholders in C<printf()> style. The available placeholders are:
     %P   PID
     %H   Hostname
     %N   Newline
+    %S   Program name
+    %R   Runtime in seconds since program start
     %C   Caller - filename and line number
-    %c   Caller - package, filename and line number
-    %p   Program name
+    %p   Caller - package name
+    %f   Caller - file name
+    %l   Caller - line number
+    %s   Caller - subroutine name
     %t   Time measurement - replaced with the time since the last call of the handler
-    %m   The message.
+    %m   Message
+    %%   Procent
 
 The default message layout is set to S<"%T [%L] %m">.
 
@@ -167,16 +172,22 @@ Traces will be appended after the complete message.
 
 You can create your own placeholders with the method C<set_pattern()>.
 
-Placeholders are documented in the section L</PLACEHOLDER>.
-
 =item B<message_pattern>
 
-This option is just useful if you want to forward messages with
-L<Log::Handler::Output::Forward> or insert the message with
-L<Log::Handler::Output::DBI> or dump messages to the screen with
-L<Log::Handler::Output::Screen>.
+This option is just useful if you want to forward messages to output
+modules that needs the parts of a message as a hash reference - as
+example L<Log::Handler::Output::Forward>, L<Log::Handler::Output::DBI>
+or L<Log::Handler::Output::Screen>.
 
-Possible placeholders:
+The option expects a list of placeholders:
+
+    # as a array reference
+    message_pattern => [ qw/%T %L %H %m/ ]
+
+    # or as a string
+    message_pattern => '%T %L %H %m'
+ 
+The patterns will be replaced with real names as hash keys.
 
     %L   level
     %T   time
@@ -184,18 +195,17 @@ Possible placeholders:
     %P   pid
     %H   hostname
     %N   newline
+    %R   runtime
     %C   caller
-    %c   caller
-    %p   progname
+    %p   package
+    %f   filename
+    %l   line
+    %s   subroutine
+    %S   progname
     %t   mtime
     %m   message
 
-The option expects a array reference with a list of placeholders:
-
-    message_pattern => [ qw/%T %L %H %m/ ]
-
-The patterns are replaced with the pattern names as hash keys and the hash is
-passed as reference to the output. Here a full code example:
+Here a full code example:
 
     use Log::Handler;
 
@@ -203,7 +213,7 @@ passed as reference to the output. Here a full code example:
 
     $log->add(forward => {
         forward_to      => \&my_func,
-        message_pattern => [ qw/%T %L %H/ ],
+        message_pattern => [ qw/%T %L %H %m/ ],
         message_layout  => '%m',
         maxlevel        => 'info',
     });
@@ -213,11 +223,11 @@ passed as reference to the output. Here a full code example:
     # now you can access it
 
     sub my_func {
-        my $params = shift;
-        print "Timestamp: $params->{time}\n";
-        print "Level:     $params->{level}\n";
-        print "Hostname:  $params->{hostname}\n";
-        print "Message:   $params->{message}\n";
+        my $msg = shift;
+        print "Timestamp: $msg->{time}\n";
+        print "Level:     $msg->{level}\n";
+        print "Hostname:  $msg->{hostname}\n";
+        print "Message:   $msg->{message}\n";
     }
 
 =item B<priority>
@@ -225,7 +235,7 @@ passed as reference to the output. Here a full code example:
 With this option you can set the priority of your output objects. This means
 that messages will be logged at first to the outputs with a higher priority.
 If this option is not set then the default priority begins with 10 and will be
-increased +1 with each output. Example...
+increased +1 with each output. Example:
 
 We add a output with no priority
 
@@ -237,8 +247,9 @@ This output gets the priority of 10. Now we add another output
 
 This output gets the priority of 11... and so on.
 
-Messages would be logged at first to priority 10 and then 11. Now you can add
-another output and set the priority to 1.
+Messages would be logged at first to the output with the priority of 10 and to
+the output with the priority of 11. Now you can add another output and set the
+priority to 1.
 
     $log->add(screen => { dump => 1, priority => 1 });
 
@@ -246,11 +257,11 @@ Messages would be logged now at first to the screen.
 
 =item B<die_on_errors>
 
-Set C<die_on_errors> to 0 if you don't want that the handler die on failed
+Set C<die_on_errors> to 0 if you don't want that the handler dies on failed
 write operations.
 
-    0 - will not die on errors
-    1 - will die (e.g. croak) on errors
+    0 - to disable it
+    1 - to enable it
 
 If you set C<die_on_errors> to 0 then you have to controll it yourself.
 
@@ -262,8 +273,8 @@ If you set C<die_on_errors> to 0 then you have to controll it yourself.
 
 =item B<filter>
 
-With this option it's possible to define a filter. If the filter is set
-than only messages will be logged that match the filter. You can pass a
+With this option it's possible to set a filter for the outputs. If the filter
+is set then only messages will be logged that match the filter. You can pass a
 regexp, a code reference or a simple string. Example:
 
     $log->add(file => {
@@ -277,8 +288,7 @@ regexp, a code reference or a simple string. Example:
     $log->info('log this');
     $log->info('but not that');
 
-If you pass a code reference then you the message is passed as a hash reference
-as first argument. Example:
+If you pass your own code then you have to check the message yourself.
 
     $log->add(file => {
         filename => 'file.log',
@@ -288,13 +298,14 @@ as first argument. Example:
         filter   => \&my_filter
     });
 
+    # return TRUE if you want to log the message, FALSE if not
     sub my_filter {
-        my $m = shift;
-        $m->{message} =~ /your filter/;
+        my $msg = shift;
+        $msg->{message} =~ /your filter/;
     }
 
-Also it's possible to define a simple condition with matches. You just have
-to pass a hash reference with the optione C<matchN> and C<condition>. Example:
+It's also possible to define a simple condition with matches. Just pass a
+hash reference with the options C<matchN> and C<condition>. Example:
 
     $log->add(file => {
         filename => 'file.log',
@@ -309,11 +320,11 @@ to pass a hash reference with the optione C<matchN> and C<condition>. Example:
         }
     });
 
-NOTE that re-eval in regexes are not valid! Something like
+NOTE that re-eval in regexes is not valid! Something like
 
     match1 => '(?{unlink("file.txt")})'
 
-would cause an error.
+would cause an error!
 
 =item B<alias>
 
@@ -323,10 +334,16 @@ You can set an alias if you want to get the output object later. Example:
 
     $log->add(screen => {
         maxlevel => 7,
-        alias    => 'error',
+        alias    => 'screen-out',
     });
 
-    my $output_object = $log->get_output('error');
+    my $screen = $log->output('screen-out');
+
+    $screen->log('foo');
+
+    # or in one step
+
+    $log->output('screen-out')->log(message => 'foo');
 
 =item B<debug_trace>
 
@@ -339,7 +356,7 @@ The debugger is set to 0 by default.
 
 There are two debug modes: line(1) and block(2) mode. The default mode is 1.
 
-The block mode looks like this:
+The line mode looks like this:
 
     use strict;
     use warnings;
@@ -407,6 +424,13 @@ Output:
          hasargs     1
          wantarray   0
 
+Another way to enable the debugger very shortly is ...
+
+    {
+        local $Log::Handler::TRACE = 1;
+        $log->info('backtrace');
+    }
+
 =item B<debug_skip>
 
 This option let skip the C<caller()> informations the count of C<debug_skip>.
@@ -420,14 +444,15 @@ This option let skip the C<caller()> informations the count of C<debug_skip>.
 
 =back
 
-=head2 How to use add()
+=head2 HowTo use add()
 
-The method C<add()> excepts 2 option parts; the options for the handler and
-for the output module you want to use - the output modules got it's own
-documentation for all options.
+The method C<add()> excepts 2 parts of options; the options for the handler and
+the options for the output module you want to use. The output modules got it's own
+documentation for all options. As example if you want to add a file-output then
+take a look into the documentation of L<Log::Handler::Output::File>.
 
 There are different ways to add a new output to the handler. The one way is
-that you create the output object yourself and pass it with the handler options
+to create the output object yourself and pass it with the handler options
 to C<add()>.
 
 Example:
@@ -439,7 +464,7 @@ Example:
     my %handler_options = (
         timeformat      => '%Y/%m/%d %H:%M:%S',
         newline         => 1,
-        message_layout  => '%T [%L] %p: %m',
+        message_layout  => '%T [%L] %S: %m',
         maxlevel        => 'debug',
         minlevel        => 'emergency',
         die_on_errors   => 1,
@@ -460,10 +485,10 @@ Example:
         utf8            => 1,
     );
 
-    # we creating the file object
+    # create the file object
     my $file = Log::Handler::Output::File->new( \%file_options );
 
-    # creating a new handler object
+    # create a new handler object
     my $log = Log::Handler->new();
 
     # now we add the file object to the handler with the handler options
@@ -472,22 +497,38 @@ Example:
 But it can be simplier! You can merge all options and pass them to C<add()>
 in one step, you just need to tell the handler what do you want to add.
 
-    # merge the options
-    my %all_options = (%output_options, %file_options);
+    use Log::Handler;
 
-    # pass all options and say what you want to add -> a file!
-    $log->add( file => \%all_options );
+    my $log = Log::Handler->new();
+
+    $log->add(
+        file => { # what do you want to add
+            # handler options
+            timeformat      => '%Y/%m/%d %H:%M:%S',
+            newline         => 1,
+            message_layout  => '%T [%L] %S: %m',
+            maxlevel        => 'debug',
+            minlevel        => 'emergency',
+            die_on_errors   => 1,
+            debug_trace     => 0,
+            debug_mode      => 2,
+            debug_skip      => 0,
+            # file options
+            filename        => 'file.log',
+            filelock        => 1,
+            fileopen        => 1,
+            reopen          => 1,
+            mode            => 'append',
+            autoflush       => 1,
+            permissions     => '0660',
+            utf8            => 1,
+        }
+    );
 
 The options will be splitted intern and you don't need to split it yourself,
 only if you want to do it yourself.
 
-Further examples:
-
-    $log->add( email   => \%all_options );
-    $log->add( forward => \%all_options );
-    # and so on ...
-
-Take a look to the section L</EXAMPLES> for more informations.
+Take a look to L<Log::Handler::Examples> for more informations.
 
 =head2 Log level methods
 
@@ -546,19 +587,20 @@ Both calls would log - if the level INFO is active:
 =back
 
 These thirteen methods could be very useful if you want to kwow if the current
-log level would output the message. All methods returns TRUE if the current set
-of C<minlevel> and C<maxlevel> would log the message and FALSE if not. Example:
+level would log the message. All methods returns TRUE if the current set
+of C<minlevel> and C<maxlevel> would log the message and FALSE if not.
+
+The following example would dump the hash in any case and pass it to the
+log handler:
 
     $log->debug(Dumper(\%hash));
 
-This example would dump the hash in any case and pass it to the log handler, 
-but that is not that what we really want!
+But that is not that what we really want! We want to dump the hash only if
+the current log level would log it.
 
     if ( $log->is_debug ) {
         $log->debug(Dumper(\%hash));
     }
-
-Now we dump the hash only if the current log level would log it.
 
 The methods C<is_err()>, C<is_crit()> and C<is_emerg()> are just shortcuts.
 
@@ -568,16 +610,18 @@ There exists a lot of other level methods.
 
 For a full list take a look into the documentation of L<Log::Handler::Levels>.
 
-=head2 get_output()
+=head2 output()
 
-Call C<get_output($alias)> to get the output object that you added with 
+Call C<output($alias)> to get the output object that you added with 
 the option C<alias>.
+
+For more informations take a look to the option C<alias>.
 
 =head2 errstr()
 
 Call C<errstr()> if you want to get the last error message. This is useful
-with C<die_on_errors>. If you set C<die_on_errors> to C<0> the handler wouldn't
-croak on failed write operations. Set C<die_on_errors> to control it yourself.
+if you set C<die_on_errors> to C<0> and the handler wouldn't die on failed
+write operations.
 
     use Log::Handler;
 
@@ -599,7 +643,7 @@ Or
         # do something with $error_string
     }
 
-The exception is that the handler croaks in any case if the call of C<new()> or
+The exception is that the handler dies in any case if the call of C<new()> or
 C<add()> fails because on missing or wrong settings!
 
 =head2 config()
@@ -632,8 +676,8 @@ Or
         }
     });
 
-The default section - I call it section here - can be used to define default
-parameters for all file outputs.
+The key S<"default"> can be used to define default parameters for all file
+outputs. All other keys (C<error_log>, C<common_log>) are used as aliases.
 
 Take a look into the documentation of L<Log::Handler::Config> for more
 informations.
@@ -642,7 +686,7 @@ informations.
 
 With this option you can set your own placeholders. Example:
 
-    $log->set_pattern('%X', 'name', sub { });
+    $log->set_pattern('%X', 'name', sub { 'value' });
 
     # or
 
@@ -661,7 +705,7 @@ L<Log::Handler::Examples>
 
 =head1 EXTENSIONS
 
-Start it or write me a mail if you have questions.
+Send me a mail if you have questions.
 
 =head1 PREREQUISITES
 
@@ -671,17 +715,19 @@ Prerequisites for all modules:
     Data::Dumper
     Devel::Backtrace
     Fcntl
-    Net::SMTP
     Params::Validate
     POSIX
     Time::HiRes
     Sys::Hostname
     UNIVERSAL::require
 
-And maybe for the config loader:
+Recommended modules:
 
     Config::General
     Config::Properties
+    DBI
+    IO::Socket
+    Net::SMTP
     YAML
 
 Just for the test suite:
@@ -713,9 +759,9 @@ If you send me a mail then add Log::Handler into the subject.
 
 =head1 TODO
 
-Maybe; don't know
+Maybe;
 
-    * Log::Handler::Filter
+    * Log::Handler::Output::HTML
 
 =head1 COPYRIGHT
 
@@ -754,7 +800,6 @@ package Log::Handler;
 use strict;
 use warnings;
 use Carp;
-use POSIX;
 use Params::Validate;
 use UNIVERSAL::require;
 use Log::Handler::Output;
@@ -762,10 +807,26 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION  = '0.39_16';
+our $VERSION  = '0.39_17';
 our $ERRSTR   = '';
-our $PRIORITY = 10;
 our $DEBUG    = 0;
+our $TRACE    = 0;
+
+use constant PRIORITY => 10;
+use constant BOOL_RX  => qr/^[01]\z/;
+use constant NUMB_RX  => qr/^\d+\z/;
+use constant LEVEL_RX => qr/^(?:
+    8 | nothing   |
+    7 | debug     |
+    6 | info      |
+    5 | notice    |
+    4 | warning   |
+    3 | error     | err   |
+    2 | critical  | crit  |
+    1 | alert     |
+    0 | emergency | emerg |
+        fatal
+)\z/x;
 
 # to convert minlevel and maxlevel
 my %LEVEL_BY_STRING = ( 
@@ -807,23 +868,6 @@ our %AVAILABLE_OUTPUTS = (
     socket  => 'Log::Handler::Output::Socket',
 );
 
-# this is needed to validate different options
-use constant BOOL_RX => qr/^[01]\z/;
-
-# this is needed to validate minlevel and maxlevel
-use constant LEVEL_RX => qr/^(?:
-    8 | nothing   |
-    7 | debug     |
-    6 | info      |
-    5 | notice    |
-    4 | warning   |
-    3 | error     | err  |
-    2 | critical  | crit |
-    1 | alert     |
-    0 | emergency | emerg |
-    fatal
-)\z/x;
-
 sub new {
     my $class = shift;
 
@@ -833,20 +877,34 @@ sub new {
         return  Log::Handler::Simple->new(@_);
     }
 
+
     my $self = bless {
-        pattern    => &Log::Handler::Pattern::get_pattern,
-        priorities => { },
-        levels     => { },
-        alias      => { },
+        priority => PRIORITY,   # start priority
+        levels   => { },        # outputs stored by active levels
+        alias    => { },        # outputs stored by an alias
+        pattern  =>             # default pattern
+            &Log::Handler::Pattern::get_pattern,
     }, $class;
 
     return $self;
 }
 
 sub add {
+    @_ == 3 or Carp::croak 'Usage: add( type => \%options )';
     my $self   = shift;
     my $output = $self->_new_output(@_);
     my $levels = $self->{levels};
+
+    # Structure:
+    #   $self->{levels}->{INFO} = [ outputs ordered by priority ]
+    #
+    # All outputs that would log the level INFO will be stored to the
+    # hash-tree $self->{levels}->{INFO}. On this way it's possible
+    # to check very fast if the level is active
+    #
+    #   if (exists $self->{levels}->{INFO}) { ... }
+    #
+    # and loop over all output objects and pass the message to it.
 
     foreach my $level (keys %{$output->{levels}}) {
         if ($levels->{$level}) {
@@ -862,6 +920,12 @@ sub add {
         }
     }
 
+    # Structure:
+    #   $self->{alias}->{$alias} = $output_object
+    #
+    # All outputs with an alias are stored to this hash tree.
+    # Each output can be fetched with output($alias);
+
     if ($output->{alias}) {
         my $alias = $output->{alias};
         $self->{alias}->{$alias} = $output;
@@ -873,6 +937,9 @@ sub add {
 sub config {
     my $self = shift;
     my $configs = Log::Handler::Config->config(@_);
+
+    # Structure:
+    #   $configs->{file} = [ output configs ];
 
     while ( my ($type, $config) = each %$configs ) {
         for my $c (@$config) {
@@ -887,12 +954,12 @@ sub set_pattern {
     @_ == 4 or Carp::croak 'Usage: $log->set_pattern( $pattern, $name, $code )';
     my ($self, $pattern, $name, $proto) = @_;
 
-    if ($pattern !~ /^%[a-zA-Z]\z/) {
-        Carp::croak "'$pattern' is not a valid pattern";
+    if ($pattern !~ /^%[a-ln-z]\z/i) {
+        Carp::croak "invalid pattern '$pattern'";
     }
 
     if (ref($name) || !length($name)) {
-        Carp::croak "not a valid name for pattern '$pattern'";
+        Carp::croak "invalid/missing name for pattern '$pattern'";
     }
 
     if (ref($proto) eq 'CODE') {
@@ -904,11 +971,11 @@ sub set_pattern {
     $self->{pattern}->{$pattern}->{name} = $name;
 }
 
-sub get_output {
+sub output {
     my ($self, $name) = @_;
     return unless length($name);
     my $alias = $self->{alias};
-    return $alias->{$name};
+    return exists $alias->{$name} ? $alias->{$name}->{output} : undef;
 }
 
 sub errstr { $ERRSTR }
@@ -918,32 +985,38 @@ sub errstr { $ERRSTR }
 #
 
 sub _shift_options {
-    my ($self, $options) = @_;
-    my %output_opts;
+    my ($self, $output_opts) = @_;
+    my %handler_opts;
 
-    my @output_options = qw(
-        timeformat
-        message_layout
-        message_pattern
-        prepare_message
-        newline
-        minlevel
-        maxlevel
-        die_on_errors
-        priority
-        debug_trace
+    # It's possible to pass all options for the handler and for the
+    # output to add(). These options must be splitted. The options
+    # for the handler will be passed to Log::Handler::Output. The
+    # options for the output will be passed - as example - to
+    # Log::Handler::Output::File.
+
+    my @shift_options = qw(
+        alias
         debug_mode
         debug_skip
-        alias
+        debug_trace
+        die_on_errors
         filter
+        maxlevel
+        message_layout
+        message_pattern
+        minlevel
+        newline
+        prepare_message
+        priority
+        timeformat
     );
 
-    foreach my $opt ( @output_options ) {
-        next unless exists $options->{$opt};
-        $output_opts{$opt} = delete $options->{$opt};
+    foreach my $opt ( @shift_options ) {
+        next unless exists $output_opts->{$opt};
+        $handler_opts{$opt} = delete $output_opts->{$opt};
     }
 
-    return \%output_opts;
+    return \%handler_opts;
 }
 
 sub _new_output {
@@ -953,14 +1026,26 @@ sub _new_output {
     my $package = ref($type);
     my ($output, $options);
 
+    # There are two ways to add an output:
+    #
+    #   my $log  = Log::Handler->new();
+    #   my $file = Log::Handler::Output::File->new(\%output_opts);
+    #   $log->add($file => \%handler_opts);
+    #
+    # and
+    #
+    #   my $log = Log::Handler->new();
+    #   $log->add(file => \%all_options);
+
     if ( length($package) ) {
         $output  = $type;
         $options = $args;
     } else {
-        # shift the handler options from $args. the rest in $args
-        # is for the output module
+        # Shift the handler options from $args. The rest in %$args
+        # will be passed to the output.
         $options = $self->_shift_options($args);
 
+        # Try to determine which output is wanted...
         if (exists $AVAILABLE_OUTPUTS{$type}) {
             $package = $AVAILABLE_OUTPUTS{$type};
         } elsif ($type =~ /::/) {
@@ -969,23 +1054,18 @@ sub _new_output {
             $package = 'Log::Handler::Output::' . ucfirst($type);
         }
 
-        # load the necessary output. require() knows what modules
-        # are loaded so I don't need to check this
         $package->require;
-
-        # create a new output object and pass $args
         $output = $package->new($args) or Carp::croak $package->errstr;
     }
 
     $options = $self->_validate_options($options);
-    $options->{output} = $output;
-    return Log::Handler::Output->new($options);
+    return Log::Handler::Output->new($options, $output);
 }
 
 sub _validate_options {
-    my $self     = shift;
-    my $pattern  = $self->{pattern};
-    my $is_fatal = ();
+    my $self    = shift;
+    my $pattern = $self->{pattern};
+    my (%wanted, $is_fatal);
 
     my %options = Params::Validate::validate(@_, {
         timeformat => {
@@ -1001,7 +1081,8 @@ sub _validate_options {
             default => '%T [%L] %m',
         },
         message_pattern => {
-            type => Params::Validate::SCALAR | Params::Validate::ARRAYREF,
+            type => Params::Validate::SCALAR
+                  | Params::Validate::ARRAYREF,
             optional => 1,
         },
         prepare_message => {
@@ -1030,7 +1111,7 @@ sub _validate_options {
         },
         priority => {
             type => Params::Validate::SCALAR,
-            regex => qr/^\d+\z/,
+            regex => NUMB_RX,
             default => undef,
         },
         debug_trace => {
@@ -1040,12 +1121,12 @@ sub _validate_options {
         },
         debug_mode => {
             type => Params::Validate::SCALAR,
-            regex => qr/^[12]\z/,
+            regex => NUMB_RX,
             default => 1,
         },
         debug_skip => {
             type => Params::Validate::SCALAR,
-            regex => qr/^\d+\z/,
+            regex => NUMB_RX,
             default => 0,
         },
         alias => {
@@ -1059,6 +1140,11 @@ sub _validate_options {
                   | Params::Validate::HASHREF,  # matchN, condition
             optional => 1,
         },
+        caller_level => {
+            type => Params::Validate::SCALAR,
+            regex => NUMB_RX,
+            default => 2,
+        },
     });
 
     if ($options{filter}) {
@@ -1066,7 +1152,7 @@ sub _validate_options {
     }
 
     if (!defined $options{priority}) {
-        $options{priority} = $PRIORITY++;
+        $options{priority} = $self->{priority}++;
     }
 
     foreach my $opt (qw/minlevel maxlevel/) {
@@ -1082,31 +1168,66 @@ sub _validate_options {
         $options{levels}{FATAL} = 1;
     }
 
-    foreach my $p ( split /(%[a-zA-Z])/, $options{message_layout} ) {
-        if ( exists $pattern->{$p} ) {
-            push @{$options{message_order}}, $pattern->{$p}{code};
-        } else {
-            push @{$options{message_order}}, $p;
-        }
-    }
-
     if ($options{message_pattern}) {
-        my @pattern = ();
         if (!ref($options{message_pattern})) {
             $options{message_pattern} = [ split /\s+/, $options{message_pattern} ];
         }
-        foreach (@{$options{message_pattern}}) {
-            if ( !exists $pattern->{$_} ) {
-                croak "placeholder '$_' does not exists";
-            } elsif ( $_ eq '%m' ) {
-                next; # %m is default
+        foreach my $p (@{$options{message_pattern}}) {
+            if (!exists $pattern->{$p}) {
+                Carp::croak "undefined pattern '$p'";
             }
-            my $name = $pattern->{$_}->{name};
-            my $code = $pattern->{$_}->{code};
-            $options{pattern}{$name} = $code;
+            $wanted{$p} = undef;
         }
+        my $func = 'sub { my ($w, $m) = @_; $m->{$_} = $w->{$_} for qw/';
+        $func .= join(' ', map { $pattern->{$_}->{name} } keys %wanted);
+        $func .= '/ }';
+        $options{message_pattern_func} = $func;
+        $options{message_pattern_code} = eval $func;
+        Carp::croak $@ if $@;
     }
 
+    if ($options{message_layout}) {
+        my (@chunks, $func);
+
+        # If the message layout is set to '%T [%L] %m' then the code
+        # should looks like:
+        #   sub {
+        #       my $m = shift;
+        #       $m->{time} . ' ]' . $m->{level} . '] ' . $m->{message}
+        #   }
+
+        foreach my $p ( split /(?:(%[a-zA-Z])|(%)%)/, $options{message_layout} ) {
+            next unless defined $p && length($p);
+            if ( exists $pattern->{$p} ) {
+                $wanted{$p} = undef;
+                my $name = $pattern->{$p}->{name};
+                push @chunks, "\$w->{$name}";
+            } else {
+                # quote backslash and apostrophe
+                $p =~ s/\\/\\\\/g;
+                $p =~ s/'/\\'/g;
+                push @chunks, "'$p'";
+            }
+        }
+
+        if (@chunks) {
+            $func  = 'sub { my ($w, $m) = @_; $m->{message} = join(\'\', ';
+            $func .= join(', ', @chunks);
+            $func .= ') }';
+        }
+
+        $options{message_layout_func} = $func;
+        $options{message_layout_code} = eval $func;
+        Carp::croak $@ if $@;
+    }
+
+    # %m is default
+    delete $wanted{'%m'};
+
+    # The references to the patterns are stored to all outputs.
+    # If a pattern will be changed with set_pattern() then the
+    # changed pattern is available for each output.
+    $options{wanted_pattern} = [ map { $pattern->{$_} } keys %wanted ];
     return \%options;
 }
 
@@ -1115,14 +1236,32 @@ sub _validate_filter {
     my $ref = ref($args);
     my %filter;
 
+    # A filter can be passed as CODE, as a Regexp, as a simple string
+    # that will be embed in a Regexp or as a condition.
+
     if ($ref eq 'CODE') {
         $filter{code} = $args;
     } elsif ($ref eq 'Regexp') {
-        $filter{code} = sub { shift->{message} =~ $args };
+        $filter{code} = sub { $_[0]->{message} =~ $args };
     } elsif (!$ref) {
-        $filter{code} = sub { shift->{message} =~ /$args/ };
+        $filter{code} = sub { $_[0]->{message} =~ /$args/ };
     } else {
         %filter = %$args;
+
+        # Structure:
+        #   $filter->{code}             = &code
+        #   $filter->{func}             = $code_as_string
+        #   $filter->{condition}        = $users_condition
+        #   $filter->{result}->{matchN} = $result_of_matchN
+        #   $filter->{matchN}           = qr//
+        #
+        # Each matchN will be checked on the message and the BOOL results
+        # will be stored to $filter->{result}->{matchN}. Then the results
+        # will be passed to &code. &code returns 0 or 1.
+        #   $filter->{result}->{match1} = $message =~ $filter->{match1}
+        #   $filter->{result}->{match2} = $message =~ $filter->{match2}
+        #   $code = sub { my $m = shift; ($m->{match1} || $m->{match2}) }
+        #   &$code($filter->{result});
 
         if (!defined $filter{condition} || $filter{condition} !~ /\w/) {
             Carp::croak "missing condition for paramater 'filter'";
@@ -1149,11 +1288,10 @@ sub _validate_filter {
             $filter{result}{$m} = '';
         }
 
-        $filter{codestring}  =  "sub { my \$m = shift; ";
-        #$filter{codestring} .=  "use Data::Dumper; warn Dumper(\$m); ";
-        $filter{codestring} .=  "$filter{condition}; }";
-        $filter{codestring}  =~ s/(match\d+)/\$m->{$1}/g;
-        $filter{code} = eval $filter{codestring};
+        $filter{func}  =  'sub { my $m = shift; ';
+        $filter{func} .=  $filter{condition}.'; }';
+        $filter{func}  =~ s/(match\d+)/\$m->{$1}/g;
+        $filter{code}  =  eval $filter{func};
     }
 
     return \%filter;

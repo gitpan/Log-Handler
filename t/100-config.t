@@ -10,20 +10,20 @@ my %config = (
             permissions    => '0640',
             timeformat     => '%b %d %H:%M:%S',
             mode           => 'append',
-            message_layout => '%T %H[%P] [%L] %p: %m',
+            message_layout => '%T %H[%P] [%L] %S: %m',
             debug_mode     => 2,
         },
         common => {
-            filename    => '*STDOUT',
-            maxlevel    => 'info',
-            minlevel    => 'info',
+            filename => '*STDOUT',
+            maxlevel => 'info',
+            minlevel => 'info',
+            newline  => 0,
         }
     }
 );
 
 my $log = Log::Handler->new();
 $log->config(config => \%config);
-$log->info('info');
 
 my $options_handler = shift @{$log->{levels}->{INFO}};
 my $options_file    = $options_handler->{output};
@@ -35,9 +35,9 @@ my %compare_file = (
 );
 
 my %compare_handler = (
-    newline         => 1,
+    newline         => 0,
     timeformat      => '%b %d %H:%M:%S',
-    message_layout  => '%T %H[%P] [%L] %p: %m',
+    message_layout  => '%T %H[%P] [%L] %S: %m',
     debug_mode      => 2,
     maxlevel        => 6,
     minlevel        => 6,

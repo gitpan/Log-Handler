@@ -1,8 +1,11 @@
 Build.PL
 ChangeLog
+examples/benchmark.pl
 examples/example-1.cfg
 examples/example-1.pl
 examples/example-2.pl
+examples/layout.pl
+examples/runtime.pl
 INSTALL
 lib/Log/Handler.pm
 lib/Log/Handler/Changes.pod
@@ -35,6 +38,7 @@ t/013-handler-priority.t
 t/014-handler-prepare.t
 t/015-handler-filter.t
 t/016-handler-alias.t
+t/017-handler-die.t
 t/020-output-forward.t
 t/030-output-file.t
 t/040-output-email.t

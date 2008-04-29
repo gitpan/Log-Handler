@@ -12,13 +12,14 @@ my $build = Module::Build->new(
     recommends         => {
         'Config::General'    => 0,
         'Config::Properties' => 0,
-        'YAML'               => 0,
         'DBI'                => 0,
-        'Net::SMTP'          => 0,
         'IO::Socket'         => 0,
+        'Net::SMTP'          => 0,
+        'YAML'               => 0,
     },
     requires => {
         'Carp'               => 0,
+        'Data::Dumper'       => 0,
         'Devel::Backtrace'   => 0.05,
         'Fcntl'              => 0,
         'File::Spec'         => 0,
@@ -28,7 +29,6 @@ my $build = Module::Build->new(
         'Time::HiRes'        => 0,
         'Sys::Hostname'      => 0,
         'UNIVERSAL::require' => 0,
-        'Data::Dumper'       => 0,
     },
 );
 $build->create_build_script;

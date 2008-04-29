@@ -93,7 +93,8 @@ use strict;
 use warnings;
 use Data::Dumper;
 use Params::Validate;
-our $VERSION  = '0.00_06';
+
+our $VERSION  = '0.00_07';
 our $ERRSTR   = '';
 
 sub new {
@@ -104,21 +105,17 @@ sub new {
 
 sub log {
     my $self    = shift;
-    my $message = ();
+    my $message = @_ > 1 ? {@_} : shift;
 
     if ($self->{dump}) {
-        $message = Dumper(@_);
-    } elsif (ref($_[0]) eq 'HASH') {
-        $message = $_[0]->{message};
-    } else {
-        $message = shift;
+        $message->{message} = Dumper(@_);
     }
 
     if ($self->{log_to} eq 'STDOUT') {
-        print STDOUT $message
+        print STDOUT $message->{message}
             or return $self->_raise_error($!);
     } else {
-        print STDERR $message
+        print STDERR $message->{message}
             or return $self->_raise_error($!);
     }
 

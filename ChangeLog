@@ -1,7 +1,21 @@
-0.38_16 Released at 2008-04-17.
+0.39_17 Released at 2008-04-24.
+        - Kicked all <level>_and_croak methods and carp() - to bloated.
+        - message_pattern and message_layout is now builded with eval.
+        - The patterns are not static any more. Changes at runtime are
+          possible with set_pattern().
+        - Fixed Log::Handler::Output::Email - forget to call sendmail()
+          if buffer is set to 0.
+        - Kicked option interval from Log::Handler::Output::Email.
+        - All log() methods of each output expects now a hash or a
+          hash reference with the message (message => $message).
+          Before this change it was possible to pass a hash reference
+          or a simple string: { message => $message } or just $message.
+        - Some other little improvements: POD, Code, Examples
+
+0.39_16 Released at 2008-04-17.
         - Kicked all <level>_and_exit() methods - to bloated.
-        - Added Log::Handler::Pattern.pm.
-        - Added Log::Handler::Output::Socket.pm.
+        - Added Log::Handler::Pattern.
+        - Added Log::Handler::Output::Socket.
         - Added option filter and alias to the handler.
         - Added close() to Log::Handler::Output::File.
         - Added connect() and disconnect() to Log::Handler::Output::DBI.

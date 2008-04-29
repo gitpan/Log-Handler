@@ -1,12 +1,6 @@
 =head1 NAME
 
-Log::Handler::Output - The output builder class.
-
-=head1 SYNOPSIS
-
-    use Log::Handler::Pattern;
-
-    my $pattern = Log::Handler::Pattern::get_pattern();
+Log::Handler::Output - The pattern builder class.
 
 =head1 DESCRIPTION
 
@@ -33,12 +27,13 @@ package Log::Handler::Pattern;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_01';
-
 use POSIX;
 use Sys::Hostname;
 use Log::Handler::Output;
+use Time::HiRes;
+use constant START_TIME => scalar Time::HiRes::gettimeofday;
 
+our $VERSION = '0.00_02';
 my $progname = $0;
 $progname =~ s@.*[/\\]@@;
 
@@ -57,25 +52,53 @@ sub get_pattern {
         '%N'  => {  name => 'newline',
                     code => "\n" },
         '%C'  => {  name => 'caller',
-                    code => \&_get_Caller },
-        '%c'  => {  name => 'caller',
                     code => \&_get_caller },
-        '%p'  => {  name => 'progname',
+        '%S'  => {  name => 'progname',
                     code => $progname },
+        '%R'  => {  name => 'runtime',
+                    code => \&_get_runtime },
         '%t'  => {  name => 'mtime',
                     code => \&_get_hires },
         '%m'  => {  name => 'message',
                     code => \&_get_message },
+        '%p'  => {  name => 'package',
+                    code => \&_get_c_pkg },
+        '%f'  => {  name => 'filename',
+                    code => \&_get_c_file },
+        '%l'  => {  name => 'line',
+                    code => \&_get_c_line },
+        '%s'  => {  name => 'subroutine',
+                    code => \&_get_c_sub },
     }
 }
 
-sub _get_level   { $Log::Handler::Output::LEVEL }
-sub _get_time    { POSIX::strftime($Log::Handler::Output::OBJECT->{timeformat}, localtime) }
-sub _get_date    { POSIX::strftime($Log::Handler::Output::OBJECT->{dateformat}, localtime) }
+# ------------------------------------------
+# Arguments:
+#   $_[0]  ->  Log::Handler::Output object
+#   $_[1]  ->  Log level
+# ------------------------------------------
+
+sub _get_level   { $_[1] }
+sub _get_time    { POSIX::strftime($_[0]->{timeformat}, localtime) }
+sub _get_date    { POSIX::strftime($_[0]->{dateformat}, localtime) }
 sub _get_pid     { $$ }
-sub _get_Caller  { my @c = caller($Log::Handler::Output::CALLER); "$c[1], line $c[2]" }
-sub _get_caller  { my @c = caller($Log::Handler::Output::CALLER); "$c[0], $c[1] line $c[2]" }
-sub _get_message { $Log::Handler::Output::MESSAGE }
-sub _get_hires   { Log::Handler::Output::_measurement($Log::Handler::Output::OBJECT) }
+sub _get_caller  { my @c = caller($_[0]->{caller_level}); "$c[1], line $c[2]" }
+sub _get_c_pkg   { (caller($_[0]->{caller_level}))[0] }
+sub _get_c_file  { (caller($_[0]->{caller_level}))[1] }
+sub _get_c_line  { (caller($_[0]->{caller_level}))[2] }
+sub _get_c_sub   { (caller($_[0]->{caller_level}))[3] }
+sub _get_runtime { return sprintf('%.6f', Time::HiRes::gettimeofday - START_TIME) }
+
+sub _get_hires {
+    my $self = shift;
+    if (!$self->{timeofday}) {
+        $self->{timeofday} = Time::HiRes::gettimeofday;
+        return sprintf('%.6f', $self->{timeofday} - START_TIME);
+    }
+    my $new_time = Time::HiRes::gettimeofday;
+    my $cur_time = $new_time - $self->{timeofday};
+    $self->{timeofday} = $new_time;
+    return sprintf('%.6f', $cur_time);
+}
 
 1;

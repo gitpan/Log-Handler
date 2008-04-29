@@ -4,6 +4,8 @@ Log::Handler::Levels - All levels for Log::Handler.
 
 =head1 DESCRIPTION
 
+Base class for all levels.
+
 =head1 METHODS
 
 =head2 Log level methods
@@ -118,38 +120,14 @@ These methods log the message to the output and then call C<Carp::croak()>.
 
 =back
 
-=head2 Log and croak
-
-These methods log the message to the output and then call C<Carp::croak()>
-with C<CarpLevel+3>
-
-=over
-
-=item B<error_and_croak()>, B<err_and_croak()>
-
-=item B<critical_and_croak()>, B<crit_and_croak()>
-
-=item B<alert_and_croak()>
-
-=item B<emergency_and_croak()>, B<emerg_and_croak()>
-
-=item B<fatal_and_croak()>
-
-=back
-
-=head2 Log and warn/carp
+=head2 Log and warn
 
 =over
 
 =item B<warn()>
 
 This method log the message as warning to the output and then call
-C<Carp::carp>.
-
-=item B<carp()>
-
-This method log the message as warning to the output and then call
-C<Carp::carp> with C<CarpLevel+3>.
+C<Carp::carp()>.
 
 =back
 
@@ -182,8 +160,9 @@ package Log::Handler::Levels;
 
 use strict;
 use warnings;
-our $VERSION  = '0.00_04';
-use Carp qw();
+use Carp;
+
+our $VERSION  = '0.00_05';
 
 my %LEVELS_BY_ROUTINE = (
     debug     => 'DEBUG',
@@ -242,24 +221,19 @@ while ( my ($routine, $level) = each %LEVELS_BY_ROUTINE ) {
 
         *{"${routine}_and_trace"} = sub {
             my $self = shift;
-            local $Log::Handler::Output::TRACE = 1;
+            local $Log::Handler::TRACE = 1;
             return $self->$routine(@_);
         };
 
         # --------------------------------------------------------------
-        # Creating the <level>_and_croak methods
+        # Creating the <level>_and_die methods
         # --------------------------------------------------------------
 
         if ($level =~ /^(?:ERROR|CRITICAL|ALERT|EMERGENCY|FATAL)\z/) {
-            *{"${routine}_and_croak"} = sub {
-                my $self = shift;
-                $self->$routine(@_);
-                $Carp::CarpLevel += 3;
-                Carp::croak @_;
-            };
             *{"${routine}_and_die"} = sub {
-                my $self = shift;
-                $self->$routine(@_);
+                my $self   = shift;
+                my @caller = caller;
+                $self->$routine(@_, "at line $caller[2]");
                 Carp::croak @_;
             };
         }
@@ -269,14 +243,9 @@ while ( my ($routine, $level) = each %LEVELS_BY_ROUTINE ) {
 
 sub warn {
     my $self = shift;
-    $self->warning(@_);
+    my @caller = caller;
+    $self->warning(@_, "at line $caller[2]");
     Carp::carp @_;
-}
-
-sub carp {
-    my $self = shift;
-    $self->warning(@_);
-    local $Carp::CarpLevel += 3;
 }
 
 1;

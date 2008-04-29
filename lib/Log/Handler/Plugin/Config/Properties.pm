@@ -59,8 +59,9 @@ package Log::Handler::Plugin::Config::Properties;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_05';
 use Config::Properties;
+
+our $VERSION = '0.00_06';
 
 sub get_config {
     my ($class, $config_file) = @_;

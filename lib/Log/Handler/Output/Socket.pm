@@ -13,7 +13,7 @@ Log::Handler::Output::Socket - Send messages to a socket.
         timeout     => 10
     );
 
-    $sock->log($message);
+    $sock->log(message => $message);
 
 =head1 DESCRIPTION
 
@@ -148,8 +148,8 @@ use Params::Validate;
 use IO::Socket::INET;
 use Data::Dumper;
 
-our $VERSION = '0.00_01';
-our $ERRSTR  = defined;
+our $VERSION = '0.00_02';
+our $ERRSTR  = '';
 
 sub new {
     my $class   = shift;
@@ -163,15 +163,12 @@ sub new {
 }
 
 sub log {
-    my $self = shift;
-    my ($socket, $message);
+    my $self    = shift;
+    my $message = @_ > 1 ? {@_} : shift;
+    my $socket  = ();
 
     if ($self->{dump}) {
-        $message = $self->{dumper}(@_);
-    } elsif (ref($_[0]) eq 'HASH') {
-        $message = $_[0]->{message};
-    } else {
-        $message = shift;
+        $message->{message} = $self->{dumper}(@_ > 1 ? {@_} : shift);
     }
 
     if ($self->{persistent} && $self->{socket}) {
@@ -182,7 +179,7 @@ sub log {
     }
 
     local $SIG{PIPE} = 'IGNORE';
-    $socket->send($message) or do {
+    $socket->send($message->{message}) or do {
         if ($self->{reconnect}) {
             $self->connect or return undef;
             print $socket $message->{message}

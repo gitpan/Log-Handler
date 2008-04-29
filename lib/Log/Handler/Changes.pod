@@ -16,9 +16,9 @@ Each output is handled as a own object.
 
 There are different output modules available:
 
-    Log::Handler::Output::File
     Log::Handler::Output::DBI
     Log::Handler::Output::Email
+    Log::Handler::Output::File
     Log::Handler::Output::Forward
     Log::Handler::Output::Screen
     Log::Handler::Output::Socket
@@ -68,7 +68,7 @@ Take a look into the documentation for L<Log::Handler::Config>.
     add()           to add new outputs
     config()        to load outputs from a configuration file
     set_pattern()   to create your own placeholder
-    get_output()    to get a output object with an alias
+    output()        to get a output object with an alias
 
 =head2 New level methods
 

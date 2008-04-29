@@ -24,7 +24,7 @@ sub check_struct {
 my $log = Log::Handler->new();
 
 $log->set_pattern('%X', 'xname', 'xvalue');
-$log->set_pattern('%Y', 'yname', sub { 'yvalue' });
+$log->set_pattern('%Y', 'yname', sub { 'xxxxxx' });
 
 $log->add(
     forward => {
@@ -38,6 +38,7 @@ $log->add(
 
 ok(1, 'new');
 
+$log->set_pattern('%Y', 'yname', sub { 'yvalue' });
 $log->debug('foo');
 
 ok($CHECKED, "call check_struct()");

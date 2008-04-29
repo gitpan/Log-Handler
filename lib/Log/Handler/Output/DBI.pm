@@ -20,21 +20,31 @@ Log::Handler::Output::DBI - Log messages to a database.
 
         # table, columns and values (as string)
         table      => 'messages',
-        columns    => 'level, ctime, cdate, pid, hostname, caller, progname, mtime, message',
-        values     => '%level, %time, %date, %pid, %hostname, %caller, %progname, %mtime, %message',
+        columns    => 'level, ctime, cdate, pid, hostname, progname, message',
+        values     => '%level, %time, %date, %pid, %hostname, %progname, %message',
 
         # table, columns and values (as array reference)
         table      => 'messages',
-        columns    => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
-        values     => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
+        columns    => [ qw/level ctime cdate pid hostname progname message/ ],
+        values     => [ qw/%level %time %date %pid %hostname %progname %message/ ],
 
         # table, columns and values (your own statement)
-        statement  => 'insert into messages (level,ctime,cdate,pid,hostname,caller,progname,mtime,message) values (?,?,?,?,?,?,?,?,?)',
-        values     => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
+        statement  => 'insert into messages (level,ctime,cdate,pid,hostname,progname,message) values (?,?,?,?,?,?,?)',
+        values     => [ qw/%level %time %date %pid %hostname %progname %message/ ],
 
         # if you like persistent connections and want to re-connect
         persistent => 1,
         reconnect  => 1,
+    );
+
+    my %message = (
+        level       => 'ERROR',
+        time        => '10:12:13',
+        date        => '1999-12-12',
+        pid         => $$,
+        hostname    => 'localhost',
+        progname    => $0,
+        message     => 'an error here'
     );
 
     $db->log(\%message);
@@ -86,33 +96,33 @@ You can pass the columns as string or as array. Example:
     table => 'messages',
 
     # columns as string
-    columns => 'level, ctime, cdate, pid, hostname, caller, progname, mtime, message',
+    columns => 'level, ctime, cdate, pid, hostname, progname, message',
 
     # columns as array
-    columns => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
+    columns => [ qw/level ctime cdate pid hostname progname message/ ],
 
 The statement would created as follows
 
-    insert into message (level, ctime, cdate, pid, hostname, caller, progname, mtime, message)
-                 values (?,?,?,?,?,?,?,?,?)
+    insert into message (level, ctime, cdate, pid, hostname, progname, mtime, message)
+                 values (?,?,?,?,?,?,?)
 
 =item B<statement>
 
 With this option you can pass your own statement if you don't want to you the
 options C<table> and C<columns>.
 
-    statement => 'insert into message (level, ctime, cdate, pid, hostname, caller, progname, mtime, message)'
-                 .' values (?,?,?,?,?,?,?,?,?)'
+    statement => 'insert into message (level, ctime, cdate, pid, hostname, progname, mtime, message)'
+                 .' values (?,?,?,?,?,?,?)'
 
 =item B<values>
 
 With this option you have to set the values for the insert.
 
-        values => '%level, %time, %date, %pid, %hostname, %caller, %progname, %mtime, %message',
+        values => '%level, %time, %date, %pid, %hostname, %progname, %message',
 
         # or
 
-        values => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
+        values => [ qw/%level %time %date %pid %hostname %progname %message/ ],
 
 The placeholders are identical with the pattern names that you have to pass
 with the option C<message_pattern>.
@@ -123,8 +133,13 @@ with the option C<message_pattern>.
     %P   pid
     %H   hostname
     %N   newline
+    %R   runtime
     %C   caller
-    %p   progname
+    %p   package
+    %f   filename
+    %l   line
+    %s   subroutine
+    %S   progname
     %t   mtime
     %m   message
 
@@ -240,7 +255,7 @@ package Log::Handler::Output::DBI;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_07';
+our $VERSION = '0.00_08';
 our $ERRSTR  = '';
 
 use Carp;
@@ -263,12 +278,8 @@ sub new {
 }
 
 sub log {
-    my $self = shift;
+    my $self    = shift;
     my $message = @_ > 1 ? {@_} : shift;
-
-    #if (!$self->{persistent} || ($self->{dbh} && !$self->{dbh}->ping)) {
-    #    $self->connect or return undef;
-    #}
 
     if ($self->{persistent}) {
         warn "ping the database" if $self->{debug};

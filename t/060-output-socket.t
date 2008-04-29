@@ -59,7 +59,7 @@ my $log = Log::Handler::Output::Socket->new(
 
 ok(1, 'new');
 
-$log->log('test message from logger') or do {
+$log->log(message => 'test message from logger') or do {
     ok(0, 'testing log() - '.$log->errstr);
 };
 

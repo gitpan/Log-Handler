@@ -2,12 +2,6 @@
 
 Log::Handler::Output - The output builder class.
 
-=head1 SYNOPSIS
-
-    use Log::Handler::Output;
-
-    my $output = Log::Handler::Output->new(\%options);
-
 =head1 DESCRIPTION
 
 Just for internal usage!
@@ -37,57 +31,48 @@ package Log::Handler::Output;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_10';
+our $VERSION = '0.00_11';
 our $ERRSTR  = '';
-our $CALLER  =  2;
-our $TRACE   =  0;
-our $MESSAGE = '';
-our $LEVEL   = '';
-our $OBJECT  = undef;
 
 use Carp;
 use Devel::Backtrace;
-use POSIX;
-use Sys::Hostname;
-use Time::HiRes;
-use UNIVERSAL::require;
 
 sub new {
-    my ($class, $options) = @_;
-    return bless $options, $class;
+    my ($class, $options, $output) = @_;
+    my $self = bless $options, $class;
+    $self->{output} = $output;
+    return $self;
 }
 
 sub log {
-    my $self       = shift;
-    my $output     = $self->{output};
-    my $message    = {message => ''};
-    local $LEVEL   = shift;
-    local $MESSAGE = join(' ', @_);
-    local $OBJECT  = $self;
+    my $self    = shift;
+    my $level   = shift;
+    my $wanted  = {message=>join(' ', @_)||''};
+    my $output  = $self->{output};
+    my $pattern = $self->{pattern};
+    my $message = { };
 
-    if ($self->{message_order}) {
-        foreach my $p ( @{$self->{message_order}} ) {
-            if (ref($p)) {
-                $message->{message} .= &$p;
-            } else {
-                $message->{message} .= $p;
-            }
+    foreach my $r (@{$self->{wanted_pattern}}) {
+        if (ref($r->{code})) {
+            $wanted->{$r->{name}} = &{$r->{code}}($self, $level);
+        } else {
+            $wanted->{$r->{name}} = $r->{code};
         }
+    }
+
+    if ($self->{message_layout}) {
+        &{$self->{message_layout_code}}($wanted, $message);
+    } else {
+        $message->{message} = $wanted->{message};
     }
 
     if ($self->{message_pattern}) {
-        while ( my ($name, $code) = each %{$self->{pattern}} ) {
-            if (ref($code)) {
-                $message->{$name} = &$code($self);
-            } else {
-                $message->{$name} = $code; # $code is a scalar
-            }
-        }
+        &{$self->{message_pattern_code}}($wanted, $message);
     }
 
-    if ($self->{debug_trace} || $LEVEL eq 'TRACE' || $TRACE) {
+    if ($self->{debug_trace} || $Log::Handler::TRACE) {
         $self->_add_trace($message);
-    } elsif ($self->{newline} && $message->{message} =~ /.\z|^\z/) {
+    } elsif ($self->{newline} && $message->{message} =~ /.\z/) {
         $message->{message} .= "\n";
     }
 
@@ -119,21 +104,21 @@ sub errstr { $ERRSTR }
 sub _add_trace {
     my ($self, $message) = @_;
 
-    if ( $message->{message} =~ /.\z|^\z/ ) {
+    if ( $message->{message} =~ /.\z/ ) {
         $message->{message} .= "\n";
     }
 
     my $bt = Devel::Backtrace->new($self->{debug_skip});
 
-    for my $p (reverse 0..$bt->points-1) {
-        $message->{message} .= ' ' x 3 . "CALL($p):";
-        my $c = $bt->point($p);
-        for my $k (qw/package filename line subroutine hasargs wantarray evaltext is_require/) {
-            next unless defined $c->{$k};
-            if ($self->{debug_mode} == 1) {
-                $message->{message} .= " $k($c->{$k})";
-            } elsif ($self->{debug_mode} == 2) {
-                $message->{message} .= "\n" . ' ' x 6 . sprintf('%-12s', $k) . $c->{$k};
+    foreach my $point (reverse 0..$bt->points-1) {
+        $message->{message} .= ' ' x 3 . "CALL($point):";
+        my $caller = $bt->point($point);
+        foreach my $key (qw/package filename line subroutine hasargs wantarray evaltext is_require/) {
+            next unless defined $caller->{$key};
+            if ($self->{debug_mode} == 1) { # line mode
+                $message->{message} .= " $key($caller->{$key})";
+            } elsif ($self->{debug_mode} == 2) { # block mode
+                $message->{message} .= "\n" . ' ' x 6 . sprintf('%-12s', $key) . $caller->{$key};
             }
         }
         $message->{message} .= "\n";
@@ -141,23 +126,11 @@ sub _add_trace {
 }
 
 sub _prepare_message {
-    my $self    = shift;
-    my $message = {@_};
-    my $code    = $self->{prepare_message};
-    eval { &$code($message) };
-    return $@ ? $self->_raise_error($@) : $message;
-}
-
-sub _measurement {
     my $self = shift;
-    if (!$self->{timeofday}) {
-        $self->{timeofday} = Time::HiRes::gettimeofday;
-        return 0;
-    }
-    my $new_time = Time::HiRes::gettimeofday;
-    my $cur_time = $new_time - $self->{timeofday};
-    $self->{timeofday} = $new_time;
-    return sprintf('%.6f', $cur_time);
+    my $msg  = {@_};
+    my $code = $self->{prepare_message};
+    eval { &$code($msg) };
+    return $@ ? $self->_raise_error($@) : $msg;
 }
 
 sub _filter_ok {

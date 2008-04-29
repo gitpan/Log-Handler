@@ -60,8 +60,9 @@ package Log::Handler::Plugin::Config::YAML;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_05';
 use YAML;
+
+our $VERSION = '0.00_06';
 
 sub get_config {
     my ($class, $config_file) = @_;

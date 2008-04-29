@@ -2,69 +2,32 @@
 
 Log::Handler::Examples - Output examples.
 
-=head1 LOG VIA FILE
-
-    use Log::Handler;
-
-    my $log = Log::Handler->new();
-
-    $log->add(file => {
-        filename => 'file1.log',
-        mode     => 'append',
-        newline  => 1,
-        maxlevel => 7,
-        minlevel => 0
-    });
-
-    $log->debug("this is a debug message");
-    $log->info("this is a info message");
-    $log->notice("this is a notice");
-    $log->warning("this is a warning");
-    $log->error("this is a error message");
-    $log->err("this is a error message as well");
-    $log->critical("this is a critical message");
-    $log->crit("this is a critical message as well");
-    $log->alert("this is a alert message");
-    $log->emergency("this is a emergency message");
-    $log->emerg("this is a emergency message as well");
-
-Would log to C<file1.log>
-
-    Feb 01 12:56:31 [DEBUG] this is a debug message
-    Feb 01 12:56:31 [INFO] this is a info message
-    Feb 01 12:56:31 [NOTICE] this is a notice
-    Feb 01 12:56:31 [WARNING] this is a warning
-    Feb 01 12:56:31 [ERROR] this is a error message
-    Feb 01 12:56:31 [ERROR] this is a error message as well
-    Feb 01 12:56:31 [CRITICAL] this is a critical message
-    Feb 01 12:56:31 [CRITICAL] this is a critial message as well
-    Feb 01 12:56:31 [ALERT] this is a alert message
-    Feb 01 12:56:31 [EMERGENCY] this is a emergency message
-    Feb 01 12:56:31 [EMERGENCY] this is a emergency message as well
-
 =head1 LOG VIA DBI
 
     use Log::Handler;
 
     my $log = Log::Handler->new();
 
-    $log->add(dbi => {
-        # database connection
-        database   => 'database',
-        driver     => 'mysql',
-        user       => 'user',
-        password   => 'password',
-        host       => '127.0.0.1',
-        port       => 3306,
-        debug      => 1,
-        table      => 'messages',
-        columns    => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
-        values     => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
-        persistent => 1,
-        reconnect  => 1,
-        maxlevel   => 'error',
-        minlevel   => 'emerg'
-    });
+    $log->add(
+        dbi => {
+            # database connection
+            database   => 'database',
+            driver     => 'mysql',
+            user       => 'user',
+            password   => 'password',
+            host       => '127.0.0.1',
+            port       => 3306,
+            debug      => 1,
+            table      => 'messages',
+            columns    => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
+            values     => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
+            persistent => 1,
+            reconnect  => 1,
+            maxlevel   => 'error',
+            minlevel   => 'emergency'
+            message_pattern => '%L %T %D %P %H %C %S %t %m',
+        }
+    );
 
     $log->error("this error goes to the database");
 
@@ -74,21 +37,38 @@ Would log to C<file1.log>
 
     my $log = Log::Handler->new();
 
-    $log->add(email => {
-        host     => 'mx.bar.example',
-        hello    => 'EHLO my.domain.example',
-        timeout  => 120,
-        debug    => 1,
-        from     => 'bar@foo.example',
-        to       => 'foo@bar.example',
-        subject  => 'your subject',
-        buffer   => 100,
-        interval => 60,
-        maxlevel => 'error',
-        minlevel => 'emerg',
-    });
+    $log->add(
+        email => {
+            host     => 'mx.bar.example',
+            hello    => 'EHLO my.domain.example',
+            timeout  => 30,
+            from     => 'bar@foo.example',
+            to       => 'foo@bar.example',
+            subject  => 'your subject',
+            buffer   => 0,
+            maxlevel => 'emergency',
+        }
+    );
 
-    $log->error($message);
+    $log->emergency('this message will be send as email');
+
+=head1 LOG VIA FILE
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(
+        file => {
+            filename => 'file1.log',
+            mode     => 'append',
+            newline  => 1,
+            maxlevel => 7,
+            minlevel => 0
+        }
+    );
+
+    $log->error("this is a error message");
 
 =head1 LOG VIA FORWARD
 
@@ -96,12 +76,14 @@ Would log to C<file1.log>
 
     my $log = Log::Handler->new();
 
-    $log->add(forward => {
-        forward_to      => \&my_func,
-        message_pattern => [ qw/%L %T %P %H %C %p %t/ ],
-        message_layout  => '%m',
-        maxlevel        => 'info',
-    });
+    $log->add(
+        forward => {
+            forward_to      => \&my_func,
+            message_pattern => [ qw/%L %T %P %H %C %S %t/ ],
+            message_layout  => '%m',
+            maxlevel        => 'info',
+        }
+    );
 
     $log->info('Hello World!');
 
@@ -116,13 +98,15 @@ Would log to C<file1.log>
 
     my $log = Log::Handler->new();
 
-    $log->add(forward => {
-        log_to          => 'STDERR',
-        dump            => 1,
-        message_pattern => [ qw/%L %T %P %H %C %p %t/ ],
-        message_layout  => '%m',
-        maxlevel        => 'info',
-    });
+    $log->add(
+        forward => {
+            log_to          => 'STDERR',
+            dump            => 1,
+            message_pattern => [ qw/%L %T %P %H %C %S %t/ ],
+            message_layout  => '%m',
+            maxlevel        => 'info',
+        }
+    );
 
     $log->info('Hello World!');
 
@@ -132,13 +116,15 @@ Would log to C<file1.log>
 
     my $log = Log::Handler->new();
 
-    $log->add(socket => {
-        peeraddr => '127.0.0.1',
-        peerport => 44444,
-        newline  => 1,
-        maxlevel => 'info',
-        die_on_errors => 0,
-    });
+    $log->add(
+        socket => {
+            peeraddr => '127.0.0.1',
+            peerport => 44444,
+            newline  => 1,
+            maxlevel => 'info',
+            die_on_errors => 0,
+        }
+    );
 
     while ( 1 ) {
         $log->info('test')
@@ -183,64 +169,62 @@ Would log to C<file1.log>
 
     my $log = Log::Handler->new();
 
-    $log->add(file => {
-        filename => 'common.log',
-        mode     => 'append',
-        maxlevel => 6,
-        minlevel => 5,
-    });
+    $log->add(
+        file => {
+            filename => 'common.log',
+            mode     => 'append',
+            maxlevel => 6,
+            minlevel => 5,
+        }
+    );
 
-    $log->add(file => {
-        filename => 'error.log',
-        mode     => 'append',
-        maxlevel => 4,
-        minlevel => 0,
-    });
+    $log->add(
+        file => {
+            filename => 'error.log',
+            mode     => 'append',
+            maxlevel => 4,
+            minlevel => 0,
+        }
+    );
 
-    $log->add(email => {
-        host     => 'mx.bar.example',
-        hello    => 'EHLO my.domain.example',
-        timeout  => 120,
-        debug    => 1,
-        from     => 'bar@foo.example',
-        to       => 'foo@bar.example',
-        subject  => 'your subject',
-        buffer   => 100,
-        interval => 60,
-        maxlevel => 'error',
-        minlevel => 'emerg',
-    });
+    $log->add(
+        email => {
+            host     => 'mx.bar.example',
+            hello    => 'EHLO my.domain.example',
+            timeout  => 120,
+            from     => 'bar@foo.example',
+            to       => 'foo@bar.example',
+            subject  => 'your subject',
+            buffer   => 0,
+            maxlevel => 0,
+        }
+    );
 
     # log to common.log
     $log->info("this is a info message");
-    $log->notice("this is a notice");
 
     # log to error.log
     $log->warning("this is a warning");
 
     # log to error.log and to foo@bar.example
-    $log->error("this is a error message");
-    $log->err("this is a error message as well");
-    $log->critical("this is a critical message");
-    $log->crit("this is a critical message as well");
-    $log->alert("this is a alert message");
     $log->emergency("this is a emergency message");
-    $log->emerg("this is a emergency message as well");
 
 =head1 FILTER
 
     my $log = Log::Handler->new();
 
-    $log->add(screen => {
-        newline  => 1,
-        maxlevel => 6,
-        filter   => {
-            match1    => 'foo',
-            match2    => 'bar',
-            match3    => 'baz',
-            condition => '(match1 && match2) && !match3'
+    $log->add(
+        screen => {
+            newline  => 1,
+            maxlevel => 6,
+            filter   => {
+                match1    => 'foo',
+                match2    => 'bar',
+                match3    => 'baz',
+                condition => '(match1 && match2) && !match3'
+            }
         }
-    });
+    );
 
     $log->info('foo');
     $log->info('foo bar');
@@ -323,11 +307,13 @@ It can be very useful if you want to check if a level is active.
 
     my $log = Log::Handler->new();
 
-    $log->add(file => {
-       filename   => 'file1.log',
-       mode       => 'append',
-       maxlevel   => 4,
-    });
+    $log->add(
+        file => {
+            filename   => 'file1.log',
+            mode       => 'append',
+            maxlevel   => 4,
+        }
+    );
 
     my %hash = (foo => 1, bar => 2);
 
@@ -344,10 +330,11 @@ This would dump the hash only if the level debug is active.
 
 A long time I was thinking about to provide a global log mechanism like
 
+    # use Log::Handler alias => accessor;
     use Log::Handler myapp => 'LOG';
     LOG->config(filename => 'myapp.conf');
 
-and then just call the handler into all the modules of your project and
+and then just inlucde C<Log::Handler> into all other modules of your project and
 use a global logger like:
 
     use Log::Handler 'myapp';
@@ -355,11 +342,11 @@ use a global logger like:
 
 I through away this idea because it would come with a lot of problems.
 
-If you want to use a feature like this then you can write your own thing. As example:
+If you want to use a feature like this then you can write your own thing.
 
     package MyAPP::Util;
     use strict;
-    use warning;
+    use warnings;
     use Log::Handler;
     use constant LOG => Log::Handler->new();
     require Exporter;

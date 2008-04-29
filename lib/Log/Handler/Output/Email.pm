@@ -14,11 +14,10 @@ Log::Handler::Output::Email - Log messages as email (via Net::SMTP).
         from     => 'bar@foo.example',
         to       => 'foo@bar.example',
         subject  => 'your subject',
-        buffer   => 100,
-        interval => 60,
+        buffer   => 0
     );
 
-    $email->log($message);
+    $email->log(message => $message);
 
 =head1 DESCRIPTION
 
@@ -68,27 +67,22 @@ The receipient address (RCPT TO).
 
 The subject of the mail.
 
-If no subject is set then the first 100 character of the message is used.
+The default subject is "Log message from $progname". 
 
-=item B<buffer> and B<interval>
+=item B<buffer>
 
-Both options exists only for security. The thing is that it would be very bad
+This options exists only for security. The thing is that it would be very bad
 if something wents wrong in your program and hundreds of mails would be send.
-For this reason you can set a buffer and a interval to take care.
+For this reason you can set a buffer to take care.
 
 With the buffer you can set the maximum size of the buffer in lines. If you set
 
     buffer => 10
 
-then 10 messages would be buffered.
+then 10 messages would be buffered. Set C<buffer> to 0 if you want to disable
+the buffer.
 
-With the interval you can set the interval in seconds to flush the buffer.
-C<flush> means to send the complete buffer as one email.
-
-Note that if the buffer is full and the interval is not expired then all
-further lines get lost - as a matter of course - because we don't want to blow
-our memory away. To flush the buffer every time if it's full you can set the
-interval to 0.
+The default buffer size is set to 20.
 
 =item B<debug>
 
@@ -101,9 +95,18 @@ intercepted with $SIG{__WARN__}.
 
 Call C<log()> if you want to log a message as email.
 
+If you set a buffer size then the message will be pushed into the buffer first.
+
 Example:
 
-    $email->log('this message will be mailed');
+    $email->log(message => 'this message will be mailed');
+
+    # or
+
+    $email->log(
+        message => 'this message will be mailed',
+        subject => 'non default subject',
+    );
 
 =head2 flush()
 
@@ -112,6 +115,8 @@ Call C<flush()> if you want to flush the buffered lines.
 =head2 sendmail()
 
 Call C<sendmail()> if you want to send an email.
+
+The difference to C<log()> is that the message won't be buffered.
 
 =head2 errstr()
 
@@ -160,14 +165,13 @@ package Log::Handler::Output::Email;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_08';
-our $ERRSTR  = '';
-our $TEST    =  0; # is needed to disable flush() for tests
-
-use Data::Dumper;
 use Net::SMTP;
 use Params::Validate;
 use Carp;
+
+our $VERSION = '0.00_09';
+our $ERRSTR  = '';
+our $TEST    =  0; # is needed to disable flush() for tests
 
 sub new {
     my $class   = shift;
@@ -177,49 +181,41 @@ sub new {
 
 sub log {
     my $self    = shift;
-    my $message = ();
-    my $return  = 1;
+    my $message = @_ > 1 ? {@_} : shift;
 
-    if (ref($_[0]) eq 'HASH') {
-        $message = $_[0]->{message};
-    } else {
-        $message = shift;
+    if ($self->{buffer} == 0) {
+        $self->sendmail($message);
     }
 
-    if (@{$self->{LINE_BUFFER}} < $self->{buffer}) {
-        push @{$self->{LINE_BUFFER}}, $message;
+    if (@{$self->{MESSAGE_BUFFER}} < $self->{buffer}) {
+        push @{$self->{MESSAGE_BUFFER}}, $message->{message};
     }
 
-    if ($self->{interval}) {
-        if ($self->{time} + $self->{interval} >= time) {
-            $return = $self->flush;
-            # set the new time _after_ the mail is send
-            # because the time that is needed to send the
-            # the mail shouldn't manipulate the interval!
-            $self->{time} = time;
-        }
-    } elsif (@{$self->{LINE_BUFFER}} == $self->{buffer}) {
-        $return = $self->flush;
+    if (@{$self->{MESSAGE_BUFFER}} == $self->{buffer}) {
+        return $self->flush;
     }
 
-    return $return;
+    return 1;
 }
 
 sub flush {
     my $self = shift;
     my $message = ();
-    return 1 if $TEST || !@{$self->{LINE_BUFFER}};
-    while (my $line = shift @{$self->{LINE_BUFFER}}) {
+
+    return 1 if $TEST || !@{$self->{MESSAGE_BUFFER}};
+
+    while (my $line = shift @{$self->{MESSAGE_BUFFER}}) {
         $message .= $line;
     }
-    return $self->sendmail($message);
+
+    return $self->sendmail(message => $message);
 }
 
 sub sendmail {
-    my ($self, $message) = @_;
-    return 1 unless length($message);
-    my $subject = $self->{subject};
-    my $smtp = ();
+    my $self    = shift;
+    my $message = @_ > 1 ? {@_} : shift;
+    my $subject = $message->{subject} || $self->{subject};
+    my $smtp    = ();
 
     foreach my $host (@{$self->{host}}) {
         $smtp = Net::SMTP->new(
@@ -235,10 +231,6 @@ sub sendmail {
         return $self->_raise_error("smtp error: unable to connect to any host");
     }
 
-    if (!$subject) {
-        $subject = substr($message, 0, 100);
-    }
-
     my $success = 0;
     $success++ if $smtp->mail($self->{from});
     $success++ if $smtp->to($self->{to});
@@ -246,7 +238,7 @@ sub sendmail {
     $success++ if $smtp->datasend("From: $self->{from}\n");
     $success++ if $smtp->datasend("To: $self->{to}\n");
     $success++ if $smtp->datasend("Subject: $subject\n");
-    $success++ if $smtp->datasend($message."\n");
+    $success++ if $smtp->datasend($message->{message}."\n");
     $success++ if $smtp->dataend();
     $success++ if $smtp->quit();
 
@@ -266,6 +258,9 @@ sub DESTROY { $_[0]->flush }
 
 sub _validate {
     my $class = shift;
+
+    my $progname = $0;
+    $progname =~ s@.*[/\\]@@;
 
     my %options = Params::Validate::validate(@_, {
         host => {
@@ -293,32 +288,28 @@ sub _validate {
         },
         subject => {
             type => Params::Validate::SCALAR,
-            default => '',
+            default => "Log message from $progname",
         },
         buffer => {
             type => Params::Validate::SCALAR,
             default => 20,
         },
-        interval => {
-            type => Params::Validate::SCALAR,
-            regex => qr/^\d+\z/,
-            default => 0,
-        },
     });
-
-    if (!@{$options{host}}) {
-        Carp::croak "empty array ref for option 'host' is not allowed";
-    }
-
-    if ($options{interval}) {
-        $options{time} = time;
-    }
 
     if (!ref($options{host})) {
         $options{host} = [ $options{host} ];
     }
 
-    $options{LINE_BUFFER} = [ ];
+    if ($options{subject}) {
+        $options{subject} =~ s/\n/ /g;
+        $options{subject} =~ s/(.{78})/$1\n /;
+        if (length($options{subject}) > 998) {
+            warn "Subject to long for email!";
+            $options{subject} = substr($options{subject}, 0, 998);
+        }
+    }
+
+    $options{MESSAGE_BUFFER} = [ ];
     return \%options;
 }
 

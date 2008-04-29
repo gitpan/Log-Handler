@@ -28,7 +28,7 @@ $log->add(
     screen => {
         log_to          => 'STDERR',
         dump            => 1,
-        message_pattern => [ qw/%L %T %P %H %C %p %t/ ],
+        message_pattern => [ qw/%L %T %P %H %C %S %t/ ],
         message_layout  => '%m',
         maxlevel        => 'info'
     }

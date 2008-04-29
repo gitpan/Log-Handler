@@ -17,7 +17,7 @@ Log::Handler::Output::File - Log messages to a file.
         utf8        => 0,
     );
 
-    $log->log($message);
+    $log->log(message => $message);
 
 =head1 DESCRIPTION
 
@@ -185,7 +185,7 @@ Call C<log()> if you want to log messages to the log file.
 
 Example:
 
-    $log->log('this message goes to the logfile');
+    $log->log(message => 'this message goes to the logfile');
 
 =head2 errstr()
 
@@ -234,12 +234,12 @@ package Log::Handler::Output::File;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_08';
-our $ERRSTR  = '';
-
 use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
 use File::Spec;
 use Params::Validate;
+
+our $VERSION = '0.00_09';
+our $ERRSTR  = '';
 
 sub new {
     my $class   = shift;
@@ -298,13 +298,7 @@ sub new {
 
 sub log {
     my $self    = shift;
-    my $message = ();
-
-    if (ref($_[0]) eq 'HASH') {
-        $message = $_[0]->{message};
-    } else {
-        $message = shift;
-    }
+    my $message = @_ > 1 ? {@_} : shift;
 
     if (!$self->{fileopen}) {
         $self->_open or return undef;
@@ -316,7 +310,7 @@ sub log {
         $self->_lock or return undef;
     }
 
-    print {$self->{fh}} $message or
+    print {$self->{fh}} $message->{message} or
         return $self->_raise_error("unable to print to logfile: $!");
 
     if ($self->{filelock}) {
