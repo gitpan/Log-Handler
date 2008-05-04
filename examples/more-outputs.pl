@@ -8,7 +8,7 @@ my $log = Log::Handler->new();
 
 $log->add(
     file => {
-       filename => 'example-2.log',
+       filename => 'more-outputs.log',
        mode     => 'append',
        newline  => 1,
        maxlevel => 'info'
@@ -17,7 +17,7 @@ $log->add(
 
 $log->add(
     forward => {
-        forward_to      => sub { my $m = shift; print "forwarded $m->{message}"; },
+        forward_to      => sub { my $m = shift; print "forwarded: $m->{message}"; },
         message_layout  => '%m',
         maxlevel        => 'info',
         newline         => 1

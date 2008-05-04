@@ -153,12 +153,12 @@ Log::Handler::Examples - Output examples.
     );
 
     while ( 1 ) {
-        $file->log("waiting for next connection\n");
+        $file->log(message => "waiting for next connection\n");
 
         while (my $request = $sock->accept) {
             my $ipaddr = sprintf('%-15s', $request->peerhost);
             while (my $message = <$request>) {
-                $file->log("$ipaddr - $message");
+                $file->log(message => "$ipaddr - $message");
             }
         }
     }
@@ -248,7 +248,7 @@ Log::Handler::Examples - Output examples.
 
 =head1 CONFIG
 
-File: my_app_log.conf
+File: file.conf
 
     <file>
         <default>
@@ -296,7 +296,7 @@ Script:
 
     my $log = Log::Handler->new();
 
-    $log->config(filename => 'my_app_log.conf');
+    $log->config(filename => 'file.conf');
 
 =head1 CHECK FOR ACTIVE LEVELS
 
@@ -344,7 +344,7 @@ I through away this idea because it would come with a lot of problems.
 
 If you want to use a feature like this then you can write your own thing.
 
-    package MyAPP::Util;
+    package MyAPP::Logger;
     use strict;
     use warnings;
     use Log::Handler;
@@ -355,15 +355,11 @@ If you want to use a feature like this then you can write your own thing.
     LOG->config(filename => 'myapp.conf');
     1;
 
-Now you can include C<MyAPP::Util> into all the modules of your project and access
+Now you can include C<MyAPP::Logger> into all the modules of your project and access
 the logger with
 
-    use MyAPP::Util;
+    use MyAPP::Logger;
     LOG->info('an info here');
-
-=head1 REPORT BUGS
-
-Please report all bugs to <jschulz.cpan(at)bloonix.de>.
 
 =head1 AUTHOR
 

@@ -43,7 +43,9 @@ No exports.
 =head1 REPORT BUGS
     
 Please report all bugs to <jschulz.cpan(at)bloonix.de>.
-    
+
+If you send me a mail then add Log::Handler into the subject.
+
 =head1 AUTHOR
 
 Jonny Schulz <jschulz.cpan(at)bloonix.de>.
@@ -63,7 +65,7 @@ use strict;
 use warnings;
 use Config::General;
 
-our $VERSION = '0.00_05';
+our $VERSION = '0.01';
 
 sub get_config {
     my ($class, $config_file) = @_;

@@ -1,4 +1,10 @@
-0.39_17 Released at 2008-04-24.
+0.40    Released at 2008-05-04.
+        - A full release - finally :-)
+        - Kicked all <level>_and_trace and <level>_and_die methods.
+          Replaced them with $log->die and $log->trace.
+        - Did some code and POD improvements.
+
+0.39_17 Released at 2008-04-29.
         - Kicked all <level>_and_croak methods and carp() - to bloated.
         - message_pattern and message_layout is now builded with eval.
         - The patterns are not static any more. Changes at runtime are

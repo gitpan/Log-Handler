@@ -24,15 +24,15 @@ $log = Log::Handler::Output::DBI->new(
     port       => 3306,
     debug      => 0,
     table      => 'messages',
-    columns    => 'level, message',
-    values     => '%level, %message',
+    columns    => 'level message',
+    values     => '%level %message',
     persistent => 0,
     reconnect  => 0,
 );
 
 ok(1, 'new');
 
-$ret = $log->{statement} eq 'insert into messages (level, message) values (?,?)';
+$ret = $log->{statement} eq 'insert into messages (level,message) values (?,?)';
 ok($ret, 'checking statement');
 
 $ret = $log->{cstr}->[0] eq 'dbi:mysql:database=dbname;host=127.0.0.1;port=3306';

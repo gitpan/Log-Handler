@@ -33,7 +33,7 @@ use Log::Handler::Output;
 use Time::HiRes;
 use constant START_TIME => scalar Time::HiRes::gettimeofday;
 
-our $VERSION = '0.00_02';
+our $VERSION = '0.01';
 my $progname = $0;
 $progname =~ s@.*[/\\]@@;
 

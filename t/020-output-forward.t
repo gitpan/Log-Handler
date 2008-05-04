@@ -5,6 +5,8 @@ use Log::Handler;
 
 my @LINES;
 sub save_lines {
+    my $foo = shift;
+    next unless $foo eq 'foo';
     push @LINES, $_[0]->{message};
 }
 
@@ -12,6 +14,7 @@ my $log = Log::Handler->new();
 
 $log->add(forward => {
     forward_to     => \&save_lines,
+    arguments      => [ 'foo' ],
     maxlevel       => 'debug',
     minlevel       => 'emergency',
     message_layout => 'prefix [%L] %m postfix',

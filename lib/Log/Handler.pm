@@ -378,7 +378,7 @@ The line mode looks like this:
 
 Output:
 
-    Apr 26 12:54:11 [WARN] 
+    Apr 26 12:54:11 [WARNING] 
        CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
        CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
        CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
@@ -694,9 +694,22 @@ With this option you can set your own placeholders. Example:
 
 Then you can use this pattern in your message layout:
 
-    $log->add(forward => {
+    $log->add(file => {
         filename        => 'file.log',
-        message_layout  => '%X %m',
+        mode            => 'append',
+        message_layout  => '%X %m %N',
+    });
+
+Or use it with C<message_pattern>:
+
+    sub func {
+        my $m = shift;
+        print "$m->{name} $m->{message}\n";
+    }
+
+    $log->add(forward => {
+        forward_to      => \&func,
+        message_pattern => '%X %m',
     });
 
 =head1 EXAMPLES
@@ -757,12 +770,6 @@ IRC: irc.perl.org#perl
 
 If you send me a mail then add Log::Handler into the subject.
 
-=head1 TODO
-
-Maybe;
-
-    * Log::Handler::Output::HTML
-
 =head1 COPYRIGHT
 
 Copyright (C) 2007 by Jonny Schulz. All rights reserved.
@@ -807,7 +814,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION  = '0.39_17';
+our $VERSION  = '0.40';
 our $ERRSTR   = '';
 our $DEBUG    = 0;
 our $TRACE    = 0;
@@ -829,11 +836,10 @@ use constant LEVEL_RX => qr/^(?:
 )\z/x;
 
 # to convert minlevel and maxlevel
-my %LEVEL_BY_STRING = ( 
+our %LEVEL_BY_STRING = ( 
     DEBUG     =>  7,  
     INFO      =>  6,  
     NOTICE    =>  5,  
-    NOTE      =>  5,  
     WARNING   =>  4,  
     WARN      =>  4,  
     ERROR     =>  3,  

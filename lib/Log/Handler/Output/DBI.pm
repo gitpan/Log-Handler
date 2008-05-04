@@ -20,8 +20,8 @@ Log::Handler::Output::DBI - Log messages to a database.
 
         # table, columns and values (as string)
         table      => 'messages',
-        columns    => 'level, ctime, cdate, pid, hostname, progname, message',
-        values     => '%level, %time, %date, %pid, %hostname, %progname, %message',
+        columns    => 'level ctime cdate pid hostname progname message',
+        values     => '%level %time %date %pid %hostname %progname %message',
 
         # table, columns and values (as array reference)
         table      => 'messages',
@@ -51,7 +51,7 @@ Log::Handler::Output::DBI - Log messages to a database.
 
 =head1 DESCRIPTION
 
-With this output you can insert messages to a database table.
+With this output you can insert messages into a database table.
 
 =head1 METHODS
 
@@ -230,17 +230,11 @@ No exports.
 
 Please report all bugs to <jschulz.cpan(at)bloonix.de>.
 
+If you send me a mail then add Log::Handler into the subject.
+
 =head1 AUTHOR
 
 Jonny Schulz <jschulz.cpan(at)bloonix.de>.
-
-=head1 QUESTIONS
-
-Do you have any questions or ideas?
-
-MAIL: <jschulz.cpan(at)bloonix.de>
-
-If you send me a mail then add Log::Handler into the subject.
 
 =head1 COPYRIGHT
 
@@ -255,12 +249,12 @@ package Log::Handler::Output::DBI;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_08';
-our $ERRSTR  = '';
-
 use Carp;
 use DBI;
 use Params::Validate;
+
+our $VERSION = '0.01';
+our $ERRSTR  = '';
 
 sub new {
     my $class   = shift;
@@ -440,7 +434,7 @@ sub _validate {
     # build the statement
 
     if (!ref($options{values})) {
-        $options{values} = [ split /\s*,\s*/, $options{values} ];
+        $options{values} = [ split /[\s,]+/, $options{values} ];
     }
 
     if (!$options{statement}) {
@@ -450,7 +444,7 @@ sub _validate {
         if (ref($options{columns})) {
             $options{statement} .= join(',', @{$options{columns}});
         } else {
-            $options{statement} .= $options{columns};
+            $options{statement} .= join(',', split /[\s,]+/, $options{columns});
         }
 
         $options{statement} .= ') values (';

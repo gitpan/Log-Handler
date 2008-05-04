@@ -119,17 +119,11 @@ No exports.
 
 Please report all bugs to <jschulz.cpan(at)bloonix.de>.
 
+If you send me a mail then add Log::Handler into the subject.
+
 =head1 AUTHOR
 
 Jonny Schulz <jschulz.cpan(at)bloonix.de>.
-
-=head1 QUESTIONS
-
-Do you have any questions or ideas?
-
-MAIL: <jschulz.cpan(at)bloonix.de>
-
-If you send me a mail then add Log::Handler into the subject.
 
 =head1 COPYRIGHT
 
@@ -148,7 +142,7 @@ use Params::Validate;
 use IO::Socket::INET;
 use Data::Dumper;
 
-our $VERSION = '0.00_02';
+our $VERSION = '0.01';
 our $ERRSTR  = '';
 
 sub new {

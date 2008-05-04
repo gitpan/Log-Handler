@@ -5,7 +5,7 @@ use Log::Handler;
 
 my $log = Log::Handler->new();
 
-$log->config(config => 'example-1.cfg');
+$log->config(config => 'example.conf');
 
 $log->debug('debug message');
 $log->info('info message');

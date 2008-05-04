@@ -4,11 +4,13 @@ Log::Handler::Levels - All levels for Log::Handler.
 
 =head1 DESCRIPTION
 
-Base class for all levels.
+Base class for Log::Handler.
+
+Just for internal usage and documentation.
 
 =head1 METHODS
 
-=head2 Log level methods
+=head2 Default log level
 
 =over
 
@@ -66,68 +68,60 @@ Check if one of the levels C<critical> - C<emergency> is active.
 
 =back
 
-=head2 Log and trace
-
-These methods are useful if you want to add a full backtrace to
-your message.
-
-Maybe you want to intercept unexpected errors and want to know
-who called C<die()>.
-
-    $SIG{__DIE__} = sub { $log->fatal_and_trace(@_) };
-
-Or maybe you just want to know who called who
-
-    $log->info_and_trace('who called who');
+=head2 Special methods
 
 =over
 
-=item B<debug_and_trace()>
+=item B<trace()>
 
-=item B<info_and_trace()>
+This method is very useful if you want to add a full backtrace to
+your message. Maybe you want to intercept unexpected errors and
+want to know who called C<die()>.
 
-=item B<notice_and_trace()>
+    $SIG{__DIE__} = sub { $log->trace(emergency => @_) };
 
-=item B<warning_and_trace()>
+By default the backtrace is logged as level C<debug>.
 
-=item B<error_and_trace()>, B<err_and_trace()>
+    # would log with the level debug
+    $log->trace('who called who');
 
-=item B<critical_and_trace()>, B<crit_and_trace()>
+If you want to log with another level then you can pass the level
+as first argument:
 
-=item B<alert_and_trace()>
+    $log->trace(info => $message);
 
-=item B<emergency_and_trace()>, B<emerg_and_trace()>
+=item B<dump()>
 
-=item B<fatal_and_trace()>
+If you want to dump something then you can use C<dump()>.
+The default level is C<debug>.
 
-=back
+    my %hash = (foo => 1, bar => 2);
 
-=head2 Log and die
+    $log->dump(\%hash);
 
-These methods log the message to the output and then call C<Carp::croak()>.
+If you want to log with another level then you can pass the level
+as first argument:
 
-=over
+    $log->dump($level => \%hash);
 
-=item B<error_and_die()>, B<err_and_die()>
+=item B<die()>
 
-=item B<critical_and_die()>, B<crit_and_die()>
+This method logs the message to the output and then call C<Carp::croak()>
+with the level C<emergency> by default.
 
-=item B<alert_and_die()>
+    $log->die('an emergency error here');
 
-=item B<emergency_and_die()>, B<emerg_and_die()>
+If you want to log with another level, then you can pass the level
+as first argument:
 
-=item B<fatal_and_die()>
-
-=back
-
-=head2 Log and warn
-
-=over
+    $log->die(fatal => 'an emergency error here');
 
 =item B<warn()>
 
-This method log the message as warning to the output and then call
-C<Carp::carp()>.
+This method logs the message with the level warning to the output and
+then calls C<Carp::carp()>.
+
+    $log->warn('a warning here');
 
 =back
 
@@ -142,6 +136,8 @@ No exports.
 =head1 REPORT BUGS
 
 Please report all bugs to <jschulz.cpan(at)bloonix.de>.
+
+If you send me a mail then add Log::Handler into the subject.
 
 =head1 AUTHOR
 
@@ -161,8 +157,9 @@ package Log::Handler::Levels;
 use strict;
 use warnings;
 use Carp;
+use Data::Dumper;
 
-our $VERSION  = '0.00_05';
+our $VERSION  = '0.01';
 
 my %LEVELS_BY_ROUTINE = (
     debug     => 'DEBUG',
@@ -215,37 +212,44 @@ while ( my ($routine, $level) = each %LEVELS_BY_ROUTINE ) {
             return $levels->{$level} ? 1 : 0;
         };
 
-        # --------------------------------------------------------------
-        # Creating the <level>_and_trace methods
-        # --------------------------------------------------------------
-
-        *{"${routine}_and_trace"} = sub {
-            my $self = shift;
-            local $Log::Handler::TRACE = 1;
-            return $self->$routine(@_);
-        };
-
-        # --------------------------------------------------------------
-        # Creating the <level>_and_die methods
-        # --------------------------------------------------------------
-
-        if ($level =~ /^(?:ERROR|CRITICAL|ALERT|EMERGENCY|FATAL)\z/) {
-            *{"${routine}_and_die"} = sub {
-                my $self   = shift;
-                my @caller = caller;
-                $self->$routine(@_, "at line $caller[2]");
-                Carp::croak @_;
-            };
-        }
-
     } # end "no strict 'refs'" block
 }
+
+sub trace {
+    my $self  = shift;
+    my $level = @_ > 1 ? lc(shift) : 'debug';
+    if (!exists $LEVELS_BY_ROUTINE{$level}) {
+        $level = 'debug';
+    }
+    local $Log::Handler::TRACE = 1;
+    return $self->$level(@_);
+}
+
+sub die {
+    my $self  = shift;
+    my $level = @_ > 1 ? lc(shift) : 'emergency';
+    if (!exists $LEVELS_BY_ROUTINE{$level}) {
+        $level = 'emergency';
+    }
+    my @caller = caller;
+    $self->$level(@_, "at line $caller[2]");
+    Carp::croak @_;
+};
 
 sub warn {
     my $self = shift;
     my @caller = caller;
     $self->warning(@_, "at line $caller[2]");
     Carp::carp @_;
+}
+
+sub dump {
+    my $self  = shift;
+    my $level = @_ > 1 ? lc(shift) : 'debug';
+    if (!exists $LEVELS_BY_ROUTINE{$level}) {
+        $level = 'debug';
+    }
+    return $self->$level(Dumper(@_));
 }
 
 1;

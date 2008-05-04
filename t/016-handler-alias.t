@@ -13,10 +13,12 @@ sub alias_check {
 
 my $log = Log::Handler->new();
 
-$log->add(forward => {
-    forward_to => \&alias_check,
-    alias => 'test',
-});
+$log->add(
+    forward => {
+        forward_to => \&alias_check,
+        alias => 'test',
+    }
+);
 
 $log->output('test')->log('foo');
 ok($ALIAS_CHECK, "checking alias");

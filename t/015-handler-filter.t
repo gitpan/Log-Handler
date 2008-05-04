@@ -17,34 +17,42 @@ my $log = Log::Handler->new();
 
 ok(2, 'new');
 
-$log->add(forward => {
-    forward_to => \&check,
-    maxlevel   => 6,
-    filter     => 'string 1$',
-});
+$log->add(
+    forward => {
+        forward_to => \&check,
+        maxlevel   => 6,
+        filter     => 'string 1$',
+    }
+);
 
-$log->add(forward => {
-    forward_to => \&check,
-    maxlevel   => 6,
-    filter     => qr/STRING\s2$/i,
-});
+$log->add(
+    forward => {
+        forward_to => \&check,
+        maxlevel   => 6,
+        filter     => qr/STRING\s2$/i,
+    }
+);
 
-$log->add(forward => {
-    forward_to => \&check,
-    maxlevel   => 6,
-    filter     => sub { shift->{message} =~ /string\s3$/ },
-});
+$log->add(
+    forward => {
+        forward_to => \&check,
+        maxlevel   => 6,
+        filter     => sub { shift->{message} =~ /string\s3$/ },
+    }
+);
 
-$log->add(forward => {
-    forward_to => \&check,
-    maxlevel   => 6,
-    filter     => {
-        match1    => 'foo',
-        match2    => qr/bar/,
-        match3    => '(?:string\s4|string\s5)',
-        condition => '(!match1 && !match2) && match3',
-    },
-});
+$log->add(
+    forward => {
+        forward_to => \&check,
+        maxlevel   => 6,
+        filter     => {
+            match1    => 'foo',
+            match2    => qr/bar/,
+            match3    => '(?:string\s4|string\s5)',
+            condition => '(!match1 && !match2) && match3',
+        }
+    }
+);
 
 ok(3, 'add');
 

@@ -140,17 +140,11 @@ No exports.
 
 Please report all bugs to <jschulz.cpan(at)bloonix.de>.
 
+If you send me a mail then add Log::Handler into the subject.
+
 =head1 AUTHOR
 
 Jonny Schulz <jschulz.cpan(at)bloonix.de>.
-
-=head1 QUESTIONS
-
-Do you have any questions or ideas?
-
-MAIL: <jschulz.cpan(at)bloonix.de>
-
-If you send me a mail then add Log::Handler into the subject.
 
 =head1 COPYRIGHT
 
@@ -169,7 +163,7 @@ use Net::SMTP;
 use Params::Validate;
 use Carp;
 
-our $VERSION = '0.00_09';
+our $VERSION = '0.01';
 our $ERRSTR  = '';
 our $TEST    =  0; # is needed to disable flush() for tests
 

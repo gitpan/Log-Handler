@@ -88,17 +88,11 @@ No exports.
 
 Please report all bugs to <jschulz.cpan(at)bloonix.de>.
 
+If you send me a mail then add Log::Handler into the subject.
+
 =head1 AUTHOR
 
 Jonny Schulz <jschulz.cpan(at)bloonix.de>.
-
-=head1 QUESTIONS
-
-Do you have any questions or ideas?
-
-MAIL: <jschulz.cpan(at)bloonix.de>
-
-If you send me a mail then add Log::Handler into the subject.
 
 =head1 COPYRIGHT
 
@@ -116,7 +110,7 @@ use warnings;
 use Carp;
 use Params::Validate;
 
-our $VERSION = '0.00_09';
+our $VERSION = '0.01';
 our $ERRSTR  = '';
 
 sub new {
@@ -157,10 +151,15 @@ sub _validate {
             type => Params::Validate::CODEREF,
         },
         arguments => {
-            type => Params::Validate::ARRAYREF,
-            default => undef,
+            type => Params::Validate::ARRAYREF
+                  | Params::Validate::SCALAR,
+            optional => 1,
         },
     });
+
+    if (defined $options{arguments} && !ref($options{arguments})) {
+        $options{arguments} = [ $options{arguments} ];
+    }
 
     return \%options;
 }

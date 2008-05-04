@@ -1,19 +1,34 @@
 use strict;
 use warnings;
-use Test::More tests => 11;
+use Test::More tests => 15;
 use Log::Handler;
 
 my $CHECKED = 0;
+my %PATTERN = (
+    '%L' => 'level',
+    '%T' => 'time',
+    '%D' => 'date',
+    '%P' => 'pid',
+    '%H' => 'hostname',
+    '%R' => 'runtime',
+    '%C' => 'caller',
+    '%p' => 'package',
+    '%f' => 'filename',
+    '%l' => 'line',
+    '%s' => 'subroutine',
+    '%S' => 'progname',
+    '%t' => 'mtime',
+    '%m' => 'message',
+);
+
+my %PATTERN_REC = map { $_ => 0 } values %PATTERN;
 
 sub check_struct {
-    $CHECKED = 1;
-    my $params = shift;
-    if (ref($params) ne 'HASH') {
-        die "not a hash ref";
-    }
-    foreach my $name (qw(level pid time date mtime progname caller hostname message)) {
-        my $ret = defined $params->{$name} ? 1 : 0;
-        ok($ret, "checking param $name");
+    my $m = shift;
+    foreach my $name (keys %$m) {
+        if (exists $PATTERN_REC{$name}) {
+            $PATTERN_REC{$name}++;
+        }
     }
 }
 
@@ -25,7 +40,7 @@ $log->add(
         maxlevel        => 'debug',
         minlevel        => 'debug',
         message_layout  => '',
-        message_pattern => [ qw/%L %T %D %P %H %C %S %t/ ],
+        message_pattern => [ keys %PATTERN ],
     }
 );
 
@@ -33,4 +48,6 @@ ok(1, 'new');
 
 $log->debug('foo');
 
-ok($CHECKED, "call check_struct()");
+while ( my ($n, $v) = each %PATTERN_REC ) {
+    ok($v, "test pattern $n");
+}

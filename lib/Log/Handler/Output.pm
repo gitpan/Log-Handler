@@ -31,7 +31,7 @@ package Log::Handler::Output;
 
 use strict;
 use warnings;
-our $VERSION = '0.00_11';
+our $VERSION = '0.01';
 our $ERRSTR  = '';
 
 use Carp;
