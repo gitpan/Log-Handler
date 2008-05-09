@@ -1,3 +1,9 @@
+0.41    Released at 2008-05-09.
+        - Messages will be send to all outputs, even if a output is
+          not able to log a message. In version 0.40 the handler
+          stopped if a message couldn't be logged. That was bad.
+        - Did a lot code, POD and internal doc improvements.
+
 0.40    Released at 2008-05-04.
         - A full release - finally :-)
         - Kicked all <level>_and_trace and <level>_and_die methods.

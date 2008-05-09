@@ -142,7 +142,7 @@ use Params::Validate;
 use IO::Socket::INET;
 use Data::Dumper;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our $ERRSTR  = '';
 
 sub new {
@@ -176,7 +176,7 @@ sub log {
     $socket->send($message->{message}) or do {
         if ($self->{reconnect}) {
             $self->connect or return undef;
-            print $socket $message->{message}
+            $socket->send($message->{message})
                 or return $self->_raise_error("lost connection and reconnect fails: $!");
         } else {
             return $self->_raise_error("unable to send message: $!");

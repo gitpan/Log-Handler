@@ -8,10 +8,24 @@ Log::Handler::Config - The main config loader.
 
     my $log = Log::Handler->new();
 
+    # Config::General
+    $log->config(config => 'file.conf');
+
+    # Config::Properties
+    $log->config(config => 'file.props');
+
+    # YAML
+    $log->config(config => 'file.yaml');
+
+Or
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
     $log->config(
-        config  => 'file.conf',
-        plugin  => 'YAML',
-        section => 'section-name',
+        config => 'file.conf'
+        plugin => 'YAML',
     );
 
 Or
@@ -19,16 +33,16 @@ Or
     use Log::Handler;
     use Log::Handler::Config;
 
-    my $conf = Log::Handler::Config->config(
-        config  => 'file.conf',
-        plugin  => 'YAML',
-        section => 'section-name',
+    my $config = Log::Handler::Config->config(
+        config  => 'file.conf'
     );
 
     my $log = Log::Handler->new();
 
-    while ( my ($type, $config) = each %$conf ) {
-        $log->add($type => $config);
+    while ( my ($output, $array) = each %$config ) {
+        foreach my $output_conf (@$array) {
+            $log->add($output => $output_conf);
+        }
     }
 
 =head1 DESCRIPTION
@@ -93,7 +107,7 @@ then you can create a own section for the logger:
     <logger>
         <file>
             <mylog>
-                config = file.log
+                filename = file.log
                 minlevel = 0
                 maxlevel = 7
             </mylog>
@@ -142,7 +156,7 @@ output with
 
 =head2 Config structure
 
-For each output object it must exist a own section. Here a example as hash:
+For each output it must exist an own section. Here a example as hash:
 
     my %config = (
 
@@ -150,12 +164,12 @@ For each output object it must exist a own section. Here a example as hash:
 
         file => {
             foo => {
-                config => 'file1.log',
+                filename => 'file1.log',
                 maxlevel => 'info',
                 minlevel => 'warn',
             },
             bar => {
-                config => 'file2.log',
+                filename => 'file2.log',
                 maxlevel => 'error',
                 minlevel => 'emergency',
             }
@@ -181,8 +195,8 @@ config plugins available.
 
 =head2 A default section
 
-If your configuration contains a C<default> section then this parameters are
-used for all other sections. Example:
+It's possible to define a section called C<default> for each output. This
+options are used as default if this options are not set. Example:
 
     my %config = (
         # the configuration for a file
@@ -191,17 +205,17 @@ used for all other sections. Example:
                 mode     => 'append',
             },
             foo => {
-                config => 'file1.log',
+                filename => 'file1.log',
                 maxlevel => 'info',
                 minlevel => 'warn',
             },
             bar => {
-                config => 'file2.log',
+                filename => 'file2.log',
                 maxlevel => 'error',
                 minlevel => 'emergency',
             },
             baz => {
-                config => 'file3.log',
+                filename => 'file3.log',
                 maxlevel => 'debug',
                 minlevel => 'debug',
                 mode     => 'trunc',
@@ -209,7 +223,7 @@ used for all other sections. Example:
         },
         # the configuration for dbi
         dbi => {
-            ...
+            default => { ... }
         }
     );
 
@@ -229,7 +243,7 @@ C<file2.log>. The configuration for C<file3.log> will be set to C<trunc>.
             mode = append
             timeformat = %b %d %H:%M:%S
             debug_mode = 2
-            config = example.log
+            filename = example.log
             minlevel = warn
             message_layout = '%T %H[%P] [%L] %S: %m'
             newline = 1
@@ -242,7 +256,7 @@ C<file2.log>. The configuration for C<file3.log> will be set to C<trunc>.
     file:
       mylog:
         debug_mode: 2
-        config: example.log
+        filename: example.log
         fileopen: 1
         maxlevel: info
         minlevel: warn
@@ -263,7 +277,7 @@ C<file2.log>. The configuration for C<file3.log> will be set to C<trunc>.
     file.mylog.timeformat = %b %d %H:%M:%S
     file.mylog.debug_mode = 2
     file.mylog.minlevel = warn
-    file.mylog.config = example.log
+    file.mylog.filename = example.log
     file.mylog.newline = 1
     file.mylog.message_layout = '%T %H[%P] [%L] %S: %m'
 
@@ -285,19 +299,19 @@ The config (Config::General)
             </default>
 
             <common>
-                config = example.log
+                filename = example.log
                 maxlevel = info
                 minlevel = warn
             </common>
 
             <error>
-                config = example-error.log
+                filename = example-error.log
                 maxlevel = warn
                 minlevel = emergency
             </error>
 
             <debug>
-                config = example-debug.log
+                filename = example-debug.log
                 maxlevel = debug
                 minlevel = debug
             </debug>
@@ -328,19 +342,19 @@ The config (Config::General)
         </default>
 
         <common>
-            config = example.log
+            filename = example.log
             maxlevel = info
             minlevel = warn
         </common>
 
         <error>
-            config = example-error.log
+            filename = example-error.log
             maxlevel = warn
             minlevel = emergency
         </error>
 
         <debug>
-            config = example-debug.log
+            filename = example-debug.log
             maxlevel = debug
             minlevel = debug
         </debug>
@@ -361,25 +375,25 @@ Load the config
                     timeformat     => '%b %d %H:%M:%S',
                     fileopen       => 1,
                     reopen         => 1,
-                    mode           => 'append
+                    mode           => 'append',
                     message_layout => '%T %H[%P] [%L] %S: %m',
                     debug_mode     => 2,
                 },
                 common => {
-                    config => 'example.log',
+                    filename => 'example.log',
                     maxlevel => 'info',
                     minlevel => 'warn',
                 },
                 error => {
-                    config => 'example-error.log',
+                    filename => 'example-error.log',
                     maxlevel => 'warn',
                     minlevel => 'emergency',
                 },
                 debug => {
-                    config => 'example-debug.log',
+                    filename => 'example-debug.log',
                     maxlevel => 'debug',
                     minlevel => 'debug',
-                },
+                }
             }
         }
     );
@@ -400,13 +414,13 @@ Load the config
             </default>
 
             <common>
-                config = example.log
+                filename = example.log
                 maxlevel = info
                 minlevel = warn
             </common>
 
             <error>
-                config = example-error.log
+                filename = example-error.log
                 maxlevel = warn
                 minlevel = emergency
             </error>
@@ -446,7 +460,7 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 use Carp;
 use File::Spec;
@@ -481,6 +495,10 @@ sub config {
             $class->_is_hash('default', $type_config->{default});
             %default = (%{ $type_config->{default} });
         }
+
+        # Structure:
+        #   $all_configs{file} = [ \%a, \%b, \%c ]
+        #   $all_configs{dbi}  = [ \%a, \%b, \%c ]
 
         while ( my ($name, $log_config) = each %$type_config ) {
             $class->_is_hash($name, $log_config);

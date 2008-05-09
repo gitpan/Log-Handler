@@ -118,7 +118,7 @@ as first argument:
 
 =item B<warn()>
 
-This method logs the message with the level warning to the output and
+This method logs the message with the level C<warning> to the output and
 then calls C<Carp::carp()>.
 
     $log->warn('a warning here');
@@ -159,7 +159,7 @@ use warnings;
 use Carp;
 use Data::Dumper;
 
-our $VERSION  = '0.01';
+our $VERSION = '0.02';
 
 my %LEVELS_BY_ROUTINE = (
     debug     => 'DEBUG',
@@ -188,17 +188,23 @@ while ( my ($routine, $level) = each %LEVELS_BY_ROUTINE ) {
             use strict 'refs';
             my $self   = shift;
             my $levels = $self->{levels};
+            my $errors = ();
 
             if ( !$levels->{$level} ) {
                 return 1;
             }
 
             foreach my $output ( @{$levels->{$level}} ) {
-                $output->log($level, @_)
-                    or return $self->_raise_error($output->errstr);
+                if ( !$output->log($level, @_) ) {
+                    if ( defined $errors ) {
+                        $errors .= '; ' . $output->errstr;
+                    } else {
+                        $errors = $output->errstr;
+                    }
+                }
             }
 
-            return 1;
+            return defined $errors ? $self->_raise_error($errors) : 1;
         };
 
         # --------------------------------------------------------------

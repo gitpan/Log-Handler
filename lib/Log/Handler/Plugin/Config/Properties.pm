@@ -63,7 +63,8 @@ use strict;
 use warnings;
 use Config::Properties;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
+our $SPLITTOTREE = qr/\./;
 
 sub get_config {
     my ($class, $config_file) = @_;
@@ -73,7 +74,7 @@ sub get_config {
     $properties->load($fh);
     close $fh;
 
-    my $config = $properties->splitToTree(qr/\./);
+    my $config = $properties->splitToTree($SPLITTOTREE);
     return $config;
 }
 

@@ -1,6 +1,6 @@
 ---
 name: Log-Handler
-version: 0.40
+version: 0.41
 author:
   - Jonny Schulz
 abstract: Log messages to one or more outputs.
@@ -29,13 +29,13 @@ recommends:
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.40
+    version: 0.41
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Levels:
     file: lib/Log/Handler/Levels.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Output:
     file: lib/Log/Handler/Output.pm
     version: 0.01
@@ -56,7 +56,7 @@ provides:
     version: 0.01
   Log::Handler::Output::Socket:
     file: lib/Log/Handler/Output/Socket.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Pattern:
     file: lib/Log/Handler/Pattern.pm
     version: 0.01
@@ -65,7 +65,7 @@ provides:
     version: 0.01
   Log::Handler::Plugin::Config::Properties:
     file: lib/Log/Handler/Plugin/Config/Properties.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Plugin::Config::YAML:
     file: lib/Log/Handler/Plugin/YAML.pm
     version: 0.01

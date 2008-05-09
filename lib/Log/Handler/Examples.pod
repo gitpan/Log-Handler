@@ -29,7 +29,7 @@ Log::Handler::Examples - Output examples.
         }
     );
 
-    $log->error("this error goes to the database");
+    $log->error('log an error');
 
 =head1 LOG VIA EMAIL
 
@@ -50,7 +50,7 @@ Log::Handler::Examples - Output examples.
         }
     );
 
-    $log->emergency('this message will be send as email');
+    $log->emergency('log an emergency issue');
 
 =head1 LOG VIA FILE
 
@@ -68,7 +68,7 @@ Log::Handler::Examples - Output examples.
         }
     );
 
-    $log->error("this is a error message");
+    $log->error('log an error');
 
 =head1 LOG VIA FORWARD
 
@@ -85,7 +85,7 @@ Log::Handler::Examples - Output examples.
         }
     );
 
-    $log->info('Hello World!');
+    $log->info('log a information');
 
     sub my_func {
         my $params = shift;
@@ -108,7 +108,7 @@ Log::Handler::Examples - Output examples.
         }
     );
 
-    $log->info('Hello World!');
+    $log->info('log to the screen');
 
 =head1 LOG VIA SOCKET
 
@@ -142,7 +142,7 @@ Log::Handler::Examples - Output examples.
     my $sock = IO::Socket::INET->new(
         LocalAddr => '127.0.0.1',
         LocalPort => 44444,
-        Listen    => 1,
+        Listen    => 2,
     ) or die $!;
 
     my $file = Log::Handler::Output::File->new(
@@ -296,7 +296,7 @@ Script:
 
     my $log = Log::Handler->new();
 
-    $log->config(filename => 'file.conf');
+    $log->config(config => 'file.conf');
 
 =head1 CHECK FOR ACTIVE LEVELS
 
@@ -332,7 +332,7 @@ A long time I was thinking about to provide a global log mechanism like
 
     # use Log::Handler alias => accessor;
     use Log::Handler myapp => 'LOG';
-    LOG->config(filename => 'myapp.conf');
+    LOG->config(config => 'myapp.conf');
 
 and then just inlucde C<Log::Handler> into all other modules of your project and
 use a global logger like:
@@ -352,7 +352,7 @@ If you want to use a feature like this then you can write your own thing.
     require Exporter;
     our @ISA = qw(Exporter);
     our @EXPORT = qw(LOG);
-    LOG->config(filename => 'myapp.conf');
+    LOG->config(config => 'myapp.conf');
     1;
 
 Now you can include C<MyAPP::Logger> into all the modules of your project and access

@@ -86,9 +86,9 @@ You can set both to 8 or C<nothing> if you want to disable the logging machine.
 
 =item B<timeformat>
 
-The option C<timeformat> is used for the placeholder C<%T>. You can set
-C<timeformat> with a date and time format that is converted with
-C<POSIX::strftime>. The default format is S<"%b %d %H:%M:%S"> and looks like
+The option C<timeformat> is used to set the format for the placeholder C<%T>.
+The string is converted with C<POSIX::strftime>. The default format is set to
+S<"%b %d %H:%M:%S"> and looks like
 
     Feb 01 12:56:31
 
@@ -98,8 +98,8 @@ As example the format S<"%Y/%m/%d %H:%M:%S"> would looks like
 
 =item B<dateformat>
 
-This options works like C<timeformat>. It's useful if you want to split the
-date and time:
+This options works like C<timeformat>. You can set a format that is used for
+the placeholder C<%D>. It's just useful if you want to split the date and time:
 
     $log->add(file => {
         filename       => 'file.log',
@@ -110,7 +110,7 @@ date and time:
 
     $log->error("an error here");
 
-Would log
+This looks like
 
     2007-02-01 12:56:31 ERROR an error here
 
@@ -273,7 +273,7 @@ If you set C<die_on_errors> to 0 then you have to controll it yourself.
 
 =item B<filter>
 
-With this option it's possible to set a filter for the outputs. If the filter
+With this option it's possible to set a filter for the output. If the filter
 is set then only messages will be logged that match the filter. You can pass a
 regexp, a code reference or a simple string. Example:
 
@@ -339,7 +339,7 @@ You can set an alias if you want to get the output object later. Example:
 
     my $screen = $log->output('screen-out');
 
-    $screen->log('foo');
+    $screen->log(message => 'foo');
 
     # or in one step
 
@@ -347,9 +347,9 @@ You can set an alias if you want to get the output object later. Example:
 
 =item B<debug_trace>
 
-You can activate a debugger that writes C<caller()> informations for each log
-level that would logged. The debugger is logging all defined values except
-C<hints> and C<bitmask>. Set C<debug_trace> to 1 to activate the debugger.
+You can activate a debugger that writes C<caller()> informations for each
+active log level. The debugger is logging all defined values except C<hints>
+and C<bitmask>. Set C<debug_trace> to 1 to activate the debugger.
 The debugger is set to 0 by default.
 
 =item B<debug_mode>
@@ -424,13 +424,6 @@ Output:
          hasargs     1
          wantarray   0
 
-Another way to enable the debugger very shortly is ...
-
-    {
-        local $Log::Handler::TRACE = 1;
-        $log->info('backtrace');
-    }
-
 =item B<debug_skip>
 
 This option let skip the C<caller()> informations the count of C<debug_skip>.
@@ -449,11 +442,11 @@ This option let skip the C<caller()> informations the count of C<debug_skip>.
 The method C<add()> excepts 2 parts of options; the options for the handler and
 the options for the output module you want to use. The output modules got it's own
 documentation for all options. As example if you want to add a file-output then
-take a look into the documentation of L<Log::Handler::Output::File>.
+take a look into the documentation of L<Log::Handler::Output::File> to see what
+options are available.
 
-There are different ways to add a new output to the handler. The one way is
-to create the output object yourself and pass it with the handler options
-to C<add()>.
+There are different ways to add a new output to the handler. One way is to create
+the output object yourself and pass it with the handler options to C<add()>.
 
 Example:
 
@@ -525,7 +518,7 @@ in one step, you just need to tell the handler what do you want to add.
         }
     );
 
-The options will be splitted intern and you don't need to split it yourself,
+The options will be splitted internal and you don't need to split it yourself,
 only if you want to do it yourself.
 
 Take a look to L<Log::Handler::Examples> for more informations.
@@ -590,23 +583,9 @@ These thirteen methods could be very useful if you want to kwow if the current
 level would log the message. All methods returns TRUE if the current set
 of C<minlevel> and C<maxlevel> would log the message and FALSE if not.
 
-The following example would dump the hash in any case and pass it to the
-log handler:
-
-    $log->debug(Dumper(\%hash));
-
-But that is not that what we really want! We want to dump the hash only if
-the current log level would log it.
-
-    if ( $log->is_debug ) {
-        $log->debug(Dumper(\%hash));
-    }
-
-The methods C<is_err()>, C<is_crit()> and C<is_emerg()> are just shortcuts.
-
 =head2 Other level methods
 
-There exists a lot of other level methods.
+There exists some other level methods.
 
 For a full list take a look into the documentation of L<Log::Handler::Levels>.
 
@@ -650,7 +629,7 @@ C<add()> fails because on missing or wrong settings!
 
 With this method it's possible to load your output configuration from a file.
 
-    $log->config(filename => 'file.conf');
+    $log->config(config => 'file.conf');
 
 Or
 
@@ -814,7 +793,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION  = '0.40';
+our $VERSION  = '0.41';
 our $ERRSTR   = '';
 our $DEBUG    = 0;
 our $TRACE    = 0;
@@ -835,7 +814,7 @@ use constant LEVEL_RX => qr/^(?:
         fatal
 )\z/x;
 
-# to convert minlevel and maxlevel
+# to convert minlevel and maxlevel to a number
 our %LEVEL_BY_STRING = ( 
     DEBUG     =>  7,  
     INFO      =>  6,  
@@ -852,7 +831,8 @@ our %LEVEL_BY_STRING = (
     FATAL     =>  0,
 );
 
-# to iterate from minlevel to maxlevel
+# to iterate from minlevel to maxlevel and
+# create an HoA with all active levels
 my @LEVEL_BY_NUM = qw(
     EMERGENCY
     ALERT
@@ -865,6 +845,7 @@ my @LEVEL_BY_NUM = qw(
     NOTHING
 );
 
+# shortcuts for each output
 our %AVAILABLE_OUTPUTS = (
     file    => 'Log::Handler::Output::File',
     email   => 'Log::Handler::Output::Email',
@@ -908,7 +889,8 @@ sub add {
     # hash-tree $self->{levels}->{INFO}. On this way it's possible
     # to check very fast if the level is active
     #
-    #   if (exists $self->{levels}->{INFO}) { ... }
+    #   my $levels = $self->{levels};
+    #   if (exists $levels->{INFO}) { ... }
     #
     # and loop over all output objects and pass the message to it.
 
@@ -946,6 +928,7 @@ sub config {
 
     # Structure:
     #   $configs->{file} = [ output configs ];
+    #   $configs->{dbi}  = [ output configs ];
 
     while ( my ($type, $config) = each %$configs ) {
         for my $c (@$config) {
@@ -967,6 +950,10 @@ sub set_pattern {
     if (ref($name) || !length($name)) {
         Carp::croak "invalid/missing name for pattern '$pattern'";
     }
+
+    # Structure:
+    #   $self->{pattern}->{'%X'}->{name} = 'name-of-x';
+    #   $self->{pattern}->{'%X'}->{code} = 'value-of-x';
 
     if (ref($proto) eq 'CODE') {
         $self->{pattern}->{$pattern}->{code} = $proto;
@@ -1157,16 +1144,20 @@ sub _validate_options {
         $options{filter} = $self->_validate_filter($options{filter});
     }
 
+    # set a default priority if not set
     if (!defined $options{priority}) {
         $options{priority} = $self->{priority}++;
     }
 
+    # replace the level strings with numbers
     foreach my $opt (qw/minlevel maxlevel/) {
         next if $options{$opt} =~ /^\d\z/;
         my $level = uc($options{$opt});
         $options{$opt} = $LEVEL_BY_STRING{$level};
     }
 
+    # iterate from minlevel to maxlevel and create
+    # a hash tree with all active levels
     foreach my $level_num ($options{minlevel} .. $options{maxlevel}) {
         my $level = $LEVEL_BY_NUM[ $level_num ];
         $options{levels}{$level} = 1;
@@ -1184,6 +1175,15 @@ sub _validate_options {
             }
             $wanted{$p} = undef;
         }
+
+        # If message_pattern is set to '%T %L %m' then the code
+        # should looks like:
+        #
+        #   sub {
+        #       my ($w, $m) = @_; # %wanted pattern, %message
+        #       $m->{$_} = $w->{$_} for qw/time level message/;
+        #   }
+
         my $func = 'sub { my ($w, $m) = @_; $m->{$_} = $w->{$_} for qw/';
         $func .= join(' ', map { $pattern->{$_}->{name} } keys %wanted);
         $func .= '/ }';
@@ -1197,9 +1197,16 @@ sub _validate_options {
 
         # If the message layout is set to '%T [%L] %m' then the code
         # should looks like:
+        #
         #   sub {
-        #       my $m = shift;
-        #       $m->{time} . ' ]' . $m->{level} . '] ' . $m->{message}
+        #       my ($w, $m) = @_; # %wanted pattern, %message
+        #       $m->{message} = join('',
+        #           $w->{time},
+        #           ' [',
+        #           $w->{level},
+        #           '] ',
+        #           $w->{message}
+        #       );
         #   }
 
         foreach my $p ( split /(?:(%[a-zA-Z])|(%)%)/, $options{message_layout} ) {
@@ -1264,9 +1271,28 @@ sub _validate_filter {
         # Each matchN will be checked on the message and the BOOL results
         # will be stored to $filter->{result}->{matchN}. Then the results
         # will be passed to &code. &code returns 0 or 1.
-        #   $filter->{result}->{match1} = $message =~ $filter->{match1}
-        #   $filter->{result}->{match2} = $message =~ $filter->{match2}
-        #   $code = sub { my $m = shift; ($m->{match1} || $m->{match2}) }
+        #
+        # As example if the filter is set to
+        #
+        #   filter => {
+        #       match1    => qr/foo/,
+        #       match2    => qr/bar/,
+        #       condition => '(match1 && match2)',
+        #   }
+        #
+        # Then the bool results will be saved:
+        #
+        #   $filter->{result}->{match1} = $message =~ $filter->{match1};
+        #   $filter->{result}->{match2} = $message =~ $filter->{match2};
+        #
+        # The code for the filter should looks like:
+        #
+        #   $filter->{code} =
+        #       sub {
+        #           my $m = shift;
+        #           ($m->{match1} && $m->{match2})
+        #       }
+        #
         #   &$code($filter->{result});
 
         if (!defined $filter{condition} || $filter{condition} !~ /\w/) {
@@ -1304,8 +1330,7 @@ sub _validate_filter {
 }
 
 sub _raise_error {
-    my $self = shift;
-    $ERRSTR = shift;
+    $ERRSTR = $_[1];
     return undef;
 }
 

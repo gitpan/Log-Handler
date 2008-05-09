@@ -78,10 +78,9 @@ METHODS
         logging machine.
 
     timeformat
-        The option "timeformat" is used for the placeholder %T. You can set
-        "timeformat" with a date and time format that is converted with
-        "POSIX::strftime". The default format is "%b %d %H:%M:%S" and looks
-        like
+        The option "timeformat" is used to set the format for the
+        placeholder %T. The string is converted with "POSIX::strftime". The
+        default format is set to "%b %d %H:%M:%S" and looks like
 
             Feb 01 12:56:31
 
@@ -90,8 +89,9 @@ METHODS
             2007/02/01 12:56:31
 
     dateformat
-        This options works like "timeformat". It's useful if you want to
-        split the date and time:
+        This options works like "timeformat". You can set a format that is
+        used for the placeholder %D. It's just useful if you want to split
+        the date and time:
 
             $log->add(file => {
                 filename       => 'file.log',
@@ -102,7 +102,7 @@ METHODS
 
             $log->error("an error here");
 
-        Would log
+        This looks like
 
             2007-02-01 12:56:31 ERROR an error here
 
@@ -263,7 +263,7 @@ METHODS
             # or $Log::Handler::ERRSTR
 
     filter
-        With this option it's possible to set a filter for the outputs. If
+        With this option it's possible to set a filter for the output. If
         the filter is set then only messages will be logged that match the
         filter. You can pass a regexp, a code reference or a simple string.
         Example:
@@ -332,7 +332,7 @@ METHODS
 
             my $screen = $log->output('screen-out');
 
-            $screen->log('foo');
+            $screen->log(message => 'foo');
 
             # or in one step
 
@@ -340,9 +340,9 @@ METHODS
 
     debug_trace
         You can activate a debugger that writes "caller()" informations for
-        each log level that would logged. The debugger is logging all
-        defined values except "hints" and "bitmask". Set "debug_trace" to 1
-        to activate the debugger. The debugger is set to 0 by default.
+        each active log level. The debugger is logging all defined values
+        except "hints" and "bitmask". Set "debug_trace" to 1 to activate the
+        debugger. The debugger is set to 0 by default.
 
     debug_mode
         There are two debug modes: line(1) and block(2) mode. The default
@@ -417,13 +417,6 @@ METHODS
                  hasargs     1
                  wantarray   0
 
-        Another way to enable the debugger very shortly is ...
-
-            {
-                local $Log::Handler::TRACE = 1;
-                $log->info('backtrace');
-            }
-
     debug_skip
         This option let skip the "caller()" informations the count of
         "debug_skip".
@@ -440,10 +433,10 @@ METHODS
     handler and the options for the output module you want to use. The
     output modules got it's own documentation for all options. As example if
     you want to add a file-output then take a look into the documentation of
-    Log::Handler::Output::File.
+    Log::Handler::Output::File to see what options are available.
 
-    There are different ways to add a new output to the handler. The one way
-    is to create the output object yourself and pass it with the handler
+    There are different ways to add a new output to the handler. One way is
+    to create the output object yourself and pass it with the handler
     options to "add()".
 
     Example:
@@ -517,7 +510,7 @@ METHODS
             }
         );
 
-    The options will be splitted intern and you don't need to split it
+    The options will be splitted internal and you don't need to split it
     yourself, only if you want to do it yourself.
 
     Take a look to Log::Handler::Examples for more informations.
@@ -559,22 +552,8 @@ METHODS
     current set of "minlevel" and "maxlevel" would log the message and FALSE
     if not.
 
-    The following example would dump the hash in any case and pass it to the
-    log handler:
-
-        $log->debug(Dumper(\%hash));
-
-    But that is not that what we really want! We want to dump the hash only
-    if the current log level would log it.
-
-        if ( $log->is_debug ) {
-            $log->debug(Dumper(\%hash));
-        }
-
-    The methods "is_err()", "is_crit()" and "is_emerg()" are just shortcuts.
-
   Other level methods
-    There exists a lot of other level methods.
+    There exists some other level methods.
 
     For a full list take a look into the documentation of
     Log::Handler::Levels.
@@ -617,7 +596,7 @@ METHODS
     With this method it's possible to load your output configuration from a
     file.
 
-        $log->config(filename => 'file.conf');
+        $log->config(config => 'file.conf');
 
     Or
 
