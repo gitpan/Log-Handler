@@ -28,23 +28,6 @@ Or
         plugin => 'YAML',
     );
 
-Or
-
-    use Log::Handler;
-    use Log::Handler::Config;
-
-    my $config = Log::Handler::Config->config(
-        config  => 'file.conf'
-    );
-
-    my $log = Log::Handler->new();
-
-    while ( my ($output, $array) = each %$config ) {
-        foreach my $output_conf (@$array) {
-            $log->add($output => $output_conf);
-        }
-    }
-
 =head1 DESCRIPTION
 
 This module makes it possible to load the configuration from a file.
@@ -144,6 +127,8 @@ output with
 
     my $file_output = $log->output('mylog');
 
+    $file_output->log(message => 'your message');
+
 =back
 
 =head1 PLUGINS
@@ -178,7 +163,7 @@ For each output it must exist an own section. Here a example as hash:
         # the configuration for email
 
         email => {
-            foo =>
+            baz =>
                 host     => 'foo.example',
                 from     => 'me@me.example',
                 to       => 'you@foo.example',
@@ -240,11 +225,11 @@ C<file2.log>. The configuration for C<file3.log> will be set to C<trunc>.
             reopen = 1
             permissions = 0640
             maxlevel = info
+            minlevel = warn
             mode = append
             timeformat = %b %d %H:%M:%S
             debug_mode = 2
             filename = example.log
-            minlevel = warn
             message_layout = '%T %H[%P] [%L] %S: %m'
             newline = 1
         </mylog>
@@ -272,11 +257,11 @@ C<file2.log>. The configuration for C<file3.log> will be set to C<trunc>.
     file.mylog.reopen = 1
     file.mylog.fileopen = 1
     file.mylog.maxlevel = info
+    file.mylog.minlevel = warn
     file.mylog.permissions = 0640
     file.mylog.mode = append
     file.mylog.timeformat = %b %d %H:%M:%S
     file.mylog.debug_mode = 2
-    file.mylog.minlevel = warn
     file.mylog.filename = example.log
     file.mylog.newline = 1
     file.mylog.message_layout = '%T %H[%P] [%L] %S: %m'
@@ -460,7 +445,7 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use Carp;
 use File::Spec;

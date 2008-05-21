@@ -253,7 +253,7 @@ use Carp;
 use DBI;
 use Params::Validate;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our $ERRSTR  = '';
 
 sub new {
@@ -265,7 +265,7 @@ sub new {
 
     if ($self->{persistent}) {
         warn "Peristent connections is set to true" if $self->{debug};
-        $self->connect or return undef;
+        $self->connect or croak $self->errstr;
     }
 
     return $self;
@@ -274,22 +274,11 @@ sub new {
 sub log {
     my $self    = shift;
     my $message = @_ > 1 ? {@_} : shift;
+    my @values  = ();
 
-    if ($self->{persistent}) {
-        warn "ping the database" if $self->{debug};
-        if (!$self->{dbh}->ping) {
-            $self->connect or return undef;
-        }
-    } else {
+    if (!$self->{persistent}) {
         $self->connect or return undef;
     }
-
-    warn "prepare: $self->{statement}" if $self->{debug};
-
-    my $sth = $self->{dbh}->prepare($self->{statement})
-        or return $self->_raise_error("DBI prepare error: ".$self->{dbh}->errstr);
-
-    my @values;
 
     foreach my $v (@{$self->{values}}) {
         if (ref($v) eq 'CODE') {
@@ -303,11 +292,23 @@ sub log {
 
     warn "execute: ".@values." bind values" if $self->{debug};
 
-    $sth->execute(@values)
-        or return $self->_raise_error("DBI execute error: ".$sth->errstr);
+    if ( ! $self->{sth}->execute(@values) ) {
+        my $execute_error = $self->{sth}->errstr;
+        if ($self->{reconnect}) {
+            warn "ping the database" if $self->{debug};
 
-    $sth->finish
-        or return $self->_raise_error("DBI finish error: ".$sth->errstr);
+            # if the database is reachable than it might be an error with
+            # the statemant or values
+            if ($self->{dbh}->ping) {
+                return $self->_raise_error("DBI execute error: $execute_error");
+            } else {
+                $self->connect or 
+                    return $self->_raise_error("Lost connection! ".$self->errstr);
+            }
+        } else {
+            return $self->_raise_error("DBI execute error: $execute_error");
+        }
+    }
 
     if (!$self->{persistent}) {
         $self->disconnect or return undef;
@@ -324,17 +325,31 @@ sub connect {
     my $dbh = DBI->connect(@{$self->{cstr}})
         or return $self->_raise_error("DBI connect error: ".DBI->errstr);
 
+    my $sth = $dbh->prepare($self->{statement})
+        or return $self->_raise_error("DBI prepare error: ".$dbh->errstr);
+
     $self->{dbh} = $dbh;
+    $self->{sth} = $sth;
 
     return 1;
 }
 
 sub disconnect {
     my $self = shift;
-    warn "Disconnect from database" if $self->{debug};
-    $self->{dbh}->disconnect
-        or return $self->_raise_error("DBI disconnect error: ".DBI->errstr);;
-    delete $self->{dbh};
+
+    if ($self->{sth}) {
+        $self->{sth}->finish
+            or return $self->_raise_error("DBI finish error: ".$self->{sth}->errstr);
+        delete $self->{sth};
+    }
+
+    if ($self->{dbh}) {
+        warn "Disconnect from database" if $self->{debug};
+        $self->{dbh}->disconnect
+            or return $self->_raise_error("DBI disconnect error: ".DBI->errstr);;
+        delete $self->{dbh};
+    }
+
     return 1;
 }
 

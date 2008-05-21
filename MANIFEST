@@ -26,6 +26,7 @@ lib/Log/Handler/Plugin/Config/General.pm
 lib/Log/Handler/Plugin/Config/Properties.pm
 lib/Log/Handler/Plugin/YAML.pm
 lib/Log/Handler/Simple.pm
+LICENCE
 Makefile.PL
 MANIFEST			This list of files
 META.yml

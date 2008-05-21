@@ -10,6 +10,14 @@ Just for internal usage!
 
 =head2 get_pattern
 
+=head1 PREREQUISITES
+
+    Carp
+    POSIX
+    Sys::Hostname
+    Time::HiRes
+    Log::Handler::Output
+
 =head1 AUTHOR
 
 Jonny Schulz <jschulz.cpan(at)bloonix.de>.
@@ -29,11 +37,11 @@ use strict;
 use warnings;
 use POSIX;
 use Sys::Hostname;
-use Log::Handler::Output;
 use Time::HiRes;
+use Log::Handler::Output;
 use constant START_TIME => scalar Time::HiRes::gettimeofday;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 my $progname = $0;
 $progname =~ s@.*[/\\]@@;
 

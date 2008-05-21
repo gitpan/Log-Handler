@@ -111,6 +111,13 @@ Disconnect from socket.
 
 This function returns the last error message.
 
+=head1 PREREQUISITES
+
+    Carp
+    Params::Validate;
+    IO::Socket::INET;
+    Data::Dumper;
+
 =head1 EXPORTS
 
 No exports.
@@ -138,11 +145,12 @@ package Log::Handler::Output::Socket;
 
 use strict;
 use warnings;
+use Carp;
 use Params::Validate;
 use IO::Socket::INET;
 use Data::Dumper;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our $ERRSTR  = '';
 
 sub new {
@@ -151,7 +159,7 @@ sub new {
     my $self    = bless $options, $class;
     if ($self->{persistent}) {
         $self->connect
-            or Carp::croak $self->errstr;
+            or croak $self->errstr;
     }
     return $self;
 }
@@ -173,15 +181,15 @@ sub log {
     }
 
     local $SIG{PIPE} = 'IGNORE';
-    $socket->send($message->{message}) or do {
+    if ( ! $socket->send($message->{message}) ) {
         if ($self->{reconnect}) {
             $self->connect or return undef;
             $socket->send($message->{message})
-                or return $self->_raise_error("lost connection and reconnect fails: $!");
+                or return $self->_raise_error("Lost connection! Reconnect failed: $!");
         } else {
             return $self->_raise_error("unable to send message: $!");
         }
-    };
+    }
 
     if (!$self->{persistent}) {
         $self->disconnect;

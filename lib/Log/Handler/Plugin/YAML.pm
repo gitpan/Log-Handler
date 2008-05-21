@@ -27,7 +27,7 @@ Expect the config file name and returns the config as a reference.
         mode: append
         newline: 1
         permissions: 0640
-        prefix: '%T %H[%P] [%L] %S: '
+        message_layout: '%T %H[%P] [%L] %S: '
         reopen: 1
         timeformat: '%b %d %H:%M:%S'
 
@@ -64,7 +64,7 @@ use strict;
 use warnings;
 use YAML;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub get_config {
     my ($class, $config_file) = @_;

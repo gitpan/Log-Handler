@@ -18,6 +18,7 @@ my $build = Module::Build->new(
         'YAML'               => 0,
     },
     requires => {
+        'perl'               => '5.6.1',
         'Carp'               => 0,
         'Data::Dumper'       => 0,
         'Devel::Backtrace'   => 0.05,

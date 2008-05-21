@@ -1,6 +1,6 @@
 ---
 name: Log-Handler
-version: 0.41
+version: 0.42
 author:
   - Jonny Schulz
 abstract: Log messages to one or more outputs.
@@ -19,6 +19,7 @@ requires:
   Test::More: 0
   Time::HiRes: 0
   UNIVERSAL::require: 0
+  perl: 5.6.1
 recommends:
   Config::General: 0
   Config::Properties: 0
@@ -29,46 +30,46 @@ recommends:
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.41
+    version: 0.42
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
-    version: 0.02
+    version: 0.03
   Log::Handler::Levels:
     file: lib/Log/Handler/Levels.pm
-    version: 0.02
+    version: 0.03
   Log::Handler::Output:
     file: lib/Log/Handler/Output.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Output::DBI:
     file: lib/Log/Handler/Output/DBI.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Output::Email:
     file: lib/Log/Handler/Output/Email.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Output::File:
     file: lib/Log/Handler/Output/File.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Output::Forward:
     file: lib/Log/Handler/Output/Forward.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Output::Screen:
     file: lib/Log/Handler/Output/Screen.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Output::Socket:
     file: lib/Log/Handler/Output/Socket.pm
-    version: 0.02
+    version: 0.03
   Log::Handler::Pattern:
     file: lib/Log/Handler/Pattern.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Plugin::Config::General:
     file: lib/Log/Handler/Plugin/Config/General.pm
-    version: 0.01
+    version: 0.02
   Log::Handler::Plugin::Config::Properties:
     file: lib/Log/Handler/Plugin/Config/Properties.pm
-    version: 0.02
+    version: 0.03
   Log::Handler::Plugin::Config::YAML:
     file: lib/Log/Handler/Plugin/YAML.pm
-    version: 0.01
+    version: 0.02
 generated_by: Module::Build version 0.2808
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.2.html

@@ -47,6 +47,7 @@ Log::Handler::Examples - Output examples.
             subject  => 'your subject',
             buffer   => 0,
             maxlevel => 'emergency',
+            minlevel => 'emergency',
         }
     );
 
@@ -99,12 +100,10 @@ Log::Handler::Examples - Output examples.
     my $log = Log::Handler->new();
 
     $log->add(
-        forward => {
-            log_to          => 'STDERR',
-            dump            => 1,
-            message_pattern => [ qw/%L %T %P %H %C %S %t/ ],
-            message_layout  => '%m',
-            maxlevel        => 'info',
+        screen => {
+            log_to   => 'STDERR',
+            newline  => 1,
+            maxlevel => 'info',
         }
     );
 
@@ -252,41 +251,41 @@ File: file.conf
 
     <file>
         <default>
-            newline     = 1
-            permissions = 0640
-            timeformat  = %b %d %H:%M:%S
-            fileopen    = 1
-            reopen      = 1
-            mode        = append
-            prefix      = "%T %H[%P] [%L] %S: "
-            debug_mode  = 2
+            newline        = 1
+            permissions    = 0640
+            timeformat     = %b %d %H:%M:%S
+            fileopen       = 1
+            reopen         = 1
+            mode           = append
+            debug_mode     = 2
+            message_layout = "%T %H[%P] [%L] %S: "
         </default>
 
         <common>
-            filename    = example.log
-            maxlevel    = info
-            minlevel    = warn
+            filename = example.log
+            maxlevel = info
+            minlevel = warn
         </common>
 
         <error>
-            filename    = example-error.log
-            maxlevel    = warn
-            minlevel    = emergency
+            filename = example-error.log
+            maxlevel = warn
+            minlevel = emergency
         </error>
 
         <debug>
-            filename    = example-debug.log
-            maxlevel    = debug
-            minlevel    = debug
+            filename = example-debug.log
+            maxlevel = debug
+            minlevel = debug
         </debug>
     </file>
 
     <screen>
         <foo>
-            log_to      = STDERR
-            dump        = 1
-            maxlevel    = debug
-            minlevel    = debug
+            log_to   = STDERR
+            dump     = 1
+            maxlevel = debug
+            minlevel = debug
         </foo>
     </screen>
 

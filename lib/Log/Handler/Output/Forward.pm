@@ -110,7 +110,7 @@ use warnings;
 use Carp;
 use Params::Validate;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our $ERRSTR  = '';
 
 sub new {

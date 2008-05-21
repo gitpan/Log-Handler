@@ -27,7 +27,7 @@ Expect the config file name and returns the config as a reference.
             debug_mode = 2
             filename = example.log
             minlevel = warn
-            prefix = '%T %H[%P] [%L] %S: '
+            message_layout = '%T %H[%P] [%L] %S: '
             newline = 1
         </mylog>
     </file>
@@ -65,7 +65,7 @@ use strict;
 use warnings;
 use Config::General;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 sub get_config {
     my ($class, $config_file) = @_;

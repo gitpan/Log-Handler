@@ -19,7 +19,7 @@ SYNOPSIS
 DESCRIPTION
     This module is just a simple object oriented log handler and very easy
     to use. It's possible to define a log level for your programs and
-    control the amount of informations that are logged to one or more
+    control the amount of informations that will be logged to one or more
     outputs.
 
 LOG LEVELS
@@ -28,13 +28,16 @@ LOG LEVELS
         7   debug
         6   info
         5   notice
-        4   warning
+        4   warning, warn
         3   error, err
         2   critical, crit
         1   alert
         0   emergency, emerg
 
     "debug" is the highest and "emergency" is the lowest level.
+
+    Level "debug" is the highest level because it basically says to log
+    every peep.
 
 METHODS
   new()
@@ -84,7 +87,8 @@ METHODS
 
             Feb 01 12:56:31
 
-        As example the format "%Y/%m/%d %H:%M:%S" would looks like
+        If you would set the format to "%Y/%m/%d %H:%M:%S" it would looks
+        like
 
             2007/02/01 12:56:31
 
@@ -109,15 +113,15 @@ METHODS
         This option is not used by default.
 
     newline
-        This helpful option appends a newline to the output message if a
-        newline not exist.
+        This helpful option appends a newline to the message if a newline
+        not exist.
 
-            0 - to disable it (default)
-            1 - to enable it
+            0 - do nothing (default)
+            1 - append a newline if not exist
 
     message_layout
-        With this option you can define your own message layout with
-        different placeholders in "printf()" style. The available
+        With this option it's possible to create your own message layout
+        with different placeholders in "printf()" style. The available
         placeholders are:
 
             %L   Log level
@@ -133,7 +137,7 @@ METHODS
             %f   Caller - file name
             %l   Caller - line number
             %s   Caller - subroutine name
-            %t   Time measurement - replaced with the time since the last call of the handler
+            %t   Time measurement - replaced with the time since the last call of $level
             %m   Message
             %%   Procent
 
@@ -263,10 +267,9 @@ METHODS
             # or $Log::Handler::ERRSTR
 
     filter
-        With this option it's possible to set a filter for the output. If
-        the filter is set then only messages will be logged that match the
-        filter. You can pass a regexp, a code reference or a simple string.
-        Example:
+        With this option it's possible to set a filter. If the filter is set
+        then only messages will be logged that match the filter. You can
+        pass a regexp, a code reference or a simple string. Example:
 
             $log->add(file => {
                 filename => 'file.log',
@@ -421,19 +424,12 @@ METHODS
         This option let skip the "caller()" informations the count of
         "debug_skip".
 
-            debug_skip => 2
-
-            Apr 26 12:55:07 [DEBUG] 
-               CALL(2): package(main) filename(./trace.pl) line(16) subroutine(main::test2) hasargs(0)
-               CALL(1): package(main) filename(./trace.pl) line(14) subroutine(main::test1) hasargs(0)
-               CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
-
   HowTo use add()
     The method "add()" excepts 2 parts of options; the options for the
     handler and the options for the output module you want to use. The
     output modules got it's own documentation for all options. As example if
     you want to add a file-output then take a look into the documentation of
-    Log::Handler::Output::File to see what options are available.
+    Log::Handler::Output::File to see which options are available.
 
     There are different ways to add a new output to the handler. One way is
     to create the output object yourself and pass it with the handler
@@ -487,7 +483,10 @@ METHODS
         my $log = Log::Handler->new();
 
         $log->add(
-            file => { # what do you want to add
+
+            # what do you want to add - a file output
+            file => {
+
                 # handler options
                 timeformat      => '%Y/%m/%d %H:%M:%S',
                 newline         => 1,
@@ -498,6 +497,7 @@ METHODS
                 debug_trace     => 0,
                 debug_mode      => 2,
                 debug_skip      => 0,
+
                 # file options
                 filename        => 'file.log',
                 filelock        => 1,
@@ -507,6 +507,7 @@ METHODS
                 autoflush       => 1,
                 permissions     => '0660',
                 utf8            => 1,
+
             }
         );
 
@@ -533,7 +534,7 @@ METHODS
 
         $log->info("Hello World!", "How are you?");
 
-    Both calls would log - if the level INFO is active:
+    Both calls would log - if level INFO is active:
 
         Feb 01 12:56:31 [INFO] Hello World! How are you?
 
@@ -562,7 +563,26 @@ METHODS
     Call "output($alias)" to get the output object that you added with the
     option "alias".
 
+    It's possible to access a output directly:
+
+        $log->output($alias)->log(message => 'booo');
+
     For more informations take a look to the option "alias".
+
+  flush()
+    Call "flush()" if you want to send flush to all outputs that can flush.
+
+    Flush means to flush buffers and/or close and re-open outputs.
+
+    If you want to send it only to some outputs you can pass the aliases.
+
+        $log->flush(); # flush all
+        $log->flush('foo', 'bar'); # flush only foo and bar
+
+    If option "die_on_errors" is set to 0 then you can intercept errors
+    with:
+
+        $log->flush or die $log->errstr;
 
   errstr()
     Call "errstr()" if you want to get the last error message. This is
@@ -622,7 +642,7 @@ METHODS
             }
         });
 
-    The key "default" can be used to define default parameters for all file
+    The key "default" is used here to define default parameters for all file
     outputs. All other keys ("error_log", "common_log") are used as aliases.
 
     Take a look into the documentation of Log::Handler::Config for more
@@ -666,6 +686,7 @@ EXTENSIONS
 PREREQUISITES
     Prerequisites for all modules:
 
+        Perl 5.6.1
         Carp
         Data::Dumper
         Devel::Backtrace

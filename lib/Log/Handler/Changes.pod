@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler::Changes - Changes from 0.38 to 0.40.
+Log::Handler::Changes - Changes from 0.38 to 0.42.
 
 =head1 WHAT IS NEW, WHAT IS DEPRECATED
 
@@ -69,6 +69,7 @@ Take a look into the documentation for L<Log::Handler::Config>.
     config()        to load outputs from a configuration file
     set_pattern()   to create your own placeholder
     output()        to get a output object with an alias
+    flush()         to flush all outputs
 
 =head2 New level methods
 
@@ -80,11 +81,6 @@ Please take a look to L<Log::Handler::Levels> because the list is very long.
     close()
     get_prefix()
     set_prefix()
-
-=head2 Changed methods
-
-    trace()  replaced with trace methods for each level
-    warn()   still exist but is a replacement vor carp() now
 
 =head2 Backward compatibilities
 

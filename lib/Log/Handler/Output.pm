@@ -12,7 +12,15 @@ Just for internal usage!
 
 =head2 log()
 
+=head2 flush()
+
 =head2 errstr()
+
+=head1 PREREQUISITES
+
+    Carp
+    UNIVERSAL
+    Devel::Backtrace
 
 =head1 AUTHOR
 
@@ -31,10 +39,11 @@ package Log::Handler::Output;
 
 use strict;
 use warnings;
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our $ERRSTR  = '';
 
 use Carp;
+use UNIVERSAL;
 use Devel::Backtrace;
 
 sub new {
@@ -95,6 +104,18 @@ sub log {
     return 1;
 }
 
+sub flush {
+    my $self   = shift;
+    my $output = $self->{output};
+
+    if ( UNIVERSAL::can($output, 'flush') ) {
+        $output->flush
+            or return $self->_raise_error($output->errstr);
+    }
+
+    return 1;
+}
+
 sub errstr { $ERRSTR }
 
 #
@@ -144,7 +165,6 @@ sub _filter_ok {
         $return = &$code($message) || 0;
     } else {
         foreach my $match ( keys %$result ) {
-            #print STDERR "$match: $message->{message} =~ $filter->{$match}\n";
             $result->{$match} =
                 $message->{message} =~ /$filter->{$match}/ || 0;
         }

@@ -163,7 +163,7 @@ use Net::SMTP;
 use Params::Validate;
 use Carp;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our $ERRSTR  = '';
 our $TEST    =  0; # is needed to disable flush() for tests
 

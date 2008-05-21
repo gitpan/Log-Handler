@@ -37,8 +37,7 @@ The following options are possible:
 
 With C<filename> you can set a file name as a string or as a array reference.
 If you set a array reference then the parts will be concat with C<catfile> from
-C<File::Spec>. It's also possible to set a GLOBREF or a string as an alias for
-STDOUT or STDERR. The default is STDOUT for this option.
+C<File::Spec>.
 
 Set a file name:
 
@@ -55,44 +54,6 @@ Set a array reference:
         filename => [ '', 'foo', 'bar', 'baz.log' ],
 
     );
-
-Set a GLOBREF
-
-    open FH, '>', 'file.log' or die $!;
-    my $log = Log::Handler::Output::File->new( filename => \*FH );
-
-Or the same with
-
-    open my $fh, '>', 'file.log' or die $!;
-    my $log = Log::Handler::Output::File->new( filename => $fh );
-
-Set STDOUT or STDERR
-
-    my $log = Log::Handler::Output::File->new( filename => \*STDOUT );
-    # or
-    my $log = Log::Handler::Output::File->new( filename => \*STDERR );
-
-If the option C<filename> is set in a config file and you want to debug to your
-screen then you can set C<*STDOUT> or C<*STDERR> as a string.
-
-    my $log = Log::Handler::Output::File->new( filename => '*STDOUT' );
-    # or
-    my $log = Log::Handler::Output::File->new( filename => '*STDERR' );
-
-That is not possible:
-
-    my $log = Log::Handler::Output::File->new( filename => '*FH' );
-
-Note that if you set a GLOBREF to C<filename> some options will be forced
-(overwritten) and you have to control the handles yourself. The forced options
-are
-
-    fileopen => 1   # don't close
-    filelock => 0   # don't lock
-    reopen   => 0   # and don't reopen
-
-The reason is simple: if you set C<*STDOUT> as filename it would be very bad
-if it would be closed or locked.
 
 =item B<filelock>
 
@@ -187,6 +148,14 @@ Example:
 
     $log->log(message => 'this message goes to the logfile');
 
+=head2 flush()
+
+Call C<flush()> if you want to re-open the log file.
+
+This is useful if you don't want to use option S<"reopen">. As example
+if a rotate mechanism moves the logfile and you want to re-open a new
+one.
+
 =head2 errstr()
 
 Call C<errstr()> to get the last error message.
@@ -198,7 +167,9 @@ to use it, because the log file will be opened and closed automatically.
 
 =head1 PREREQUISITES
 
+    Carp
     Fcntl
+    File::Spec
     Params::Validate
 
 =head1 EXPORTS
@@ -228,45 +199,21 @@ package Log::Handler::Output::File;
 
 use strict;
 use warnings;
+use Carp;
 use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
 use File::Spec;
 use Params::Validate;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our $ERRSTR  = '';
 
 sub new {
     my $class   = shift;
     my $options = $class->_validate(@_);
     my $self    = bless $options, $class;
-    my $fileref = ref($self->{filename});
 
-    # it's possible to set *STDOUT and *STDERR as string
-    # or pass a GLOB as filename
-    if ($fileref eq 'GLOB') {
-        $self->{fh} = $self->{filename};
-    } elsif ($fileref eq 'ARRAY') {
+    if (ref($self->{filename}) eq 'ARRAY') {
         $self->{filename} = File::Spec->catfile(@{$self->{filename}});
-    } elsif ($self->{filename} eq '*STDOUT') {
-        $self->{fh} = \*STDOUT;
-    } elsif ($self->{filename} eq '*STDERR') {
-        $self->{fh} = \*STDERR;
-    }
-
-    # if filename is a GLOB, then we force some options and return
-    if (defined $self->{fh}) {
-        $self->{fileopen} = 1; # never call _open() and _close()
-        $self->{reopen}   = 0; # never try to reopen
-        $self->{filelock} = 0; # no, we won't lock
-        if ($self->{autoflush}) {
-            my $oldfh = select $self->{fh};
-            $| = $self->{autoflush};
-            select $oldfh;
-        }
-        if ($self->{utf8}) {
-            binmode $self->{fh}, ':utf8';
-        }
-        return $self;
     }
 
     if ($self->{mode} eq 'append') {
@@ -280,12 +227,7 @@ sub new {
     $self->{permissions} = oct($self->{permissions});
 
     # open the log file permanent
-    if ($self->{fileopen} == 1) {
-        $self->_open or return undef;
-        if ($self->{reopen}) {
-            $self->{inode} = (stat($self->{filename}))[1];
-        }
-    }
+    $self->flush or croak $self->errstr;
 
     return $self;
 }
@@ -318,6 +260,20 @@ sub log {
     return 1;
 }
 
+sub flush {
+    my $self = shift;
+
+    if ($self->{fileopen} == 1) {
+        $self->_close or return undef;
+        $self->_open  or return undef;
+        if ($self->{reopen}) {
+            $self->{inode} = (stat($self->{filename}))[1];
+        }
+    }
+
+    return 1;
+}
+
 sub close {
     my $self = shift;
     return $self->_close;
@@ -327,10 +283,9 @@ sub errstr { $ERRSTR }
 
 sub DESTROY {
     my $self = shift;
-    CORE::close($self->{fh})
-        if $self->{fh}
-        && !ref($self->{filename})
-        && $self->{filename} !~ /^\*STDOUT\z|^\*STDERR\z/;
+    if ($self->{fh}) {
+        CORE::close($self->{fh});
+    }
 }
 
 #
@@ -412,8 +367,7 @@ sub _validate {
 
     my %options = Params::Validate::validate(@_, {
         filename => {
-            type => Params::Validate::SCALAR | Params::Validate::GLOBREF | Params::Validate::ARRAYREF,
-            default => '*STDOUT',
+            type => Params::Validate::SCALAR | Params::Validate::ARRAYREF,
         },
         filelock => {
             type => Params::Validate::SCALAR,

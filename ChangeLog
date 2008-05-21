@@ -1,3 +1,12 @@
+0.42    Released at 2008-05-21.
+        - Added $|=1 to Screen.pm.
+        - warn() is now a shortcut for warning().
+        - Add flush() to Handler.pm, Output.pm and File.pm.
+        - Added Perl version 5.6.1 to Build.PL (use warnings & utf8).
+        - Added a licence file.
+        - Fixed reconnect in DBI.pm.
+        - Fixed a lot of POD typos.
+
 0.41    Released at 2008-05-09.
         - Messages will be send to all outputs, even if a output is
           not able to log a message. In version 0.40 the handler

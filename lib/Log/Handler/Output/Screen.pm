@@ -54,7 +54,6 @@ This function returns the last error message.
 
 =head1 PREREQUISITES
 
-    Carp
     Data::Dumper
     Params::Validate
 
@@ -88,8 +87,8 @@ use warnings;
 use Data::Dumper;
 use Params::Validate;
 
-our $VERSION  = '0.01';
-our $ERRSTR   = '';
+our $VERSION = '0.02';
+our $ERRSTR  = '';
 
 sub new {
     my $class   = shift;
@@ -100,6 +99,7 @@ sub new {
 sub log {
     my $self    = shift;
     my $message = @_ > 1 ? {@_} : shift;
+    local $|=1;
 
     if ($self->{dump}) {
         $message->{message} = Dumper($message);

@@ -1,15 +1,15 @@
 use strict;
 use warnings;
-use Test::More tests => 22;
+use Test::More tests => 23;
 use Log::Handler;
 
-my $MESSAGES = 14;
+my $MESSAGES = 13;
 my $RECEIVED = 0;
 my %LEVELS   = (
     DEBUG     =>  1,
     INFO      =>  1,
     NOTICE    =>  1,
-    WARNING   =>  3,
+    WARNING   =>  2,
     ERROR     =>  2,
     CRITICAL  =>  2,
     ALERT     =>  1,
@@ -21,6 +21,7 @@ my @LEVELS = (qw/
     info
     notice
     warning
+    warn
     error
     err
     critical
@@ -30,8 +31,6 @@ my @LEVELS = (qw/
     emerg
     fatal
 /);
-
-$SIG{__WARN__} = sub { forward({message=> 'WARNING '.shift}) };
 
 sub forward {
     my $m = shift;
@@ -53,9 +52,6 @@ $log->add(
         message_layout => '%L %m',
     }
 );
-
-# warn
-$log->warn('foo');
 
 # die
 foreach my $level (@LEVELS) {

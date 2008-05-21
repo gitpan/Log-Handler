@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 14;
+use Test::More tests => 15;
 use File::Spec;
 use Log::Handler;
 
@@ -35,6 +35,7 @@ ok($log->is_debug,     'checking debug');
 ok($log->is_info,      'checking info');
 ok($log->is_notice,    'checking notice');
 ok($log->is_warning,   'checking warning');
+ok($log->is_warn,      'checking warn');
 ok($log->is_error,     'checking error');
 ok($log->is_err,       'checking err');
 ok($log->is_critical,  'checking critical');

@@ -20,7 +20,7 @@ Just for internal usage and documentation.
 
 =item B<notice()>
 
-=item B<warning()>
+=item B<warning()>, B<warn()>
 
 =item B<error()>, B<err()>
 
@@ -42,7 +42,7 @@ Just for internal usage and documentation.
 
 =item B<is_notice()>
 
-=item B<is_warning()>
+=item B<is_warning()>, B<is_warn()>
 
 =item B<is_error()>, B<is_err()>
 
@@ -116,18 +116,12 @@ as first argument:
 
     $log->die(fatal => 'an emergency error here');
 
-=item B<warn()>
-
-This method logs the message with the level C<warning> to the output and
-then calls C<Carp::carp()>.
-
-    $log->warn('a warning here');
-
 =back
 
 =head1 PREREQUISITES
 
     Carp
+    Data::Dumper
 
 =head1 EXPORTS
 
@@ -138,6 +132,11 @@ No exports.
 Please report all bugs to <jschulz.cpan(at)bloonix.de>.
 
 If you send me a mail then add Log::Handler into the subject.
+
+=head1 PREREQUISITES
+
+    Carp
+    Data::Dumper
 
 =head1 AUTHOR
 
@@ -159,13 +158,14 @@ use warnings;
 use Carp;
 use Data::Dumper;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 my %LEVELS_BY_ROUTINE = (
     debug     => 'DEBUG',
     info      => 'INFO',
     notice    => 'NOTICE',
     warning   => 'WARNING',
+    warn      => 'WARNING',
     error     => 'ERROR',
     err       => 'ERROR',
     critical  => 'CRITICAL',
@@ -241,13 +241,6 @@ sub die {
     $self->$level(@_, "at line $caller[2]");
     Carp::croak @_;
 };
-
-sub warn {
-    my $self = shift;
-    my @caller = caller;
-    $self->warning(@_, "at line $caller[2]");
-    Carp::carp @_;
-}
 
 sub dump {
     my $self  = shift;

@@ -1,20 +1,20 @@
 use strict;
 use warnings;
-use Test::More tests => 9;
+use Test::More tests => 8;
 use Log::Handler;
 
 my %config = (
     file => {
         default => {
             newline        => 1,
-            permissions    => '0640',
             timeformat     => '%b %d %H:%M:%S',
-            mode           => 'append',
+            mode           => 'excl',
             message_layout => '%T %H[%P] [%L] %S: %m',
             debug_mode     => 2,
+            fileopen       => 0,
         },
         common => {
-            filename => '*STDOUT',
+            filename => 'foo',
             maxlevel => 'info',
             minlevel => 'info',
             newline  => 0,
@@ -29,9 +29,8 @@ my $options_handler = shift @{$log->{levels}->{INFO}};
 my $options_file    = $options_handler->{output};
 
 my %compare_file = (
-    permissions     => '0640',
-    filename        => '*STDOUT',
-    mode            => 'append',
+    filename => 'foo',
+    fileopen => 0,
 );
 
 my %compare_handler = (

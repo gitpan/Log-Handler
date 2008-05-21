@@ -28,7 +28,7 @@ The configuration will be splitted by dot.
     file.mylog.minlevel = warn
     file.mylog.filename = example.log
     file.mylog.newline = 1
-    file.mylog.prefix = '%T %H[%P] [%L] %S: '
+    file.mylog.message_layout = '%T %H[%P] [%L] %S: '
 
 =head1 PREREQUISITES
     
@@ -63,7 +63,7 @@ use strict;
 use warnings;
 use Config::Properties;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our $SPLITTOTREE = qr/\./;
 
 sub get_config {

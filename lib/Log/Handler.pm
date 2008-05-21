@@ -22,7 +22,7 @@ Log::Handler - Log messages to one or more outputs.
 
 This module is just a simple object oriented log handler and very easy to use.
 It's possible to define a log level for your programs and control the amount
-of informations that are logged to one or more outputs.
+of informations that will be logged to one or more outputs.
 
 =head1 LOG LEVELS
 
@@ -31,13 +31,15 @@ There are eigth levels available:
     7   debug
     6   info
     5   notice
-    4   warning
+    4   warning, warn
     3   error, err
     2   critical, crit
     1   alert
     0   emergency, emerg
 
 C<debug> is the highest and C<emergency> is the lowest level.
+
+Level C<debug> is the highest level because it basically says to log every peep.
 
 =head1 METHODS
 
@@ -92,7 +94,7 @@ S<"%b %d %H:%M:%S"> and looks like
 
     Feb 01 12:56:31
 
-As example the format S<"%Y/%m/%d %H:%M:%S"> would looks like
+If you would set the format to S<"%Y/%m/%d %H:%M:%S"> it would looks like
 
     2007/02/01 12:56:31
 
@@ -118,15 +120,14 @@ This option is not used by default.
 
 =item B<newline>
 
-This helpful option appends a newline to the output message if a newline not
-exist.
+This helpful option appends a newline to the message if a newline not exist.
 
-    0 - to disable it (default)
-    1 - to enable it
+    0 - do nothing (default)
+    1 - append a newline if not exist
 
 =item B<message_layout>
 
-With this option you can define your own message layout with different
+With this option it's possible to create your own message layout with different
 placeholders in C<printf()> style. The available placeholders are:
 
     %L   Log level
@@ -142,7 +143,7 @@ placeholders in C<printf()> style. The available placeholders are:
     %f   Caller - file name
     %l   Caller - line number
     %s   Caller - subroutine name
-    %t   Time measurement - replaced with the time since the last call of the handler
+    %t   Time measurement - replaced with the time since the last call of $level
     %m   Message
     %%   Procent
 
@@ -273,9 +274,9 @@ If you set C<die_on_errors> to 0 then you have to controll it yourself.
 
 =item B<filter>
 
-With this option it's possible to set a filter for the output. If the filter
-is set then only messages will be logged that match the filter. You can pass a
-regexp, a code reference or a simple string. Example:
+With this option it's possible to set a filter. If the filter is set then
+only messages will be logged that match the filter. You can pass a regexp,
+a code reference or a simple string. Example:
 
     $log->add(file => {
         filename => 'file.log',
@@ -428,13 +429,6 @@ Output:
 
 This option let skip the C<caller()> informations the count of C<debug_skip>.
 
-    debug_skip => 2
-
-    Apr 26 12:55:07 [DEBUG] 
-       CALL(2): package(main) filename(./trace.pl) line(16) subroutine(main::test2) hasargs(0)
-       CALL(1): package(main) filename(./trace.pl) line(14) subroutine(main::test1) hasargs(0)
-       CALL(0): package(main) filename(./trace.pl) line(13) subroutine(Log::Handler::__ANON__) hasargs(1)
-
 =back
 
 =head2 HowTo use add()
@@ -442,7 +436,7 @@ This option let skip the C<caller()> informations the count of C<debug_skip>.
 The method C<add()> excepts 2 parts of options; the options for the handler and
 the options for the output module you want to use. The output modules got it's own
 documentation for all options. As example if you want to add a file-output then
-take a look into the documentation of L<Log::Handler::Output::File> to see what
+take a look into the documentation of L<Log::Handler::Output::File> to see which
 options are available.
 
 There are different ways to add a new output to the handler. One way is to create
@@ -495,7 +489,10 @@ in one step, you just need to tell the handler what do you want to add.
     my $log = Log::Handler->new();
 
     $log->add(
-        file => { # what do you want to add
+
+        # what do you want to add - a file output
+        file => {
+
             # handler options
             timeformat      => '%Y/%m/%d %H:%M:%S',
             newline         => 1,
@@ -506,6 +503,7 @@ in one step, you just need to tell the handler what do you want to add.
             debug_trace     => 0,
             debug_mode      => 2,
             debug_skip      => 0,
+
             # file options
             filename        => 'file.log',
             filelock        => 1,
@@ -515,6 +513,7 @@ in one step, you just need to tell the handler what do you want to add.
             autoflush       => 1,
             permissions     => '0660',
             utf8            => 1,
+
         }
     );
 
@@ -553,7 +552,7 @@ Or maybe:
 
     $log->info("Hello World!", "How are you?");
 
-Both calls would log - if the level INFO is active:
+Both calls would log - if level INFO is active:
 
     Feb 01 12:56:31 [INFO] Hello World! How are you?
 
@@ -594,7 +593,26 @@ For a full list take a look into the documentation of L<Log::Handler::Levels>.
 Call C<output($alias)> to get the output object that you added with 
 the option C<alias>.
 
+It's possible to access a output directly:
+
+    $log->output($alias)->log(message => 'booo');
+
 For more informations take a look to the option C<alias>.
+
+=head2 flush()
+
+Call C<flush()> if you want to send flush to all outputs that can flush.
+
+Flush means to flush buffers and/or close and re-open outputs.
+
+If you want to send it only to some outputs you can pass the aliases.
+
+    $log->flush(); # flush all
+    $log->flush('foo', 'bar'); # flush only foo and bar
+
+If option S<"die_on_errors"> is set to 0 then you can intercept errors with:
+
+    $log->flush or die $log->errstr;
 
 =head2 errstr()
 
@@ -655,7 +673,7 @@ Or
         }
     });
 
-The key S<"default"> can be used to define default parameters for all file
+The key S<"default"> is used here to define default parameters for all file
 outputs. All other keys (C<error_log>, C<common_log>) are used as aliases.
 
 Take a look into the documentation of L<Log::Handler::Config> for more
@@ -703,6 +721,7 @@ Send me a mail if you have questions.
 
 Prerequisites for all modules:
 
+    Perl 5.6.1
     Carp
     Data::Dumper
     Devel::Backtrace
@@ -793,10 +812,11 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION  = '0.41';
-our $ERRSTR   = '';
-our $DEBUG    = 0;
-our $TRACE    = 0;
+our $VERSION = '0.42';
+our $ERRSTR  = '';
+
+# turn on/off tracing
+our $TRACE = 0;
 
 use constant PRIORITY => 10;
 use constant BOOL_RX  => qr/^[01]\z/;
@@ -806,7 +826,7 @@ use constant LEVEL_RX => qr/^(?:
     7 | debug     |
     6 | info      |
     5 | notice    |
-    4 | warning   |
+    4 | warning   | warn  |
     3 | error     | err   |
     2 | critical  | crit  |
     1 | alert     |
@@ -858,17 +878,17 @@ our %AVAILABLE_OUTPUTS = (
 sub new {
     my $class = shift;
 
-    # for full backward compatibilities
+    # for full backward compatibilities to v0.38
     if (@_) {
         require Log::Handler::Simple;
         return  Log::Handler::Simple->new(@_);
     }
 
-
     my $self = bless {
         priority => PRIORITY,   # start priority
         levels   => { },        # outputs stored by active levels
         alias    => { },        # outputs stored by an alias
+        output   => [ ],        # all outputs needed for flush()
         pattern  =>             # default pattern
             &Log::Handler::Pattern::get_pattern,
     }, $class;
@@ -877,7 +897,7 @@ sub new {
 }
 
 sub add {
-    @_ == 3 or Carp::croak 'Usage: add( type => \%options )';
+    @_ == 3 or Carp::croak 'Usage: add( $output => \%options )';
     my $self   = shift;
     my $output = $self->_new_output(@_);
     my $levels = $self->{levels};
@@ -919,6 +939,9 @@ sub add {
         $self->{alias}->{$alias} = $output;
     }
 
+    # save all outputs here
+    push @{$self->{outputs}}, $output;
+
     return 1;
 }
 
@@ -954,13 +977,7 @@ sub set_pattern {
     # Structure:
     #   $self->{pattern}->{'%X'}->{name} = 'name-of-x';
     #   $self->{pattern}->{'%X'}->{code} = 'value-of-x';
-
-    if (ref($proto) eq 'CODE') {
-        $self->{pattern}->{$pattern}->{code} = $proto;
-    } elsif (length($proto)) {
-        $self->{pattern}->{$pattern}->{code} = $proto;
-    }
-
+    $self->{pattern}->{$pattern}->{code} = $proto;
     $self->{pattern}->{$pattern}->{name} = $name;
 }
 
@@ -969,6 +986,37 @@ sub output {
     return unless length($name);
     my $alias = $self->{alias};
     return exists $alias->{$name} ? $alias->{$name}->{output} : undef;
+}
+
+sub flush {
+    my ($self, @alias) = @_;
+    my $errors = ();
+
+    if (@alias) {
+        foreach my $name (@alias) {
+            my $output = $self->output($name);
+            next unless $output;
+            if ( !$output->flush ) {
+                if ( defined $errors ) {
+                    $errors .= '; ' . $output->errstr;
+                } else {
+                    $errors = $output->errstr;
+                }
+            }
+        }
+    } else {
+        foreach my $output (@{$self->{outputs}}) {
+            if ( !$output->flush ) {
+                if ( defined $errors ) {
+                    $errors .= '; ' . $output->errstr;
+                } else {
+                    $errors = $output->errstr;
+                }
+            }
+        }
+    }
+
+    return defined $errors ? $self->_raise_error($errors) : 1;
 }
 
 sub errstr { $ERRSTR }
@@ -1017,7 +1065,7 @@ sub _new_output {
     my $type    = shift;
     my $args    = @_ > 1 ? {@_} : shift;
     my $package = ref($type);
-    my ($output, $options);
+    my ($output, $handler_opts);
 
     # There are two ways to add an output:
     #
@@ -1031,12 +1079,12 @@ sub _new_output {
     #   $log->add(file => \%all_options);
 
     if ( length($package) ) {
-        $output  = $type;
-        $options = $args;
+        $output = $type;
+        $handler_opts = $args;
     } else {
         # Shift the handler options from $args. The rest in %$args
         # will be passed to the output.
-        $options = $self->_shift_options($args);
+        $handler_opts = $self->_shift_options($args);
 
         # Try to determine which output is wanted...
         if (exists $AVAILABLE_OUTPUTS{$type}) {
@@ -1051,8 +1099,8 @@ sub _new_output {
         $output = $package->new($args) or Carp::croak $package->errstr;
     }
 
-    $options = $self->_validate_options($options);
-    return Log::Handler::Output->new($options, $output);
+    $handler_opts = $self->_validate_options($handler_opts);
+    return Log::Handler::Output->new($handler_opts, $output);
 }
 
 sub _validate_options {

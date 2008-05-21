@@ -49,7 +49,8 @@ $log->add(
         minlevel   => 'error',
         newline    => 1,
         forward_to => \&buffer,
-        message_pattern => [qw/%T %L %m/],
+        message_layout  => '%m',
+        message_pattern => [qw/%T %L %P/],
     }
 );
 
