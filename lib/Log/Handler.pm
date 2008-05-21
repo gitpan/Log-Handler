@@ -812,7 +812,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.42';
+our $VERSION = '0.43';
 our $ERRSTR  = '';
 
 # turn on/off tracing
@@ -1248,12 +1248,12 @@ sub _validate_options {
         #
         #   sub {
         #       my ($w, $m) = @_; # %wanted pattern, %message
-        #       $m->{message} = join('',
-        #           $w->{time},
-        #           ' [',
-        #           $w->{level},
-        #           '] ',
-        #           $w->{message}
+        #       $m->{message} = 
+        #           $w->{time}
+        #           . ' ['
+        #           . $w->{level}
+        #           . '] '
+        #           . $w->{message}
         #       );
         #   }
 
@@ -1272,9 +1272,9 @@ sub _validate_options {
         }
 
         if (@chunks) {
-            $func  = 'sub { my ($w, $m) = @_; $m->{message} = join(\'\', ';
-            $func .= join(', ', @chunks);
-            $func .= ') }';
+            $func  = 'sub { my ($w, $m) = @_; $m->{message} = ';
+            $func .= join('.', @chunks);
+            $func .= ' }';
         }
 
         $options{message_layout_func} = $func;

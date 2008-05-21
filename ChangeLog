@@ -1,3 +1,7 @@
+0.43    Released at 2008-05-21.
+        - Fixed log() in DBI.pm and Socket.pm - only try to reconnect
+          if persistent + reconnect is set to true. Sorry :(
+
 0.42    Released at 2008-05-21.
         - Added $|=1 to Screen.pm.
         - warn() is now a shortcut for warning().

@@ -150,9 +150,6 @@ Take a look to the documentation of L<Log::Handler> for all possible patterns.
 With this option you can enable or disable a persistent database connection and
 re-connect if the connection was lost.
 
-If you use persistent connections then a ping is send to the database before
-each insert. If the ping fails then a re-connect is executed.
-
 Both options are set to 1 on default.
 
 =item B<dbi_params>
@@ -253,7 +250,7 @@ use Carp;
 use DBI;
 use Params::Validate;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our $ERRSTR  = '';
 
 sub new {
@@ -294,7 +291,7 @@ sub log {
 
     if ( ! $self->{sth}->execute(@values) ) {
         my $execute_error = $self->{sth}->errstr;
-        if ($self->{reconnect}) {
+        if ($self->{persistent} && $self->{reconnect}) {
             warn "ping the database" if $self->{debug};
 
             # if the database is reachable than it might be an error with

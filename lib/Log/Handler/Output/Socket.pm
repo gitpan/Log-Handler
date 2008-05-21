@@ -45,14 +45,12 @@ The protocol you wish to use. Default is TCP.
 
 The timeout to send message. The default is 1.
 
-=item B<persistent>
+=item B<persistent> and B<reconnect>
 
-Enable a persistent connection to the server. The default is 1.
+With this option you can enable or disable a persistent connection and
+re-connect if the connection was lost.
 
-=item B<reconnect>
-
-You can enable this if you want to reconnect to the server after the
-connection lost. The default is 1.
+Both options are set to 1 on default.
 
 =item B<dump>
 
@@ -150,7 +148,7 @@ use Params::Validate;
 use IO::Socket::INET;
 use Data::Dumper;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our $ERRSTR  = '';
 
 sub new {
@@ -182,7 +180,7 @@ sub log {
 
     local $SIG{PIPE} = 'IGNORE';
     if ( ! $socket->send($message->{message}) ) {
-        if ($self->{reconnect}) {
+        if ($self->{persistent} && $self->{reconnect}) {
             $self->connect or return undef;
             $socket->send($message->{message})
                 or return $self->_raise_error("Lost connection! Reconnect failed: $!");
