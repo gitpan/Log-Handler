@@ -1,3 +1,8 @@
+0.44    Released at 2008-06-04.
+        - Fixed set_pattern(). It dies if the key name is something like
+          'x-name' because $m->{x-name} is not valid.
+        - Changed pattern %R to %r.
+
 0.43    Released at 2008-05-21.
         - Fixed log() in DBI.pm and Socket.pm - only try to reconnect
           if persistent + reconnect is set to true. Sorry :(

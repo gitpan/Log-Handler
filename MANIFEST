@@ -5,7 +5,6 @@ examples/client.pl
 examples/example.conf
 examples/example.pl
 examples/layout.pl
-examples/more-outputs.pl
 examples/runtime.pl
 examples/server.pl
 INSTALL

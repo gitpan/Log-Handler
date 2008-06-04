@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler - Log messages to one or more outputs.
+Log::Handler - Log messages to several outputs.
 
 =head1 SYNOPSIS
 
@@ -20,9 +20,13 @@ Log::Handler - Log messages to one or more outputs.
 
 =head1 DESCRIPTION
 
-This module is just a simple object oriented log handler and very easy to use.
-It's possible to define a log level for your programs and control the amount
-of informations that will be logged to one or more outputs.
+The C<Log::Handler> is a object oriented handler for logging, tracing and
+debugging. It is very easy to use and provides a simple interface for
+multiple output objects with lots of configuration parameters. You can
+easily filter the amount of logged information on a per-output base,
+define priorities and create patterns to format the messages.
+
+See the documentation for details.
 
 =head1 LOG LEVELS
 
@@ -39,7 +43,8 @@ There are eigth levels available:
 
 C<debug> is the highest and C<emergency> is the lowest level.
 
-Level C<debug> is the highest level because it basically says to log every peep.
+Level C<debug> is the highest level because it basically says to log
+every peep.
 
 =head1 METHODS
 
@@ -137,12 +142,12 @@ placeholders in C<printf()> style. The available placeholders are:
     %H   Hostname
     %N   Newline
     %S   Program name
-    %R   Runtime in seconds since program start
     %C   Caller - filename and line number
     %p   Caller - package name
     %f   Caller - file name
     %l   Caller - line number
     %s   Caller - subroutine name
+    %r   Runtime in seconds since program start
     %t   Time measurement - replaced with the time since the last call of $level
     %m   Message
     %%   Procent
@@ -196,7 +201,7 @@ The patterns will be replaced with real names as hash keys.
     %P   pid
     %H   hostname
     %N   newline
-    %R   runtime
+    %r   runtime
     %C   caller
     %p   package
     %f   filename
@@ -683,11 +688,11 @@ informations.
 
 With this option you can set your own placeholders. Example:
 
-    $log->set_pattern('%X', 'name', sub { 'value' });
+    $log->set_pattern('%X', 'key_name', sub { 'value' });
 
     # or
 
-    $log->set_pattern('%X', 'name', 'value');
+    $log->set_pattern('%X', 'key_name', 'value');
 
 Then you can use this pattern in your message layout:
 
@@ -701,13 +706,15 @@ Or use it with C<message_pattern>:
 
     sub func {
         my $m = shift;
-        print "$m->{name} $m->{message}\n";
+        print "$m->{key_name} $m->{message}\n";
     }
 
     $log->add(forward => {
         forward_to      => \&func,
         message_pattern => '%X %m',
     });
+
+Note: valid character for the key name are: C<[%\w\-\.]+>
 
 =head1 EXAMPLES
 
@@ -812,7 +819,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.43';
+our $VERSION = '0.44';
 our $ERRSTR  = '';
 
 # turn on/off tracing
@@ -897,7 +904,7 @@ sub new {
 }
 
 sub add {
-    @_ == 3 or Carp::croak 'Usage: add( $output => \%options )';
+    @_ == 3 or Carp::croak 'Usage: $log->add( $output => \%options )';
     my $self   = shift;
     my $output = $self->_new_output(@_);
     my $levels = $self->{levels};
@@ -946,6 +953,7 @@ sub add {
 }
 
 sub config {
+    @_ > 1 or Carp::croak 'Usage: $log->config( %param )';
     my $self = shift;
     my $configs = Log::Handler::Config->config(@_);
 
@@ -963,14 +971,20 @@ sub config {
 }
 
 sub set_pattern {
-    @_ == 4 or Carp::croak 'Usage: $log->set_pattern( $pattern, $name, $code )';
-    my ($self, $pattern, $name, $proto) = @_;
+    (@_ == 3 || @_ == 4)
+        or Carp::croak 'Usage: $log->set_pattern( $pattern, $name, $code )';
+
+    my $self    = shift;
+    my $pattern = shift;
+
+    # If no $name is set then we use $pattern as name
+    my ($name, $proto) = @_ == 2 ? @_ : ($pattern, @_);
 
     if ($pattern !~ /^%[a-ln-z]\z/i) {
         Carp::croak "invalid pattern '$pattern'";
     }
 
-    if (ref($name) || !length($name)) {
+    if (!defined $name || $name !~ /^[%\w\-\.]+\z/) {
         Carp::croak "invalid/missing name for pattern '$pattern'";
     }
 
@@ -982,8 +996,8 @@ sub set_pattern {
 }
 
 sub output {
+    @_ == 2 or Carp::croak 'Usage: $log->output( $alias )';
     my ($self, $name) = @_;
-    return unless length($name);
     my $alias = $self->{alias};
     return exists $alias->{$name} ? $alias->{$name}->{output} : undef;
 }
@@ -1248,12 +1262,12 @@ sub _validate_options {
         #
         #   sub {
         #       my ($w, $m) = @_; # %wanted pattern, %message
-        #       $m->{message} = 
-        #           $w->{time}
+        #       $m->{'message'} = 
+        #           $w->{'time'}
         #           . ' ['
-        #           . $w->{level}
+        #           . $w->{'level'}
         #           . '] '
-        #           . $w->{message}
+        #           . $w->{'message'}
         #       );
         #   }
 
@@ -1262,7 +1276,7 @@ sub _validate_options {
             if ( exists $pattern->{$p} ) {
                 $wanted{$p} = undef;
                 my $name = $pattern->{$p}->{name};
-                push @chunks, "\$w->{$name}";
+                push @chunks, "\$w->{'$name'}";
             } else {
                 # quote backslash and apostrophe
                 $p =~ s/\\/\\\\/g;

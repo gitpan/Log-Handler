@@ -1,5 +1,5 @@
 NAME
-    Log::Handler - Log messages to one or more outputs.
+    Log::Handler - Log messages to several outputs.
 
 SYNOPSIS
         use Log::Handler;
@@ -17,10 +17,13 @@ SYNOPSIS
         $log->warning("a warinng here");
 
 DESCRIPTION
-    This module is just a simple object oriented log handler and very easy
-    to use. It's possible to define a log level for your programs and
-    control the amount of informations that will be logged to one or more
-    outputs.
+    The "Log::Handler" is a object oriented handler for logging, tracing and
+    debugging. It is very easy to use and provides a simple interface for
+    multiple output objects with lots of configuration parameters. You can
+    easily filter the amount of logged information on a per-output base,
+    define priorities and create patterns to format the messages.
+
+    See the documentation for details.
 
 LOG LEVELS
     There are eigth levels available:
@@ -131,12 +134,12 @@ METHODS
             %H   Hostname
             %N   Newline
             %S   Program name
-            %R   Runtime in seconds since program start
             %C   Caller - filename and line number
             %p   Caller - package name
             %f   Caller - file name
             %l   Caller - line number
             %s   Caller - subroutine name
+            %r   Runtime in seconds since program start
             %t   Time measurement - replaced with the time since the last call of $level
             %m   Message
             %%   Procent
@@ -190,7 +193,7 @@ METHODS
             %P   pid
             %H   hostname
             %N   newline
-            %R   runtime
+            %r   runtime
             %C   caller
             %p   package
             %f   filename
@@ -651,11 +654,11 @@ METHODS
   set_pattern()
     With this option you can set your own placeholders. Example:
 
-        $log->set_pattern('%X', 'name', sub { 'value' });
+        $log->set_pattern('%X', 'key_name', sub { 'value' });
 
         # or
 
-        $log->set_pattern('%X', 'name', 'value');
+        $log->set_pattern('%X', 'key_name', 'value');
 
     Then you can use this pattern in your message layout:
 
@@ -669,13 +672,15 @@ METHODS
 
         sub func {
             my $m = shift;
-            print "$m->{name} $m->{message}\n";
+            print "$m->{key_name} $m->{message}\n";
         }
 
         $log->add(forward => {
             forward_to      => \&func,
             message_pattern => '%X %m',
         });
+
+    Note: valid character for the key name are: "[%\w\-\.]+"
 
 EXAMPLES
     Log::Handler::Examples

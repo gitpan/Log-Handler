@@ -133,13 +133,13 @@ with the option C<message_pattern>.
     %P   pid
     %H   hostname
     %N   newline
-    %R   runtime
     %C   caller
     %p   package
     %f   filename
     %l   line
     %s   subroutine
     %S   progname
+    %r   runtime
     %t   mtime
     %m   message
 
@@ -294,7 +294,7 @@ sub log {
         if ($self->{persistent} && $self->{reconnect}) {
             warn "ping the database" if $self->{debug};
 
-            # if the database is reachable than it might be an error with
+            # if the database is reachable then it might be an error with
             # the statemant or values
             if ($self->{dbh}->ping) {
                 return $self->_raise_error("DBI execute error: $execute_error");

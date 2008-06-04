@@ -8,7 +8,7 @@ my $log = Log::Handler->new();
 $log->add(
     screen => {
         maxlevel => 'debug',
-        message_layout => '%T %L %m runtime: %t, total runtime: %R %N',
+        message_layout => '%T %L %m runtime: %t, total runtime: %r%N',
     }
 );
 
