@@ -208,7 +208,7 @@ Log::Handler::Examples - Output examples.
     # log to error.log and to foo@bar.example
     $log->emergency("this is a emergency message");
 
-=head1 FILTER
+=head1 FILTER MESSAGES
 
     my $log = Log::Handler->new();
 
@@ -216,7 +216,7 @@ Log::Handler::Examples - Output examples.
         screen => {
             newline  => 1,
             maxlevel => 6,
-            filter   => {
+            filter_message => {
                 match1    => 'foo',
                 match2    => 'bar',
                 match3    => 'baz',
@@ -229,21 +229,56 @@ Log::Handler::Examples - Output examples.
     $log->info('foo bar');
     $log->info('foo baz');
 
+=head2 FILTER CALLER
+
+This example shows you how it's possilbe to debug messages
+only from a special namespace.
+
+    my $log = Log::Handler->new();
+
+    $log->add(
+        file => {
+            filename => 'file1.log',
+            mode     => 'append',
+            newline  => 1,
+            maxlevel => 'warning',
+        }
+    );
+
+    $log->add(
+        screen => {
+            maxlevel => 'debug',
+            newline  => 1,
+            message_layout => 'message from %p - %m',
+            filter_caller  => qr/^Foo::Bar\z/,
+        }
+    );
+
+    $log->warning('a warning here');
+
+    package Foo::Bar;
+    $log->info('an info here');
+    1;
+
 =head2 ANOTHER FILTER
 
-    filter => 'as string'
+    filter_message => 'as string'
 
-    filter => qr/as regexp/
+    filter_message => qr/as regexp/
 
-    filter => sub { shift->{message} =~ /as code ref/ }
+    filter_message => sub { shift->{message} =~ /as code ref/ }
 
     # or with conditions
 
-    filter => {
+    filter_message => {
         match1    => 'as string',
         match2    => qr/as regexp/',
         condition => 'match1 || match2',
     }
+
+    filter_caller => 'as string'
+
+    filter_caller => qr/as regexp/
 
 =head1 CONFIG
 

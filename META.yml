@@ -1,6 +1,6 @@
 ---
 name: Log-Handler
-version: 0.44
+version: 0.45
 author:
   - Jonny Schulz
 abstract: Log messages to several outputs.
@@ -19,7 +19,7 @@ requires:
   Test::More: 0
   Time::HiRes: 0
   UNIVERSAL::require: 0
-  perl: 5.6.1
+  perl: 5.006_001
 recommends:
   Config::General: 0
   Config::Properties: 0
@@ -30,16 +30,16 @@ recommends:
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.44
+    version: 0.45
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
     version: 0.03
   Log::Handler::Levels:
     file: lib/Log/Handler/Levels.pm
-    version: 0.03
+    version: 0.04
   Log::Handler::Output:
     file: lib/Log/Handler/Output.pm
-    version: 0.03
+    version: 0.04
   Log::Handler::Output::DBI:
     file: lib/Log/Handler/Output/DBI.pm
     version: 0.03
@@ -60,7 +60,7 @@ provides:
     version: 0.04
   Log::Handler::Pattern:
     file: lib/Log/Handler/Pattern.pm
-    version: 0.02
+    version: 0.03
   Log::Handler::Plugin::Config::General:
     file: lib/Log/Handler/Plugin/Config/General.pm
     version: 0.02

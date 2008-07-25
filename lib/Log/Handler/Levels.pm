@@ -158,7 +158,7 @@ use warnings;
 use Carp;
 use Data::Dumper;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 my %LEVELS_BY_ROUTINE = (
     debug     => 'DEBUG',
@@ -227,6 +227,7 @@ sub trace {
     if (!exists $LEVELS_BY_ROUTINE{$level}) {
         $level = 'debug';
     }
+    local $Log::Handler::CALLER_LEVEL = 1;
     local $Log::Handler::TRACE = 1;
     return $self->$level(@_);
 }
@@ -237,6 +238,7 @@ sub die {
     if (!exists $LEVELS_BY_ROUTINE{$level}) {
         $level = 'emergency';
     }
+    local $Log::Handler::CALLER_LEVEL = 1;
     my @caller = caller;
     $self->$level(@_, "at line $caller[2]");
     Carp::croak @_;
@@ -248,6 +250,7 @@ sub dump {
     if (!exists $LEVELS_BY_ROUTINE{$level}) {
         $level = 'debug';
     }
+    local $Log::Handler::CALLER_LEVEL = 1;
     return $self->$level(Dumper(@_));
 }
 

@@ -21,7 +21,7 @@ $log->add(
     forward => {
         forward_to => \&check,
         maxlevel   => 6,
-        filter     => 'string 1$',
+        filter_message => 'string 1$',
     }
 );
 
@@ -29,7 +29,7 @@ $log->add(
     forward => {
         forward_to => \&check,
         maxlevel   => 6,
-        filter     => qr/STRING\s2$/i,
+        filter_message => qr/STRING\s2$/i,
     }
 );
 
@@ -37,7 +37,7 @@ $log->add(
     forward => {
         forward_to => \&check,
         maxlevel   => 6,
-        filter     => sub { shift->{message} =~ /string\s3$/ },
+        filter_message => sub { shift->{message} =~ /string\s3$/ },
     }
 );
 
@@ -45,7 +45,7 @@ $log->add(
     forward => {
         forward_to => \&check,
         maxlevel   => 6,
-        filter     => {
+        filter_message => {
             match1    => 'foo',
             match2    => qr/bar/,
             match3    => '(?:string\s4|string\s5)',

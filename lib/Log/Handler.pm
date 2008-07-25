@@ -277,7 +277,7 @@ If you set C<die_on_errors> to 0 then you have to controll it yourself.
     # or Log::Handler::errstr()
     # or $Log::Handler::ERRSTR
 
-=item B<filter>
+=item B<filter_message>
 
 With this option it's possible to set a filter. If the filter is set then
 only messages will be logged that match the filter. You can pass a regexp,
@@ -288,7 +288,10 @@ a code reference or a simple string. Example:
         mode     => 'append',
         newline  => 1,
         maxlevel => 6,
-        filter   => qr/log this/, # log only messages that contain 'log this'
+        filter_message => qr/log this/,
+        # or
+        # filter_message => 'log this',
+        # filter_message => '^log only this$',
     });
 
     $log->info('log this');
@@ -301,7 +304,7 @@ If you pass your own code then you have to check the message yourself.
         mode     => 'append',
         newline  => 1,
         maxlevel => 6,
-        filter   => \&my_filter
+        filter_message => \&my_filter
     });
 
     # return TRUE if you want to log the message, FALSE if not
@@ -318,7 +321,7 @@ hash reference with the options C<matchN> and C<condition>. Example:
         mode     => 'append',
         newline  => 1,
         maxlevel => 6,
-        filter   => {
+        filter_message => {
             match1    => 'log this',
             match2    => qr/with that/,
             match3    => '(?:or this|or that)',
@@ -331,6 +334,33 @@ NOTE that re-eval in regexes is not valid! Something like
     match1 => '(?{unlink("file.txt")})'
 
 would cause an error!
+
+=item C<filter_caller>
+
+You can use this option to set a package name. Only messages from this
+packages will be logged.
+
+Example:
+
+    my $log = Log::Handler->new();
+
+    $log->add(screen => {
+        maxlevel => 'info',
+        newline  => 1,
+        filter_caller  => qr/^Foo::Bar$/,
+        # or
+        # filter_caller => '^Foo::Bar$',
+    });
+
+    package Foo::Bar;
+    $log->info('log this');
+
+    package Foo::Baz;
+    $log->info('but not that');
+
+    1;
+
+This would only log the message from the package C<Foo::Bar>.
 
 =item B<alias>
 
@@ -819,12 +849,21 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.44';
+our $VERSION = '0.45';
 our $ERRSTR  = '';
 
-# turn on/off tracing
-our $TRACE = 0;
+# $TRACE and $CALLER_LEVEL are both used as global
+# variables in other packages as well. You shouldn't
+# manipulate them if you don't know what you do.
+#
+# $TRACE is used to turn on/off tracing.
+#
+# $CALLER_LEVEL is used to determine the current
+# caller level
+our $CALLER_LEVEL = 0;
+our $TRACE        = 0;
 
+# Some constants...
 use constant PRIORITY => 10;
 use constant BOOL_RX  => qr/^[01]\z/;
 use constant NUMB_RX  => qr/^\d+\z/;
@@ -1056,6 +1095,8 @@ sub _shift_options {
         debug_trace
         die_on_errors
         filter
+        filter_message
+        filter_caller
         maxlevel
         message_layout
         message_pattern
@@ -1118,11 +1159,15 @@ sub _new_output {
 }
 
 sub _validate_options {
-    my $self    = shift;
+    my ($self, @args) = @_;
     my $pattern = $self->{pattern};
     my (%wanted, $is_fatal);
 
-    my %options = Params::Validate::validate(@_, {
+    if (exists $args[0]{filter}) {
+        $args[0]{filter_message} = delete $args[0]{filter};
+    }
+
+    my %options = Params::Validate::validate(@args, {
         timeformat => {
             type => Params::Validate::SCALAR,
             default => '%b %d %H:%M:%S',
@@ -1188,22 +1233,21 @@ sub _validate_options {
             type => Params::Validate::SCALAR,
             optional => 1,
         },
-        filter => {
+        filter_message => {
             type => Params::Validate::SCALAR    # 'foo'
                   | Params::Validate::SCALARREF # qr/foo/
                   | Params::Validate::CODEREF   # sub { shift->{message} =~ /foo/ }
                   | Params::Validate::HASHREF,  # matchN, condition
             optional => 1,
         },
-        caller_level => {
-            type => Params::Validate::SCALAR,
-            regex => NUMB_RX,
-            default => 2,
+        filter_caller => {
+            type => Params::Validate::SCALAR | Params::Validate::SCALARREF,
+            optional => 1,
         },
     });
 
-    if ($options{filter}) {
-        $options{filter} = $self->_validate_filter($options{filter});
+    if ($options{filter_message}) {
+        $options{filter_message} = $self->_validate_filter($options{filter_message});
     }
 
     # set a default priority if not set

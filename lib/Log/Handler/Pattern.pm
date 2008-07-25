@@ -41,7 +41,7 @@ use Time::HiRes;
 use Log::Handler::Output;
 use constant START_TIME => scalar Time::HiRes::gettimeofday;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 my $progname = $0;
 $progname =~ s@.*[/\\]@@;
 
@@ -90,11 +90,11 @@ sub _get_level   { $_[1] }
 sub _get_time    { POSIX::strftime($_[0]->{timeformat}, localtime) }
 sub _get_date    { POSIX::strftime($_[0]->{dateformat}, localtime) }
 sub _get_pid     { $$ }
-sub _get_caller  { my @c = caller($_[0]->{caller_level}); "$c[1], line $c[2]" }
-sub _get_c_pkg   { (caller($_[0]->{caller_level}))[0] }
-sub _get_c_file  { (caller($_[0]->{caller_level}))[1] }
-sub _get_c_line  { (caller($_[0]->{caller_level}))[2] }
-sub _get_c_sub   { (caller($_[0]->{caller_level}))[3] }
+sub _get_caller  { my @c = caller(2+$Log::Handler::CALLER_LEVEL); "$c[1], line $c[2]" }
+sub _get_c_pkg   { (caller(2+$Log::Handler::CALLER_LEVEL))[0] }
+sub _get_c_file  { (caller(2+$Log::Handler::CALLER_LEVEL))[1] }
+sub _get_c_line  { (caller(2+$Log::Handler::CALLER_LEVEL))[2] }
+sub _get_c_sub   { (caller(2+$Log::Handler::CALLER_LEVEL))[3] }
 sub _get_runtime { return sprintf('%.6f', Time::HiRes::gettimeofday - START_TIME) }
 
 sub _get_hires {

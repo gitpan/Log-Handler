@@ -1,3 +1,11 @@
+0.45    Released at 2008-07-25.
+        - Kicked $self->{caller_level} and replaced it with
+          Log::Handler::CALLER_LEVEL. The reason is that if dump(),
+          die() or warn() was called then the patterns %p, %f, %c or
+          %s was wrong.
+        - Changed option filter to filter_message and added a new
+          option called filter_caller.
+
 0.44    Released at 2008-06-04.
         - Fixed set_pattern(). It dies if the key name is something like
           'x-name' because $m->{x-name} is not valid.
@@ -278,4 +286,4 @@
         - Changed the POD.
 
 0.01	Released at 2007-02-04.
-x.xx	Thanks to Larry Wall and all other Perl developer for Perl :-)
+x.xx	Thanks to Larry Wall and all other Perl developers for Perl :-)

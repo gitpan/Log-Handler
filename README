@@ -269,7 +269,7 @@ METHODS
             # or Log::Handler::errstr()
             # or $Log::Handler::ERRSTR
 
-    filter
+    filter_message
         With this option it's possible to set a filter. If the filter is set
         then only messages will be logged that match the filter. You can
         pass a regexp, a code reference or a simple string. Example:
@@ -279,7 +279,10 @@ METHODS
                 mode     => 'append',
                 newline  => 1,
                 maxlevel => 6,
-                filter   => qr/log this/, # log only messages that contain 'log this'
+                filter_message => qr/log this/,
+                # or
+                # filter_message => 'log this',
+                # filter_message => '^log only this$',
             });
 
             $log->info('log this');
@@ -293,7 +296,7 @@ METHODS
                 mode     => 'append',
                 newline  => 1,
                 maxlevel => 6,
-                filter   => \&my_filter
+                filter_message => \&my_filter
             });
 
             # return TRUE if you want to log the message, FALSE if not
@@ -311,7 +314,7 @@ METHODS
                 mode     => 'append',
                 newline  => 1,
                 maxlevel => 6,
-                filter   => {
+                filter_message => {
                     match1    => 'log this',
                     match2    => qr/with that/,
                     match3    => '(?:or this|or that)',
@@ -324,6 +327,32 @@ METHODS
             match1 => '(?{unlink("file.txt")})'
 
         would cause an error!
+
+    "filter_caller"
+        You can use this option to set a package name. Only messages from
+        this packages will be logged.
+
+        Example:
+
+            my $log = Log::Handler->new();
+
+            $log->add(screen => {
+                maxlevel => 'info',
+                newline  => 1,
+                filter_caller  => qr/^Foo::Bar$/,
+                # or
+                # filter_caller => '^Foo::Bar$',
+            });
+
+            package Foo::Bar;
+            $log->info('log this');
+
+            package Foo::Baz;
+            $log->info('but not that');
+
+            1;
+
+        This would only log the message from the package "Foo::Bar".
 
     alias
         You can set an alias if you want to get the output object later.

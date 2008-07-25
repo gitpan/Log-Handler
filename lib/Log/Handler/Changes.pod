@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler::Changes - Changes from 0.38 to 0.42.
+Log::Handler::Changes - Changes from 0.38 to 0.45.
 
 =head1 WHAT IS NEW, WHAT IS DEPRECATED
 
@@ -51,7 +51,8 @@ Take a look into the documentation for L<Log::Handler::Config>.
     priority
     message_pattern
     prepare_message
-    filter
+    filter_message
+    filter_caller
     alias
 
 =head2 Changed options

@@ -43,7 +43,7 @@ use Carp;
 use UNIVERSAL;
 use Devel::Backtrace;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our $ERRSTR  = '';
 
 sub new {
@@ -60,6 +60,11 @@ sub log {
     my $output  = $self->{output};
     my $pattern = $self->{pattern};
     my $message = { };
+
+    if ($self->{filter_caller}) {
+        my $caller = (caller(1+$Log::Handler::CALLER_LEVEL))[0];
+        return 1 if $caller !~ $self->{filter_caller};
+    }
 
     foreach my $r (@{$self->{wanted_pattern}}) {
         if (ref($r->{code})) {
@@ -85,8 +90,8 @@ sub log {
         $message->{message} .= "\n";
     }
 
-    if ($self->{filter}) {
-        $self->_filter_ok($message) or return 1;
+    if ($self->{filter_message}) {
+        $self->_filter_msg($message) or return 1;
     }
 
     if ($self->{prepare_message}) {
@@ -154,9 +159,9 @@ sub _prepare_message {
     return $@ ? $self->_raise_error($@) : $msg;
 }
 
-sub _filter_ok {
+sub _filter_msg {
     my ($self, $message) = @_;
-    my $filter = $self->{filter};
+    my $filter = $self->{filter_message};
     my $result = $filter->{result};
     my $code   = $filter->{code};
     my $return = ();
