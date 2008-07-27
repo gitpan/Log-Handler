@@ -1,12 +1,12 @@
 =head1 NAME
 
-Log::Handler::Plugin::Config::YAML - Config loader for YAML.
+Log::Handler::Plugin::YAML - Config loader for YAML.
 
 =head1 SYNOPSIS
 
-    use Log::Handler::Plugin::Config::YAML;
+    use Log::Handler::Plugin::YAML;
 
-    my $config = Log::Handler::Plugin::Config::YAML->get_config( $config_file );
+    my $config = Log::Handler::Plugin::YAML->get_config( $config_file );
 
 =head1 ROUTINES
 
@@ -27,9 +27,9 @@ Expect the config file name and returns the config as a reference.
         mode: append
         newline: 1
         permissions: 0640
-        message_layout: '%T %H[%P] [%L] %S: '
+        message_layout: %T %H[%P] [%L] %S: %m
         reopen: 1
-        timeformat: '%b %d %H:%M:%S'
+        timeformat: %b %d %H:%M:%S
 
 =head1 PREREQUISITES
     
@@ -58,13 +58,13 @@ modify it under the same terms as Perl itself.
 
 =cut
 
-package Log::Handler::Plugin::Config::YAML;
+package Log::Handler::Plugin::YAML;
 
 use strict;
 use warnings;
 use YAML;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 sub get_config {
     my ($class, $config_file) = @_;

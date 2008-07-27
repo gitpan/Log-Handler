@@ -66,6 +66,9 @@ sub log {
         return 1 if $caller !~ $self->{filter_caller};
     }
 
+    # The patterns must be generated for each output. The reason
+    # is that each output can have their own time/date format
+    # and the code which is executed can return another value.
     foreach my $r (@{$self->{wanted_pattern}}) {
         if (ref($r->{code})) {
             $wanted->{$r->{name}} = &{$r->{code}}($self, $level);

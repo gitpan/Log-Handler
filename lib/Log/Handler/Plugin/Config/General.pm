@@ -27,7 +27,7 @@ Expect the config file name and returns the config as a reference.
             debug_mode = 2
             filename = example.log
             minlevel = warn
-            message_layout = '%T %H[%P] [%L] %S: '
+            message_layout = %T %H[%P] [%L] %S: %m
             newline = 1
         </mylog>
     </file>

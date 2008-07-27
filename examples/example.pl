@@ -6,9 +6,7 @@ use Log::Handler;
 my $log = Log::Handler->new();
 
 $log->config(config => 'example.conf');
+$log->config(config => 'example.yaml');
+$log->config(config => 'example.props');
 
-$log->debug('debug message');
 $log->info('info message');
-$log->warn('warn message');
-$log->crit('crit message');
-$log->fatal('fatal message');

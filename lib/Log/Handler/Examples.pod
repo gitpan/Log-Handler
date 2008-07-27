@@ -1,6 +1,48 @@
 =head1 NAME
 
-Log::Handler::Examples - Output examples.
+Log::Handler::Examples - Examples.
+
+=head1 ADD OUTPUTS
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add( dbi     => \%options );
+    $log->add( email   => \%options );
+    $log->add( file    => \%options );
+    $log->add( forward => \%options );
+    $log->add( screen  => \%options );
+    $log->add( socket  => \%options );
+
+This is the same like
+
+    $log->add( 'Log::Handler::Output::DBI'     => \%options );
+    $log->add( 'Log::Handler::Output::Email'   => \%options );
+    $log->add( 'Log::Handler::Output::File'    => \%options );
+    $log->add( 'Log::Handler::Output::Forward' => \%options );
+    $log->add( 'Log::Handler::Output::Screen'  => \%options );
+    $log->add( 'Log::Handler::Output::Socket'  => \%options );
+
+You can add output objects on this way as well:
+
+    use Log::Handler;
+    use Log::Handler::Output::File;
+
+    my %file_options = (
+        filename => 'file1.log',
+        mode     => 'append'
+    );
+
+    my %handler_options = (
+        maxlevel => 'info',
+        newline  => 1
+    );
+
+    my $log  = Log::Handler->new();
+    my $file = Log::Handler::Output::File->new( \%file_options );
+
+    $log->add( $file => \%handler_options );
 
 =head1 LOG VIA DBI
 
@@ -293,7 +335,7 @@ File: file.conf
             reopen         = 1
             mode           = append
             debug_mode     = 2
-            message_layout = "%T %H[%P] [%L] %S: "
+            message_layout = %T %H[%P] [%L] %S: %m
         </default>
 
         <common>

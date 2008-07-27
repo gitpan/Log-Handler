@@ -328,7 +328,7 @@ METHODS
 
         would cause an error!
 
-    "filter_caller"
+    filter_caller
         You can use this option to set a package name. Only messages from
         this packages will be logged.
 
@@ -694,7 +694,7 @@ METHODS
         $log->add(file => {
             filename        => 'file.log',
             mode            => 'append',
-            message_layout  => '%X %m %N',
+            message_layout  => '%X %m%N',
         });
 
     Or use it with "message_pattern":

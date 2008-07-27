@@ -28,7 +28,7 @@ The configuration will be splitted by dot.
     file.mylog.minlevel = warn
     file.mylog.filename = example.log
     file.mylog.newline = 1
-    file.mylog.message_layout = '%T %H[%P] [%L] %S: '
+    file.mylog.message_layout = %T %H[%P] [%L] %S: %m
 
 =head1 PREREQUISITES
     

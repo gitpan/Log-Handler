@@ -1,3 +1,7 @@
+0.45    Released at 2008-07-28.
+        - Fixed Plugin::YAML. It was created as Plugin::Config::YAML.
+        - Did some code/example improvements.
+
 0.45    Released at 2008-07-25.
         - Kicked $self->{caller_level} and replaced it with
           Log::Handler::CALLER_LEVEL. The reason is that if dump(),

@@ -44,7 +44,7 @@ $log->add(
 
 $log->add(
     forward => {
-        alias      => 'pattern',
+        alias      => 'message pattern',
         maxlevel   => 'error',
         minlevel   => 'error',
         newline    => 1,
@@ -54,25 +54,53 @@ $log->add(
     }
 );
 
-my $count = 100_000;
-my $time  = ();
+$log->add(
+    forward => {
+        alias      => 'filter caller',
+        maxlevel   => 'emerg',
+        minlevel   => 'emerg',
+        newline    => 1,
+        forward_to => \&buffer,
+        filter_caller => qr/^Foo::Bar\z/,
+    }
+);
 
-$time = timeit($count, sub { $log->info('foo') });
-print "$count loops for a complex output took:   ", timestr($time) ,"\n";
-undef $BUFFER;
+$log->add(
+    forward => {
+        alias      => 'filter message',
+        maxlevel   => 'alert',
+        minlevel   => 'alert',
+        newline    => 1,
+        forward_to => \&buffer,
+        filter_message => qr/bar/,
+    }
+);
 
-$time = timeit($count, sub { $log->notice('foo') });
-print "$count loops for a simple output took:    ", timestr($time) ,"\n";
-undef $BUFFER;
+my $count   = 100_000;
+my $message = 'foo bar baz';
 
-$time = timeit($count, sub { $log->debug('foo') }); # debug will not be logged
-print "$count loops for a suppressed output took:", timestr($time) ,"\n";
-undef $BUFFER;
+run("simple pattern output took",    $count, sub { $log->notice($message)  } );
+run("default pattern output took",   $count, sub { $log->warning($message) } );
+run("complex pattern output took",   $count, sub { $log->info($message)    } );
+run("message pattern output took",   $count, sub { $log->error($message)   } );
+run("suppressed output took",        $count, sub { $log->debug($message)   } );
+run("filtered caller output took",   $count, \&Foo::Bar::emerg               );
+run("suppressed caller output took", $count, \&Foo::Baz::emerg               );
+run("filterd messages output took",  $count, sub { $log->alert($message)   } );
 
-$time = timeit($count, sub { $log->warning('foo') });
-print "$count loops for a default output took:   ", timestr($time) ,"\n";
-undef $BUFFER;
+sub run {
+    my ($desc, $count, $bench) = @_;
+    my $time = timeit($count, $bench);
+    print sprintf('%-35s', $desc), ' : ', timestr($time), "\n";
+    undef $BUFFER;
+}
 
-$time = timeit($count, sub { $log->error('foo') });
-print "$count loops for a pattern output took:   ", timestr($time) ,"\n";
-undef $BUFFER;
+# Filter messages by caller
+package Foo::Bar;
+sub emerg { $log->emerg($message) }
+
+# Suppressed messages by caller
+package Foo::Baz;
+sub emerg { $log->emerg($message) }
+
+1;

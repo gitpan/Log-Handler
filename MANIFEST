@@ -4,6 +4,8 @@ examples/benchmark.pl
 examples/client.pl
 examples/example.conf
 examples/example.pl
+examples/example.props
+examples/example.yaml
 examples/layout.pl
 examples/runtime.pl
 examples/server.pl

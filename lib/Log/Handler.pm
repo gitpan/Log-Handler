@@ -335,7 +335,7 @@ NOTE that re-eval in regexes is not valid! Something like
 
 would cause an error!
 
-=item C<filter_caller>
+=item B<filter_caller>
 
 You can use this option to set a package name. Only messages from this
 packages will be logged.
@@ -729,7 +729,7 @@ Then you can use this pattern in your message layout:
     $log->add(file => {
         filename        => 'file.log',
         mode            => 'append',
-        message_layout  => '%X %m %N',
+        message_layout  => '%X %m%N',
     });
 
 Or use it with C<message_pattern>:
@@ -849,7 +849,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.45';
+our $VERSION = '0.46';
 our $ERRSTR  = '';
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -899,7 +899,7 @@ our %LEVEL_BY_STRING = (
 
 # to iterate from minlevel to maxlevel and
 # create an HoA with all active levels
-my @LEVEL_BY_NUM = qw(
+our @LEVEL_BY_NUM = qw(
     EMERGENCY
     ALERT
     CRITICAL
@@ -1017,7 +1017,7 @@ sub set_pattern {
     my $pattern = shift;
 
     # If no $name is set then we use $pattern as name
-    my ($name, $proto) = @_ == 2 ? @_ : ($pattern, @_);
+    my ($name, $code) = @_ == 2 ? @_ : ($pattern, @_);
 
     if ($pattern !~ /^%[a-ln-z]\z/i) {
         Carp::croak "invalid pattern '$pattern'";
@@ -1030,8 +1030,8 @@ sub set_pattern {
     # Structure:
     #   $self->{pattern}->{'%X'}->{name} = 'name-of-x';
     #   $self->{pattern}->{'%X'}->{code} = 'value-of-x';
-    $self->{pattern}->{$pattern}->{code} = $proto;
     $self->{pattern}->{$pattern}->{name} = $name;
+    $self->{pattern}->{$pattern}->{code} = $code;
 }
 
 sub output {
@@ -1095,8 +1095,8 @@ sub _shift_options {
         debug_trace
         die_on_errors
         filter
-        filter_message
         filter_caller
+        filter_message
         maxlevel
         message_layout
         message_pattern
@@ -1160,9 +1160,10 @@ sub _new_output {
 
 sub _validate_options {
     my ($self, @args) = @_;
-    my $pattern = $self->{pattern};
     my (%wanted, $is_fatal);
+    my $pattern = $self->{pattern};
 
+    # Option 'filter' is deprecated.
     if (exists $args[0]{filter}) {
         $args[0]{filter_message} = delete $args[0]{filter};
     }
@@ -1405,6 +1406,8 @@ sub _validate_filter {
             Carp::croak "missing condition for paramater 'filter'";
         }
 
+        # Remove all valid characters from the condition
+        # and check if invalid characters left.
         my $cond = $filter{condition};
         $cond =~ s/match\d+//g;
         $cond =~ s/[()&|!<>=\s\d]+//;
