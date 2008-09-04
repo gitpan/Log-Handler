@@ -324,7 +324,37 @@ only from a special namespace.
 
 =head1 CONFIG
 
-File: file.conf
+Examples with Config::General.
+
+    <file>
+        alias    = common
+        filename = example.log
+        maxlevel = info
+        minlevel = warn
+    </file>
+
+    <file>
+        alias    = error
+        filename = example-error.log
+        maxlevel = warn
+        minlevel = emergency
+    </file>
+
+    <file>
+        alias    = debug
+        filename = example-debug.log
+        maxlevel = debug
+        minlevel = debug
+    </file>
+
+    <screen>
+        log_to   = STDERR
+        dump     = 1
+        maxlevel = debug
+        minlevel = debug
+    </screen>
+
+Or
 
     <file>
         <default>

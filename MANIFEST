@@ -2,6 +2,7 @@ Build.PL
 ChangeLog
 examples/benchmark.pl
 examples/client.pl
+examples/config-examples.pl
 examples/example.conf
 examples/example.pl
 examples/example.props
@@ -11,7 +12,6 @@ examples/runtime.pl
 examples/server.pl
 INSTALL
 lib/Log/Handler.pm
-lib/Log/Handler/Changes.pod
 lib/Log/Handler/Config.pm
 lib/Log/Handler/Examples.pod
 lib/Log/Handler/Levels.pm

@@ -89,12 +89,15 @@ then you can create a own section for the logger:
 
     <logger>
         <file>
-            <mylog>
-                filename = file.log
-                minlevel = 0
-                maxlevel = 7
-            </mylog>
+            filename = file.log
+            minlevel = emerg
+            maxlevel = warning
         </file>
+
+        <screen>
+            minlevel = emerg
+            maxlevel = debug
+        </screen>
     </logger>
 
     <another_script_config>
@@ -122,13 +125,6 @@ section with
 
     $log->config( config => $config{logger} );
 
-Note that the section C<mylog> is used as an C<alias>. Later you access the
-output with
-
-    my $file_output = $log->output('mylog');
-
-    $file_output->log(message => 'your message');
-
 =back
 
 =head1 PLUGINS
@@ -139,88 +135,123 @@ output with
 
 =head1 EXAMPLES
 
-=head2 Config structure
+=head2 Config structures
 
-For each output it must exist an own section. Here a example as hash:
+A very simple configuration looks like:
 
-    my %config = (
-
-        # the configuration for a file
-
+    $log->config(config => {
         file => {
-            foo => {
+            alias    => 'file1',
+            filename => 'file1.log',
+            maxlevel => 'info',
+            minlevel => 'warn',
+        },
+        screen => {
+            alias    => 'screen1',
+            maxlevel => 'debug',
+            minlevel => 'emerg',
+        }
+    });
+
+Now, if you want to add another file-output then you can pass the outputs
+with a array reference:
+
+    $log->config(config => {
+        file => [
+            {
+                alias    => 'file1,
                 filename => 'file1.log',
                 maxlevel => 'info',
                 minlevel => 'warn',
             },
-            bar => {
+            {
+                alias    => 'file2',
                 filename => 'file2.log',
                 maxlevel => 'error',
                 minlevel => 'emergency',
             }
-        }
+        ],
+        screen => {
+            alias    => 'screen1',
+            maxlevel => 'debug',
+            minlevel => 'emerg',
+        },
+    });
 
-        # the configuration for email
+It's also possible to pass the outputs as a hash reference.
+The hash keys "file1" and "file2" will be used as aliases.
 
-        email => {
-            baz =>
-                host     => 'foo.example',
-                from     => 'me@me.example',
-                to       => 'you@foo.example',
-                maxlevel => 'error',
-                minlevel => 'emergency',
-            },
-
-            # and_so_on ...
-        }
-    );
-
-You can store your configuration to a file and loads it. There are different
-config plugins available.
-
-=head2 A default section
-
-It's possible to define a section called C<default> for each output. This
-options are used as default if this options are not set. Example:
-
-    my %config = (
-        # the configuration for a file
+    $log->config(config => {
         file => {
-            default => {
-                mode     => 'append',
-            },
-            foo => {
+            file1 => {
                 filename => 'file1.log',
                 maxlevel => 'info',
                 minlevel => 'warn',
             },
-            bar => {
+            file2 => {
                 filename => 'file2.log',
                 maxlevel => 'error',
                 minlevel => 'emergency',
-            },
-            baz => {
-                filename => 'file3.log',
-                maxlevel => 'debug',
-                minlevel => 'debug',
-                mode     => 'trunc',
-            },
+            }
         },
-        # the configuration for dbi
-        dbi => {
-            default => { ... }
-        }
-    );
+        screen => {
+            alias    => 'screen1',
+            maxlevel => 'debug',
+            minlevel => 'emerg',
+        },
+    });
 
-The option C<mode> is set to C<append> for the log file C<file1.log> and
-C<file2.log>. The configuration for C<file3.log> will be set to C<trunc>.
+If you pass the configuration with the alias as a hash key then
+it's also possible to pass a section called "section". The options
+from this section will be used as defaults.
+
+    $log->config(config => {
+        file => {
+            default => { # defaults for all file-outputs
+                newline => 1,
+                mode    => 'append',
+            },
+            file1 => {
+                filename => 'file1.log',
+                maxlevel => 'info',
+                minlevel => 'warn',
+            },
+            file2 => {
+                filename => 'file2.log',
+                maxlevel => 'error',
+                minlevel => 'emergency',
+            }
+        },
+        screen => {
+            alias    => 'screen1',
+            maxlevel => 'debug',
+            minlevel => 'emerg',
+        },
+    });
 
 =head2 Examples for the config plugins
 
 =head3 Config::General
 
     <file>
-        <mylog>
+        alias = file1
+        fileopen = 1
+        reopen = 1
+        permissions = 0640
+        maxlevel = info
+        minlevel = warn
+        mode = append
+        timeformat = %b %d %H:%M:%S
+        debug_mode = 2
+        filename = example.log
+        message_layout = '%T %H[%P] [%L] %S: %m'
+        newline = 1
+    </file>
+
+Or
+
+    <file>
+        <file1>
             fileopen = 1
             reopen = 1
             permissions = 0640
@@ -232,14 +263,31 @@ C<file2.log>. The configuration for C<file3.log> will be set to C<trunc>.
             filename = example.log
             message_layout = '%T %H[%P] [%L] %S: %m'
             newline = 1
-        </mylog>
+        </file1>
     </file>
 
 =head3 YAML
 
     ---
     file:
-      mylog:
+      alias: file1
+      debug_mode: 2
+      filename: example.log
+      fileopen: 1
+      maxlevel: info
+      minlevel: warn
+      mode: append
+      newline: 1
+      permissions: 0640
+      message_layout: '%T %H[%P] [%L] %S: %m'
+      reopen: 1
+      timeformat: '%b %d %H:%M:%S'
+
+Or
+
+    ---
+    file:
+      file1:
         debug_mode: 2
         filename: example.log
         fileopen: 1
@@ -254,163 +302,33 @@ C<file2.log>. The configuration for C<file3.log> will be set to C<trunc>.
 
 =head3 Config::Properties
 
-    file.mylog.reopen = 1
-    file.mylog.fileopen = 1
-    file.mylog.maxlevel = info
-    file.mylog.minlevel = warn
-    file.mylog.permissions = 0640
-    file.mylog.mode = append
-    file.mylog.timeformat = %b %d %H:%M:%S
-    file.mylog.debug_mode = 2
-    file.mylog.filename = example.log
-    file.mylog.newline = 1
-    file.mylog.message_layout = '%T %H[%P] [%L] %S: %m'
+    file.alias = file1
+    file.reopen = 1
+    file.fileopen = 1
+    file.maxlevel = info
+    file.minlevel = warn
+    file.permissions = 0640
+    file.mode = append
+    file.timeformat = %b %d %H:%M:%S
+    file.debug_mode = 2
+    file.filename = example.log
+    file.newline = 1
+    file.message_layout = '%T %H[%P] [%L] %S: %m'
 
-=head2 Load the config from a certain section
+Or
 
-The config (Config::General)
-
-    <output>
-        <file>
-            <default>
-                newline        = 1
-                permissions    = 0640
-                timeformat     = %b %d %H:%M:%S
-                fileopen       = 1
-                reopen         = 1
-                mode           = append
-                message_layout = "%T %H[%P] [%L] %S: %m"
-                debug_mode     = 2
-            </default>
-
-            <common>
-                filename = example.log
-                maxlevel = info
-                minlevel = warn
-            </common>
-
-            <error>
-                filename = example-error.log
-                maxlevel = warn
-                minlevel = emergency
-            </error>
-
-            <debug>
-                filename = example-debug.log
-                maxlevel = debug
-                minlevel = debug
-            </debug>
-        </file>
-    </output>
-
-Load the config
-
-    $log->config(
-        config  => 'file.conf',
-        section => 'output',
-    );
-
-=head2 Simple configuration without a certain section
-
-The config (Config::General)
-
-    <file>
-        <default>
-            newline        = 1
-            permissions    = 0640
-            timeformat     = %b %d %H:%M:%S
-            fileopen       = 1
-            reopen         = 1
-            mode           = append
-            message_layout = "%T %H[%P] [%L] %S: $m"
-            debug_mode     = 2
-        </default>
-
-        <common>
-            filename = example.log
-            maxlevel = info
-            minlevel = warn
-        </common>
-
-        <error>
-            filename = example-error.log
-            maxlevel = warn
-            minlevel = emergency
-        </error>
-
-        <debug>
-            filename = example-debug.log
-            maxlevel = debug
-            minlevel = debug
-        </debug>
-    </file>
-
-Load the config
-
-    $log->config(config => 'file.conf');
-
-=head2 The config as hash
-
-    $log->config(
-        config => {
-            file => {
-                default => {
-                    newline        => 1,
-                    permissions    => '0640',
-                    timeformat     => '%b %d %H:%M:%S',
-                    fileopen       => 1,
-                    reopen         => 1,
-                    mode           => 'append',
-                    message_layout => '%T %H[%P] [%L] %S: %m',
-                    debug_mode     => 2,
-                },
-                common => {
-                    filename => 'example.log',
-                    maxlevel => 'info',
-                    minlevel => 'warn',
-                },
-                error => {
-                    filename => 'example-error.log',
-                    maxlevel => 'warn',
-                    minlevel => 'emergency',
-                },
-                debug => {
-                    filename => 'example-debug.log',
-                    maxlevel => 'debug',
-                    minlevel => 'debug',
-                }
-            }
-        }
-    );
-
-=head2 Configuration for different outputs
-
-    <output>
-        <file>
-            <default>
-                newline        = 1
-                permissions    = 0640
-                timeformat     = %b %d %H:%M:%S
-                fileopen       = 1
-                reopen         = 1
-                mode           = append
-                message_layout = "%T %H[%P] [%L] %S: %m"
-                debug_mode     = 2
-            </default>
-
-            <common>
-                filename = example.log
-                maxlevel = info
-                minlevel = warn
-            </common>
-
-            <error>
-                filename = example-error.log
-                maxlevel = warn
-                minlevel = emergency
-            </error>
-        </file>
-    </output>
+    file.file1.alias = file1
+    file.file1.reopen = 1
+    file.file1.fileopen = 1
+    file.file1.maxlevel = info
+    file.file1.minlevel = warn
+    file.file1.permissions = 0640
+    file.file1.mode = append
+    file.file1.timeformat = %b %d %H:%M:%S
+    file.file1.debug_mode = 2
+    file.file1.filename = example.log
+    file.file1.newline = 1
+    file.file1.message_layout = '%T %H[%P] [%L] %S: %m'
 
 =head1 PREREQUISITES
 
@@ -445,7 +363,7 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 
 use Carp;
 use File::Spec;
@@ -453,61 +371,99 @@ use Params::Validate;
 use UNIVERSAL::require;
 
 sub config {
-    my $class  = shift;
-    my $params = $class->_validate(@_);
-    my $plugin = $params->{plugin};
-    my ($config, %all_configs);
+    my $self   = shift;
+    my $params = $self->_validate(@_);
+    my $config = $self->_get_config($params);
 
-    if (ref($params->{config})) {
-        $config = $params->{config};
-    } elsif ($params->{config}) {
-        $plugin->require or Carp::croak "unable to load plugin '$plugin'";
-        $config = $plugin->get_config($params->{config});
+    if (ref($config) ne 'HASH') {
+        croak "Bad config structure!";
     }
 
-    $class->_is_hash('main', $config);
+    # Structure:
+    #   $log_config{file} = [ \%a, \%b, \%c ]
+    #   $log_config{dbi}  = [ \%a, \%b, \%c ]
+    my %log_config;
 
-    if ($params->{section}) {
-        $class->_is_hash($params->{section}, $config->{ $params->{section} });
-        $config = $config->{ $params->{section} };
-    }
+    while (my ($type, $output) = each %$config) {
+        my $ref = ref($output);
 
-    while ( my ($type, $type_config) = each %$config ) {
-        $class->_is_hash($type, $type_config);
-        my %default = ();
-
-        if ($type_config->{default}) {
-            $class->_is_hash('default', $type_config->{default});
-            %default = (%{ $type_config->{default} });
-        }
-
-        # Structure:
-        #   $all_configs{file} = [ \%a, \%b, \%c ]
-        #   $all_configs{dbi}  = [ \%a, \%b, \%c ]
-
-        while ( my ($name, $log_config) = each %$type_config ) {
-            $class->_is_hash($name, $log_config);
-            next if $name eq 'default';
-            my %new_config = (%default, %$log_config, alias => $name);
-            push @{$all_configs{$type}}, \%new_config;
+        if ($ref eq 'HASH') {
+            push @{$log_config{$type}}, $self->_get_hash_config($output);
+        } elsif ($ref eq 'ARRAY') {
+            push @{$log_config{$type}}, $self->_get_array_config($output);
+        } else {
+            croak "Bad config structure for '$type'";
         }
     }
 
-    return \%all_configs;
+    return \%log_config;
 }
 
 #
 # private stuff
 #
 
+sub _get_config {
+    my ($self, $params) = @_;
+    my $config = ();
+    my $plugin = $params->{plugin};
+
+    if (ref($params->{config})) {
+        $config = $params->{config};
+    } elsif ($params->{config}) {
+        $plugin->require or croak "Unable to load plugin '$plugin'";
+        $config = $plugin->get_config($params->{config});
+    }
+
+    if ($params->{section}) {
+        return $config->{ $params->{section} };
+    }
+
+    return $config;
+}
+
+sub _get_hash_config {
+    my ($self, $config) = @_;
+    my @config  = ();
+    my %default = ();
+
+    if (exists $config->{default}) {
+        %default = %{ delete $config->{default} };
+    }
+
+    while (my ($alias, $param) = each %$config) {
+        if (ref($param) ne 'HASH') {
+            push @config, $config;
+            last;
+        }
+        $param->{alias} = $alias;
+        my %config = (%default, %$param);
+        push @config, \%config;
+    }
+
+    return @config;
+}
+
+sub _get_array_config {
+    my ($self, $config) = @_;
+    my @config = ();
+
+    foreach my $params (@$config) {
+        push @config, $params;
+    }
+
+    return @config;
+}
+
 sub _validate {
-    my $class = shift;
+    my $self = shift;
 
     my %options = Params::Validate::validate(@_, {
         config => {
             type => Params::Validate::SCALAR
                   | Params::Validate::HASHREF
                   | Params::Validate::ARRAYREF,
+            optional => 1,
         },
         plugin => {
             type => Params::Validate::SCALAR,
@@ -519,12 +475,14 @@ sub _validate {
         },
     });
 
-    if (ref($options{config}) eq 'ARRAY') {
-        $options{config} = File::Spec->catfile(@{$options{config}});
-    }
+    my $ref = ref($options{config});
 
-    if (!$options{plugin}) {
-        if (!ref($options{config})) {
+    if ($ref ne 'HASH') {
+        if ($ref eq 'ARRAY') {
+            $options{config} = File::Spec->catfile(@{$options{config}});
+        }
+
+        if (!$options{plugin}) {
             if ($options{config} =~ /\.ya{0,1}ml\z/) {
                 $options{plugin} = 'Log::Handler::Plugin::YAML';
             } elsif ($options{config} =~ /\.(?:props|jc(?:onf|fg))\z/) {
@@ -536,13 +494,6 @@ sub _validate {
     }
 
     return \%options;
-}
-
-sub _is_hash {
-    my ($self, $name, $ref) = @_;
-    if (ref($ref) ne 'HASH') {
-        Carp::croak "bad config structure! Config name '$name' missplaced";
-    }
 }
 
 1;

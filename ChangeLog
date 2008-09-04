@@ -1,4 +1,11 @@
-0.45    Released at 2008-07-28.
+0.47    Released at 2008-09-04.
+        - Add new config features. Now it's possilbe to add the
+          configuration for the outputs as a array reference.
+        - Add method log() to log with the level as first argument:
+          log($level=>$msg).
+        - Kicked Changes.pm. Not needed any more.
+
+0.46    Released at 2008-07-28.
         - Fixed Plugin::YAML. It was created as Plugin::Config::YAML.
         - Did some code/example improvements.
 

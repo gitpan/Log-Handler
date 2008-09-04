@@ -1,7 +1,6 @@
 ---
 screen:
-  screen3:
-    maxlevel: debug
-    minlevel: emerg
-    newline: 1
-    message_layout: %T %H[%P] [%L] YAML - %m
+  maxlevel: debug
+  minlevel: emerg
+  newline: 1
+  message_layout: %T %H[%P] [%L] YAML - %m

@@ -601,7 +601,7 @@ Both calls would log - if level INFO is active:
 
 =item B<is_notice()>
 
-=item B<is_warning()>
+=item B<is_warning()>, B<is_warn()>
 
 =item B<is_error()>, B<is_err()>
 
@@ -613,7 +613,7 @@ Both calls would log - if level INFO is active:
 
 =back
 
-These thirteen methods could be very useful if you want to kwow if the current
+These twelve methods could be very useful if you want to kwow if the current
 level would log the message. All methods returns TRUE if the current set
 of C<minlevel> and C<maxlevel> would log the message and FALSE if not.
 
@@ -849,7 +849,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.46';
+our $VERSION = '0.47';
 our $ERRSTR  = '';
 
 # $TRACE and $CALLER_LEVEL are both used as global

@@ -574,13 +574,13 @@ METHODS
     is_debug()
     is_info()
     is_notice()
-    is_warning()
+    is_warning(), is_warn()
     is_error(), is_err()
     is_critical(), is_crit()
     is_alert()
     is_emergency(), is_emerg()
 
-    These thirteen methods could be very useful if you want to kwow if the
+    These twelve methods could be very useful if you want to kwow if the
     current level would log the message. All methods returns TRUE if the
     current set of "minlevel" and "maxlevel" would log the message and FALSE
     if not.

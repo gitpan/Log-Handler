@@ -116,6 +116,23 @@ as first argument:
 
     $log->die(fatal => 'an emergency error here');
 
+=item B<log()>
+
+With this method it's possible to log messages with the log level as
+first argument:
+
+    $log->log(info => 'an info message');
+
+Is the same like
+
+    $log->info('an info message');
+
+and
+
+    $log->log('an info message');
+
+If you log without a level then the default level is C<info>.
+
 =back
 
 =head1 PREREQUISITES
@@ -158,7 +175,7 @@ use warnings;
 use Carp;
 use Data::Dumper;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 my %LEVELS_BY_ROUTINE = (
     debug     => 'DEBUG',
@@ -219,6 +236,16 @@ while ( my ($routine, $level) = each %LEVELS_BY_ROUTINE ) {
         };
 
     } # end "no strict 'refs'" block
+}
+
+sub log {
+    my $self  = shift;
+    my $level = @_ > 1 ? lc(shift) : 'info';
+    if (!exists $LEVELS_BY_ROUTINE{$level}) {
+        $level = 'info';
+    }
+    local $Log::Handler::CALLER_LEVEL = 1;
+    return $self->$level(@_);
 }
 
 sub trace {
