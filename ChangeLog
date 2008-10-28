@@ -1,3 +1,11 @@
+0.48    Released at 2008-10-28.
+        - Fixed a bug in Email.pm - no error message if a email
+          couldn't be send.
+        - Added Email::Date to send the date with a email.
+        - EMAIL: if the key $message->{level} exists then the level is
+          used in the subject: "$level: $subject". The level can
+          passed with the option message_pattern.
+
 0.47    Released at 2008-09-04.
         - Add new config features. Now it's possilbe to add the
           configuration for the outputs as a array reference.

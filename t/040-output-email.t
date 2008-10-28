@@ -8,6 +8,11 @@ BEGIN {
         plan skip_all => "No Net::SMTP installed";
         exit(0);
     } 
+    eval "use Email::Date;";
+    if ($@) {
+        plan skip_all => "No Email::Date installed";
+        exit(0);
+    } 
 };
 
 plan tests => 3;
@@ -19,7 +24,7 @@ my $log = Log::Handler::Output::Email->new(
     host     => [ 'bloonix.de' ],
     hello    => 'EHLO bloonix.de',
     timeout  => 60,
-    debug    => 1,
+    debug    => 0,
     from     => 'jschulz.cpan@bloonix.de',
     to       => 'jschulz.cpan@bloonix.de',
     subject  => 'Log::Handler::Output::Email test',
@@ -40,7 +45,7 @@ my $all_lines   = 0;
 
 foreach my $line ( @{$log->{MESSAGE_BUFFER}} ) {
     ++$all_lines;
-    next unless $line =~ /^test \d+$/;
+    next unless $line->{message} =~ /^test \d+$/;
     ++$match_lines;
 }
 

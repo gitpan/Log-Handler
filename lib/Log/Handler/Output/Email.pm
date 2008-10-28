@@ -22,7 +22,7 @@ Log::Handler::Output::Email - Log messages as email (via Net::SMTP).
 =head1 DESCRIPTION
 
 With this output module it's possible to log messages via email and it used
-Net::SMTP to do it.
+Net::SMTP to do it. The date for the email is generated with C<Email::Date::format_date>.
 
 Net::SMTP is from Graham Barr and it does it's job very well.
 
@@ -129,6 +129,7 @@ C<DESTROY> is defined and called C<flush()>.
 =head1 PREREQUISITES
 
     Carp
+    Email::Date
     Net::SMTP
     Params::Validate
 
@@ -162,8 +163,9 @@ use warnings;
 use Net::SMTP;
 use Params::Validate;
 use Carp;
+use Email::Date;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our $ERRSTR  = '';
 our $TEST    =  0; # is needed to disable flush() for tests
 
@@ -178,11 +180,11 @@ sub log {
     my $message = @_ > 1 ? {@_} : shift;
 
     if ($self->{buffer} == 0) {
-        $self->sendmail($message);
+        return $self->sendmail($message);
     }
 
     if (@{$self->{MESSAGE_BUFFER}} < $self->{buffer}) {
-        push @{$self->{MESSAGE_BUFFER}}, $message->{message};
+        push @{$self->{MESSAGE_BUFFER}}, $message;
     }
 
     if (@{$self->{MESSAGE_BUFFER}} == $self->{buffer}) {
@@ -193,23 +195,35 @@ sub log {
 }
 
 sub flush {
-    my $self = shift;
+    my $self    = shift;
     my $message = ();
+    my $string  = '';
 
-    return 1 if $TEST || !@{$self->{MESSAGE_BUFFER}};
-
-    while (my $line = shift @{$self->{MESSAGE_BUFFER}}) {
-        $message .= $line;
+    if ($TEST || !@{$self->{MESSAGE_BUFFER}}) {
+        return 1;
     }
 
-    return $self->sendmail(message => $message);
+    # Safe the last message to use the level for the subject
+    $message = pop @{$self->{MESSAGE_BUFFER}};
+
+    while (my $buffer = shift @{$self->{MESSAGE_BUFFER}}) {
+        $string .= $buffer->{message};
+    }
+
+    $message->{message} = $string . $message->{message};
+    return $self->sendmail($message);
 }
 
 sub sendmail {
     my $self    = shift;
     my $message = @_ > 1 ? {@_} : shift;
     my $subject = $message->{subject} || $self->{subject};
+    my $date    = Email::Date::format_date();
     my $smtp    = ();
+
+    if ($message->{level}) {
+        $subject = "$message->{level}: $subject";
+    }
 
     foreach my $host (@{$self->{host}}) {
         $smtp = Net::SMTP->new(
@@ -222,7 +236,7 @@ sub sendmail {
     }
 
     if (!$smtp) {
-        return $self->_raise_error("smtp error: unable to connect to any host");
+        return $self->_raise_error("smtp error: unable to connect to ".join(', ', @{$self->{host}}));
     }
 
     my $success = 0;
@@ -232,11 +246,12 @@ sub sendmail {
     $success++ if $smtp->datasend("From: $self->{from}\n");
     $success++ if $smtp->datasend("To: $self->{to}\n");
     $success++ if $smtp->datasend("Subject: $subject\n");
+    $success++ if $smtp->datasend("Date: $date\n");
     $success++ if $smtp->datasend($message->{message}."\n");
     $success++ if $smtp->dataend();
     $success++ if $smtp->quit();
 
-    if ($success != 9) {
+    if ($success != 10) {
         return $self->_raise_error("smtp error($success): unable to send mail to $self->{to}");
     }
 

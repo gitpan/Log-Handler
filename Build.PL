@@ -15,6 +15,7 @@ my $build = Module::Build->new(
         'DBI'                => 0,
         'IO::Socket'         => 0,
         'Net::SMTP'          => 0,
+        'Email::Date'        => 0,
         'YAML'               => 0,
     },
     requires => {

@@ -16,6 +16,7 @@ my %LEVELS   = (
     EMERGENCY =>  2,
     FATAL     =>  1,
 );
+
 my @LEVELS = (qw/
     debug
     info

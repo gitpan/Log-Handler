@@ -4,7 +4,7 @@ To install the module execute the following steps:
    make
    make test
 
-"make test" do some tests. If you get failed messages then you shouldn't install the module.
+"make test" do some tests. If you get error messages then you shouldn't install the module.
 Otherwise your last step is:
 
    make install
