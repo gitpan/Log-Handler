@@ -46,9 +46,9 @@ while ( 1 ) {
     $file->log(message => "waiting for next connection\n");
 
     while (my $request = $sock->accept) {
-        my $ipaddr = sprintf('%-15s', $request->peerhost);
         while (my $message = <$request>) {
-            $file->log(message => "$ipaddr - $message");
+            $file->log(message => $message);
         }
     }
 }
+

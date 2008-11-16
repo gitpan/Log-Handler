@@ -36,12 +36,17 @@ $log->add(
         peerport => 44444,
         newline  => 1,
         maxlevel => 'info',
-        die_on_errors => 0,
+        die_on_errors  => 0,
+        message_layout => '%T [%L] %U %H %S[%P] %m',
     }
 );
+
+my $err = Log::Handler->new();
+$err->add(screen => { newline => 1 });
 
 while ( 1 ) {
     $log->info('test')
         or warn "unable to send message: ", $log->errstr;
     sleep 1;
 }
+

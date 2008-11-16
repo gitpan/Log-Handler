@@ -9,6 +9,7 @@ examples/example.props
 examples/example.yaml
 examples/layout.pl
 examples/runtime.pl
+examples/server.log
 examples/server.pl
 INSTALL
 lib/Log/Handler.pm
@@ -49,5 +50,6 @@ t/030-output-file.t
 t/040-output-email.t
 t/050-output-dbi.t
 t/060-output-socket.t
+t/090-test-undef.t
 t/100-config.t
 t/200-backward-compatibility.t

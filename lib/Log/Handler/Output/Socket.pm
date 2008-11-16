@@ -43,7 +43,7 @@ The protocol you wish to use. Default is TCP.
 
 =item B<timeout>
 
-The timeout to send message. The default is 1.
+The timeout to send message. The default is 5 seconds.
 
 =item B<persistent> and B<reconnect>
 
@@ -148,7 +148,7 @@ use Params::Validate;
 use IO::Socket::INET;
 use Data::Dumper;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 our $ERRSTR  = '';
 
 sub new {
@@ -178,14 +178,18 @@ sub log {
             or return undef;
     }
 
-    local $SIG{PIPE} = 'IGNORE';
-    if ( ! $socket->send($message->{message}) ) {
+    # If the peer is done then send() croaks
+    eval { $socket->send($message->{message}) };
+
+    if ($@) {
         if ($self->{persistent} && $self->{reconnect}) {
             $self->connect or return undef;
-            $socket->send($message->{message})
-                or return $self->_raise_error("Lost connection! Reconnect failed: $!");
+            eval { $socket->send($message->{message}) };
+            if ($@) {
+                return $self->_raise_error("something curious happends: $@");
+            }
         } else {
-            return $self->_raise_error("unable to send message: $!");
+            return $self->_raise_error("unable to send message: $@");
         }
     }
 

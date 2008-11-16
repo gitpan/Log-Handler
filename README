@@ -132,6 +132,8 @@ METHODS
             %D   Date (option dateformat)
             %P   PID
             %H   Hostname
+            %U   User name
+            %G   Group name
             %N   Newline
             %S   Program name
             %C   Caller - filename and line number
@@ -140,7 +142,7 @@ METHODS
             %l   Caller - line number
             %s   Caller - subroutine name
             %r   Runtime in seconds since program start
-            %t   Time measurement - replaced with the time since the last call of $level
+            %t   Time measurement - replaced with the time since the last call of $log->$level
             %m   Message
             %%   Procent
 
@@ -174,8 +176,8 @@ METHODS
     message_pattern
         This option is just useful if you want to forward messages to output
         modules that needs the parts of a message as a hash reference - as
-        example Log::Handler::Output::Forward, Log::Handler::Output::DBI or
-        Log::Handler::Output::Screen.
+        example Log::Handler::Output::Forward, Log::Handler::Output::DBI,
+        Log::Handler::Output::Email or Log::Handler::Output::Screen.
 
         The option expects a list of placeholders:
 
@@ -184,7 +186,7 @@ METHODS
 
             # or as a string
             message_pattern => '%T %L %H %m'
- 
+
         The patterns will be replaced with real names as hash keys.
 
             %L   level
@@ -192,6 +194,8 @@ METHODS
             %D   date
             %P   pid
             %H   hostname
+            %U   user
+            %G   group
             %N   newline
             %r   runtime
             %C   caller
@@ -237,16 +241,16 @@ METHODS
 
         We add a output with no priority
 
-            $log->add(file => { filename => 'file.log' });
+            $log->add(file => { filename => 'file1.log' });
 
         This output gets the priority of 10. Now we add another output
 
-            $log->add(file => { filename => 'file.log' });
+            $log->add(file => { filename => 'file2.log' });
 
         This output gets the priority of 11... and so on.
 
         Messages would be logged at first to the output with the priority of
-        10 and to the output with the priority of 11. Now you can add
+        10 and then to the output with the priority of 11. Now you can add
         another output and set the priority to 1.
 
             $log->add(screen => { dump => 1, priority => 1 });
@@ -405,7 +409,7 @@ METHODS
 
         Output:
 
-            Apr 26 12:54:11 [WARNING] 
+            Apr 26 12:54:11 [WARNING]
                CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
                CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
                CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
@@ -419,7 +423,7 @@ METHODS
 
         Output:
 
-           Apr 26 12:52:17 [DEBUG] 
+           Apr 26 12:52:17 [DEBUG]
               CALL(4):
                  package     main
                  filename    ./trace.pl

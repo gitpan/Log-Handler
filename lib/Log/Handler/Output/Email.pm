@@ -105,8 +105,21 @@ Example:
 
     $email->log(
         message => 'this message will be mailed',
-        subject => 'non default subject',
+        subject => 'your subject',
+        level   => 'INFO',
     );
+
+If you pass C<"level => 'INFO'"> then the level is placed into the subject:
+
+    INFO: your subject
+
+As example you can use message_pattern from L<Log::Handler> to pass the level:
+
+    message_pattern => '%L'
+
+then the level is placed into the subject.
+
+If you use a buffer higher than 0 then the level from the last message is used.
 
 =head2 flush()
 

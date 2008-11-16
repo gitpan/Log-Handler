@@ -61,6 +61,10 @@ sub get_pattern {
                     code => "\n" },
         '%S'  => {  name => 'progname',
                     code => $progname },
+        '%U'  => {  name => 'user',
+                    code => \&_get_user },
+        '%G'  => {  name => 'group',
+                    code => \&_get_group },
         '%C'  => {  name => 'caller',
                     code => \&_get_caller },
         '%r'  => {  name => 'runtime',
@@ -96,6 +100,8 @@ sub _get_c_file  { (caller(2+$Log::Handler::CALLER_LEVEL))[1] }
 sub _get_c_line  { (caller(2+$Log::Handler::CALLER_LEVEL))[2] }
 sub _get_c_sub   { (caller(2+$Log::Handler::CALLER_LEVEL))[3] }
 sub _get_runtime { return sprintf('%.6f', Time::HiRes::gettimeofday - START_TIME) }
+sub _get_user    { getpwuid($<) || $<     }
+sub _get_group   { getgrgid($(+0) || $(+0 }
 
 sub _get_hires {
     my $self = shift;

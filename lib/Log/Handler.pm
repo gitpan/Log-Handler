@@ -140,6 +140,8 @@ placeholders in C<printf()> style. The available placeholders are:
     %D   Date (option dateformat)
     %P   PID
     %H   Hostname
+    %U   User name
+    %G   Group name
     %N   Newline
     %S   Program name
     %C   Caller - filename and line number
@@ -148,7 +150,7 @@ placeholders in C<printf()> style. The available placeholders are:
     %l   Caller - line number
     %s   Caller - subroutine name
     %r   Runtime in seconds since program start
-    %t   Time measurement - replaced with the time since the last call of $level
+    %t   Time measurement - replaced with the time since the last call of $log->$level
     %m   Message
     %%   Procent
 
@@ -182,8 +184,8 @@ You can create your own placeholders with the method C<set_pattern()>.
 
 This option is just useful if you want to forward messages to output
 modules that needs the parts of a message as a hash reference - as
-example L<Log::Handler::Output::Forward>, L<Log::Handler::Output::DBI>
-or L<Log::Handler::Output::Screen>.
+example L<Log::Handler::Output::Forward>, L<Log::Handler::Output::DBI>,
+L<Log::Handler::Output::Email> or L<Log::Handler::Output::Screen>.
 
 The option expects a list of placeholders:
 
@@ -192,7 +194,7 @@ The option expects a list of placeholders:
 
     # or as a string
     message_pattern => '%T %L %H %m'
- 
+
 The patterns will be replaced with real names as hash keys.
 
     %L   level
@@ -200,6 +202,8 @@ The patterns will be replaced with real names as hash keys.
     %D   date
     %P   pid
     %H   hostname
+    %U   user
+    %G   group
     %N   newline
     %r   runtime
     %C   caller
@@ -245,16 +249,16 @@ increased +1 with each output. Example:
 
 We add a output with no priority
 
-    $log->add(file => { filename => 'file.log' });
+    $log->add(file => { filename => 'file1.log' });
 
 This output gets the priority of 10. Now we add another output
 
-    $log->add(file => { filename => 'file.log' });
+    $log->add(file => { filename => 'file2.log' });
 
 This output gets the priority of 11... and so on.
 
-Messages would be logged at first to the output with the priority of 10 and to
-the output with the priority of 11. Now you can add another output and set the
+Messages would be logged at first to the output with the priority of 10 and then
+to the output with the priority of 11. Now you can add another output and set the
 priority to 1.
 
     $log->add(screen => { dump => 1, priority => 1 });
@@ -414,7 +418,7 @@ The line mode looks like this:
 
 Output:
 
-    Apr 26 12:54:11 [WARNING] 
+    Apr 26 12:54:11 [WARNING]
        CALL(4): package(main) filename(./trace.pl) line(15) subroutine(main::test2) hasargs(0)
        CALL(3): package(main) filename(./trace.pl) line(13) subroutine(main::test1) hasargs(0)
        CALL(2): package(main) filename(./trace.pl) line(12) subroutine(Log::Handler::__ANON__) hasargs(1)
@@ -427,7 +431,7 @@ The same code example but the debugger in block mode would looks like this:
 
 Output:
 
-   Apr 26 12:52:17 [DEBUG] 
+   Apr 26 12:52:17 [DEBUG]
       CALL(4):
          package     main
          filename    ./trace.pl
@@ -625,7 +629,7 @@ For a full list take a look into the documentation of L<Log::Handler::Levels>.
 
 =head2 output()
 
-Call C<output($alias)> to get the output object that you added with 
+Call C<output($alias)> to get the output object that you added with
 the option C<alias>.
 
 It's possible to access a output directly:
@@ -849,7 +853,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.48';
+our $VERSION = '0.49';
 our $ERRSTR  = '';
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -858,8 +862,7 @@ our $ERRSTR  = '';
 #
 # $TRACE is used to turn on/off tracing.
 #
-# $CALLER_LEVEL is used to determine the current
-# caller level
+# $CALLER_LEVEL is used to determine the current caller level
 our $CALLER_LEVEL = 0;
 our $TRACE        = 0;
 
@@ -881,19 +884,19 @@ use constant LEVEL_RX => qr/^(?:
 )\z/x;
 
 # to convert minlevel and maxlevel to a number
-our %LEVEL_BY_STRING = ( 
-    DEBUG     =>  7,  
-    INFO      =>  6,  
-    NOTICE    =>  5,  
-    WARNING   =>  4,  
-    WARN      =>  4,  
-    ERROR     =>  3,  
-    ERR       =>  3,  
-    CRITICAL  =>  2,  
-    CRIT      =>  2,  
-    ALERT     =>  1,  
-    EMERGENCY =>  0,  
-    EMERG     =>  0,  
+our %LEVEL_BY_STRING = (
+    DEBUG     =>  7,
+    INFO      =>  6,
+    NOTICE    =>  5,
+    WARNING   =>  4,
+    WARN      =>  4,
+    ERROR     =>  3,
+    ERR       =>  3,
+    CRITICAL  =>  2,
+    CRIT      =>  2,
+    ALERT     =>  1,
+    EMERGENCY =>  0,
+    EMERG     =>  0,
     FATAL     =>  0,
 );
 
@@ -1307,7 +1310,7 @@ sub _validate_options {
         #
         #   sub {
         #       my ($w, $m) = @_; # %wanted pattern, %message
-        #       $m->{'message'} = 
+        #       $m->{'message'} =
         #           $w->{'time'}
         #           . ' ['
         #           . $w->{'level'}

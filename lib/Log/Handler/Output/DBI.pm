@@ -125,7 +125,7 @@ With this option you have to set the values for the insert.
         values => [ qw/%level %time %date %pid %hostname %progname %message/ ],
 
 The placeholders are identical with the pattern names that you have to pass
-with the option C<message_pattern>.
+with the option C<message_pattern> from L<Log::Handler>.
 
     %L   level
     %T   time

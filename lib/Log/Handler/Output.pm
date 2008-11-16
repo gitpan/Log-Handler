@@ -43,7 +43,7 @@ use Carp;
 use UNIVERSAL;
 use Devel::Backtrace;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 our $ERRSTR  = '';
 
 sub new {
@@ -56,7 +56,7 @@ sub new {
 sub log {
     my $self    = shift;
     my $level   = shift;
-    my $wanted  = {message=>join(' ', @_)||''};
+    my $wanted  = {message=>join(' ', grep defined, @_)};
     my $output  = $self->{output};
     my $pattern = $self->{pattern};
     my $message = { };
