@@ -58,12 +58,15 @@ sub log {
     my $level   = shift;
     my $wanted  = {message=>join(' ', grep defined, @_)};
     my $output  = $self->{output};
-    my $pattern = $self->{pattern};
     my $message = { };
+    my $caller  = ();
 
     if ($self->{filter_caller}) {
-        my $caller = (caller(1+$Log::Handler::CALLER_LEVEL))[0];
+        $caller = (caller(1+$Log::Handler::CALLER_LEVEL))[0];
         return 1 if $caller !~ $self->{filter_caller};
+    } elsif ($self->{except_caller}) {
+        $caller = (caller(1+$Log::Handler::CALLER_LEVEL))[0];
+        return 1 if $caller =~ $self->{except_caller};
     }
 
     # The patterns must be generated for each output. The reason

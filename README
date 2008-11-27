@@ -14,7 +14,27 @@ SYNOPSIS
             newline  => 1,
         });
 
-        $log->warning("a warinng here");
+        $log->warning("warn message");
+
+    Or
+
+        # init myapp logger with accessor LOG
+        package MyApp;
+        use Log::Handler myapp => 'LOG';
+
+        LOG->add(screen => { maxlevel => 'info' });
+        LOG->info("info message");
+
+        # import myapp logger with accessor LOG
+        package MyApp::Foo;
+        use Log::Handler myapp => 'LOG';
+        LOG->info("info message from MyApp::Foo");
+
+        # get myapp logger with get_logger()
+        package MyApp::Bar;
+        use Log::Handler;
+        my $log = Log::Handler->get_logger('myapp');
+        $log->info("info message from MyApp::Bar");
 
 DESCRIPTION
     The "Log::Handler" is a object oriented handler for logging, tracing and
@@ -343,9 +363,9 @@ METHODS
             $log->add(screen => {
                 maxlevel => 'info',
                 newline  => 1,
-                filter_caller  => qr/^Foo::Bar$/,
+                filter_caller  => qr/^Foo::Bar\z/,
                 # or
-                # filter_caller => '^Foo::Bar$',
+                # filter_caller => '^Foo::Bar\z',
             });
 
             package Foo::Bar;
@@ -357,6 +377,13 @@ METHODS
             1;
 
         This would only log the message from the package "Foo::Bar".
+
+    except_caller
+        This options is just the opposite of "filter_caller".
+
+        If you want to log messages from all callers but "Foo::Bar":
+
+            except_caller => qr/^Foo::Bar\z/
 
     alias
         You can set an alias if you want to get the output object later.
@@ -715,6 +742,82 @@ METHODS
 
     Note: valid character for the key name are: "[%\w\-\.]+"
 
+  create_logger()
+    "create_logger()" is the same like "new()" but it creates a global
+    logger.
+
+        my $log = Log::Handler->create_logger('myapp');
+
+    If you want to create more than one object you can call
+
+        my @logger = Log::Handler->create_logger('myapp1', 'myapp2', ...);
+
+  get_logger()
+    With "get_logger()" it's possible to get a logger that was created with
+    "create_logger()" or with
+
+        use Log::Handler 'myapp';
+
+    Just call
+
+        my $log = Log::Handler->get_logger('myapp');
+
+    Or
+
+        my @logger = Log::Handler->create_logger('myapp1', 'myapp2', ...);
+
+GLOBAL LOG HANDLER
+    Since version 0.50 it's possible to define a application logger. This
+    means to create a "Log::Handler" object and import it into all modules
+    of your program.
+
+        use Log::Handler alias => accessor;
+
+    The accessor is created into the namespace of the caller and referenced
+    to the alias.
+
+    If the alias doesn't exists then a new "Log::Handler" object will be
+    created.
+
+    If no acesseor is set then no accessor is exported into the namespace of
+    the caller.
+
+    Example:
+
+        package MyAPP;
+        use strict;
+        use warnings;
+        use Log::Handler myapp => 'LOG';
+
+        LOG->config(config => 'myapp.conf');
+        LOG->info('hello world');
+
+    Now you can access the logger after you import it.
+
+        package MyAPP::Foo; 
+        use Log::Handler myapp => 'LOG';
+
+        LOG->info('message');
+
+    If you want to import another accessor name ...
+
+        package MyAPP::Bar;
+        use Log::Handler myapp => 'MYLOG';
+
+        MYLOG->info('message');
+
+    Another way to get the logger is to call "get_logger()" if you don't
+    want to create an accessor.
+
+        package MyAPP::Foo::Bar;
+        use Log::Handler;
+
+        my $log = Log::Handler->get_logger('myapp');
+        $log->info('message');
+
+    For a little example you can take a look into the examples directory of
+    the distribution (Log-Handler-$VERSION/examples/logger.pl).
+
 EXAMPLES
     Log::Handler::Examples
 
@@ -724,7 +827,6 @@ EXTENSIONS
 PREREQUISITES
     Prerequisites for all modules:
 
-        Perl 5.6.1
         Carp
         Data::Dumper
         Devel::Backtrace

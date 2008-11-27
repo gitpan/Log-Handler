@@ -31,7 +31,7 @@ use Benchmark;
 
 my $BUFFER;
 sub buffer {
-    $BUFFER .= $_[0]->{message};
+    $BUFFER .= shift->{message};
 }
 
 my $log = Log::Handler->new();
@@ -69,6 +69,18 @@ $log->add(
 
 $log->add(
     forward => {
+        alias      => 'message pattern',
+        maxlevel   => 'error',
+        minlevel   => 'error',
+        newline    => 1,
+        forward_to => \&buffer,
+        message_layout  => '%m',
+        message_pattern => [qw/%T %L %P/],
+    }
+);
+
+$log->add(
+    forward => {
         alias      => 'filter caller',
         maxlevel   => 'emerg',
         minlevel   => 'emerg',
@@ -90,21 +102,21 @@ $log->add(
 );
 
 my $count   = 100_000;
-my $message = 'foobarbaz';
+my $message = 'foo bar baz';
 
-print "Iterations: $count\n";
-run("simple pattern output took",    sub { $log->notice($message)  for 1..$count } );
-run("default pattern output took",   sub { $log->warning($message) for 1..$count } );
-run("complex pattern output took",   sub { $log->info($message)    for 1..$count } );
-run("suppressed output took",        sub { $log->debug($message)   for 1..$count } );
-run("filtered caller output took",   sub { &Foo::Bar::emerg        for 1..$count } );
-run("suppressed caller output took", sub { &Foo::Baz::emerg        for 1..$count } );
-run("filterd messages output took",  sub { $log->alert($message)   for 1..$count } );
+run("simple pattern output took",    $count, sub { $log->notice($message)  } );
+run("default pattern output took",   $count, sub { $log->warning($message) } );
+run("complex pattern output took",   $count, sub { $log->info($message)    } );
+run("message pattern output took",   $count, sub { $log->error($message)   } );
+run("suppressed output took",        $count, sub { $log->debug($message)   } );
+run("filtered caller output took",   $count, \&Foo::Bar::emerg               );
+run("suppressed caller output took", $count, \&Foo::Baz::emerg               );
+run("filtered messages output took", $count, sub { $log->alert($message)   } );
 
 sub run {
-    my ($desc, $bench) = @_;
-    my $time = timeit(1, $bench);
-    printf "%-30s : %10s/s\n", $desc, sprintf('%.2f', $count/$time->[1]);
+    my ($desc, $count, $bench) = @_;
+    my $time = timeit($count, $bench);
+    print sprintf('%-30s', $desc), ' : ', timestr($time), "\n";
     undef $BUFFER;
 }
 

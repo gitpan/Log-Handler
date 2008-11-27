@@ -16,7 +16,27 @@ Log::Handler - Log messages to several outputs.
         newline  => 1,
     });
 
-    $log->warning("a warinng here");
+    $log->warning("warn message");
+
+Or
+
+    # init myapp logger with accessor LOG
+    package MyApp;
+    use Log::Handler myapp => 'LOG';
+
+    LOG->add(screen => { maxlevel => 'info' });
+    LOG->info("info message");
+
+    # import myapp logger with accessor LOG
+    package MyApp::Foo;
+    use Log::Handler myapp => 'LOG';
+    LOG->info("info message from MyApp::Foo");
+
+    # get myapp logger with get_logger()
+    package MyApp::Bar;
+    use Log::Handler;
+    my $log = Log::Handler->get_logger('myapp');
+    $log->info("info message from MyApp::Bar");
 
 =head1 DESCRIPTION
 
@@ -351,9 +371,9 @@ Example:
     $log->add(screen => {
         maxlevel => 'info',
         newline  => 1,
-        filter_caller  => qr/^Foo::Bar$/,
+        filter_caller  => qr/^Foo::Bar\z/,
         # or
-        # filter_caller => '^Foo::Bar$',
+        # filter_caller => '^Foo::Bar\z',
     });
 
     package Foo::Bar;
@@ -365,6 +385,14 @@ Example:
     1;
 
 This would only log the message from the package C<Foo::Bar>.
+
+=item B<except_caller>
+
+This options is just the opposite of C<filter_caller>.
+
+If you want to log messages from all callers but C<Foo::Bar>:
+
+    except_caller => qr/^Foo::Bar\z/
 
 =item B<alias>
 
@@ -750,6 +778,85 @@ Or use it with C<message_pattern>:
 
 Note: valid character for the key name are: C<[%\w\-\.]+>
 
+=head2 create_logger()
+
+C<create_logger()> is the same like C<new()> but it creates a global
+logger.
+
+    my $log = Log::Handler->create_logger('myapp');
+
+If you want to create more than one object you can call
+
+    my @logger = Log::Handler->create_logger('myapp1', 'myapp2', ...);
+
+=head2 get_logger()
+
+With C<get_logger()> it's possible to get a logger that was created
+with C<create_logger()> or with
+
+    use Log::Handler 'myapp';
+
+Just call
+
+    my $log = Log::Handler->get_logger('myapp');
+
+Or
+
+    my @logger = Log::Handler->create_logger('myapp1', 'myapp2', ...);
+
+=head1 GLOBAL LOG HANDLER
+
+Since version C<0.50> it's possible to define a application logger.
+This means to create a C<Log::Handler> object and import it into
+all modules of your program.
+
+    use Log::Handler alias => accessor;
+
+The accessor is created into the namespace of the caller and
+referenced to the alias.
+
+If the alias doesn't exists then a new C<Log::Handler> object
+will be created.
+
+If no acesseor is set then no accessor is exported into the
+namespace of the caller.
+
+Example:
+
+    package MyAPP;
+    use strict;
+    use warnings;
+    use Log::Handler myapp => 'LOG';
+
+    LOG->config(config => 'myapp.conf');
+    LOG->info('hello world');
+
+Now you can access the logger after you import it.
+
+    package MyAPP::Foo; 
+    use Log::Handler myapp => 'LOG';
+
+    LOG->info('message');
+
+If you want to import another accessor name ...
+
+    package MyAPP::Bar;
+    use Log::Handler myapp => 'MYLOG';
+
+    MYLOG->info('message');
+
+Another way to get the logger is to call C<get_logger()> if you
+don't want to create an accessor.
+
+    package MyAPP::Foo::Bar;
+    use Log::Handler;
+
+    my $log = Log::Handler->get_logger('myapp');
+    $log->info('message');
+
+For a little example you can take a look into the examples directory
+of the distribution (Log-Handler-$VERSION/examples/logger.pl).
+
 =head1 EXAMPLES
 
 L<Log::Handler::Examples>
@@ -762,7 +869,6 @@ Send me a mail if you have questions.
 
 Prerequisites for all modules:
 
-    Perl 5.6.1
     Carp
     Data::Dumper
     Devel::Backtrace
@@ -853,7 +959,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.49';
+our $VERSION = '0.50';
 our $ERRSTR  = '';
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -865,6 +971,9 @@ our $ERRSTR  = '';
 # $CALLER_LEVEL is used to determine the current caller level
 our $CALLER_LEVEL = 0;
 our $TRACE        = 0;
+
+# safe logger by app
+my %LOGGER;
 
 # Some constants...
 use constant PRIORITY => 10;
@@ -923,6 +1032,53 @@ our %AVAILABLE_OUTPUTS = (
     screen  => 'Log::Handler::Output::Screen',
     socket  => 'Log::Handler::Output::Socket',
 );
+
+# use Log::Handler foo => 'LOGFOO', bar => 'LOGBAR';
+# use Log::Handler qw/foo LOGFOO bar LOGBAR/;
+sub import {
+    return unless @_ > 1;
+    my $class  = shift;
+    my %create = @_ > 1 ? @_ : (@_, undef);
+    my $caller = (caller)[0];
+
+    while (my ($appl, $export) = each %create) {
+        my $logger = ();
+
+        if (!exists $LOGGER{$appl}) {
+            $LOGGER{$appl} = __PACKAGE__->new();
+        }
+
+        if ($export) {
+            no strict 'refs';
+            my $method = $caller.'::'.$export;
+            *{$method} = sub { $LOGGER{$appl} };
+        }
+    }
+}
+
+sub get_logger {
+    @_ > 1 || croak 'Usage: Log::Handler->get_logger($app)';
+    my $class = shift;
+
+    foreach my $logger (@_) {
+        if (!exists $LOGGER{$logger}) {
+            croak "logger '$logger' does not exists";
+        }
+    }
+
+    return @LOGGER{@_};
+}
+
+sub create_logger {
+    @_ > 1 || croak 'Usage: Log::Handler->create_logger($app)';
+    my $class = shift;
+
+    foreach my $logger (@_) {
+        $LOGGER{$logger} = __PACKAGE__->new();
+    }
+
+    return @LOGGER{@_};
+}
 
 sub new {
     my $class = shift;
@@ -1098,8 +1254,9 @@ sub _shift_options {
         debug_trace
         die_on_errors
         filter
-        filter_caller
         filter_message
+        filter_caller
+        except_caller
         maxlevel
         message_layout
         message_pattern
@@ -1245,6 +1402,10 @@ sub _validate_options {
             optional => 1,
         },
         filter_caller => {
+            type => Params::Validate::SCALAR | Params::Validate::SCALARREF,
+            optional => 1,
+        },
+        except_caller => {
             type => Params::Validate::SCALAR | Params::Validate::SCALARREF,
             optional => 1,
         },
