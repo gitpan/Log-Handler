@@ -6,7 +6,7 @@ Jonny Schulz <jschulz.cpan(at)bloonix.de>
 
 =head1 DESCRIPTION
 
-This script shows you examples how you can filter messages.
+This script shows you examples for all patterns.
 
 =head1 POWERED BY
 
@@ -27,24 +27,26 @@ modify it under the same terms as Perl itself.
 use strict;
 use warnings;
 use Log::Handler;
+use Data::Dumper;
 
 my $log = Log::Handler->new();
 
 $log->add(
     screen => {
-        maxlevel => 'info',
-        newline  => 1,
-        filter_message => {
-            match1    => 'log this',
-            match2    => qr/with that/,
-            match3    => '(?:or this|or that)',
-            condition => '(match1 && match2) || match3',
-        }
+        newline => 1,
+        message_pattern => [ qw/%T %L %H %m/ ],
+        prepare_message => \&format,
     }
 );
 
-$log->info('log this with that');
-$log->info('or this');
-$log->info('or that');
-$log->info('but not that');
+$log->error("foo bar baz");
+$log->error("foo bar baz");
+$log->error("foo bar baz");
+
+sub format {
+    my $m = shift;
+
+    $m->{message} = sprintf('%-20s %-20s %-20s %s',
+        $m->{time}, $m->{level}, $m->{hostname}, $m->{message});
+}
 

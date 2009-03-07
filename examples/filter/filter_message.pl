@@ -10,14 +10,14 @@ This script shows you examples how you can filter messages.
 
 =head1 POWERED BY
 
-     _    __ ____ ____ __  __ __ __   __
-    | |__|  |    |    |  \|  |__|\  \/  /
-    |  . |  |  | |  | |      |  | >    <
-    |____|__|____|____|__|\__|__|/__/\__\
+     _    __ _____ _____ __  __ __ __   __
+    | |__|  |     |     |  \|  |__|\  \/  /
+    |  . |  |  |  |  |  |      |  | >    <
+    |____|__|_____|_____|__|\__|__|/__/\__\
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2008 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

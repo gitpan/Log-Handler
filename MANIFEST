@@ -9,9 +9,11 @@ examples/filter/extended_filter.pl
 examples/filter/filter_caller.pl
 examples/filter/filter_message.pl
 examples/layout/layout.pl
+examples/layout/pattern.pl
 examples/layout/runtime.pl
 examples/logger/myapp.pl
 examples/logger/MyApp.pm
+examples/prepare/prepare.pl
 examples/socket/client.pl
 examples/socket/server.pl
 INSTALL
@@ -43,7 +45,6 @@ t/010-handler.t
 t/011-handler-set-pattern.t
 t/012-handler-message-pattern.t
 t/013-handler-priority.t
-t/014-handler-prepare.t
 t/015-handler-filter-caller.t
 t/015-handler-filter-message.t
 t/016-handler-alias.t

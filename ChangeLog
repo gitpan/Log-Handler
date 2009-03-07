@@ -1,3 +1,13 @@
+0.50_01 Released at 2009-03-07.
+        - Fixed a bug in the output DBI.pm - if the connection to
+          the database was lost then the message lost as well even
+          if a reconnect was successful.
+        - Added option prepare_message.
+        - Fixed message_pattern - the formatted messages was
+          overwritten if message_pattern was set.
+        - Option reconnect from Log::Handler::Output::DBI is
+          deprecated.
+
 0.50    Released at 2008-11-27.
         - Added the functionality to create a application logger.
           New functions are create_logger and get_logger.

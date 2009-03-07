@@ -28,7 +28,7 @@ Jonny Schulz <jschulz.cpan(at)bloonix.de>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2008 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -43,7 +43,7 @@ use Carp;
 use UNIVERSAL;
 use Devel::Backtrace;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 our $ERRSTR  = '';
 
 sub new {
@@ -80,6 +80,10 @@ sub log {
         }
     }
 
+    if ($self->{message_pattern}) {
+        &{$self->{message_pattern_code}}($wanted, $message);
+    }
+
     if ($self->{message_layout}) {
         &{$self->{message_layout_code}}($wanted, $message);
     } else {
@@ -87,13 +91,14 @@ sub log {
     }
 
     if ($self->{message_pattern}) {
+        if ($message->{message}) {
+            $wanted->{message} = $message->{message};
+        }
         &{$self->{message_pattern_code}}($wanted, $message);
     }
 
     if ($self->{debug_trace} || $Log::Handler::TRACE) {
         $self->_add_trace($message);
-    } elsif ($self->{newline} && $message->{message} =~ /.\z/) {
-        $message->{message} .= "\n";
     }
 
     if ($self->{filter_message}) {
@@ -101,16 +106,18 @@ sub log {
     }
 
     if ($self->{prepare_message}) {
-        # each output can have an own prepare function. for this reason
-        # the message is passed as hash and not as a reference.
-        my $prepare_message = $self->_prepare_message(%$message)
-            or return $self->_raise_error($output->errstr);
-        $output->log($prepare_message)
-            or return $self->_raise_error($output->errstr);
-    } else {
-        $output->log($message)
-            or return $self->_raise_error($output->errstr);
+        eval { &{$self->{prepare_message}}($message) };
+        if ($@) {
+            return $self->_raise_error("prepare_message failed - $@");
+        }
     }
+
+    if ($self->{newline} && $message->{message} !~ /(?:\015|\012)\z/) {
+        $message->{message} .= "\n";
+    }
+
+    $output->log($message)
+        or return $self->_raise_error($output->errstr);
 
     return 1;
 }
@@ -155,14 +162,6 @@ sub _add_trace {
         }
         $message->{message} .= "\n";
     }
-}
-
-sub _prepare_message {
-    my $self = shift;
-    my $msg  = {@_};
-    my $code = $self->{prepare_message};
-    eval { &$code($msg) };
-    return $@ ? $self->_raise_error($@) : $msg;
 }
 
 sub _filter_msg {

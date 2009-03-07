@@ -34,7 +34,6 @@ Log::Handler::Output::DBI - Log messages to a database.
 
         # if you like persistent connections and want to re-connect
         persistent => 1,
-        reconnect  => 1,
     );
 
     my %message = (
@@ -145,12 +144,16 @@ with the option C<message_pattern> from L<Log::Handler>.
 
 Take a look to the documentation of L<Log::Handler> for all possible patterns.
 
-=item B<persistent> and B<reconnect>
+=item B<persistent>
 
 With this option you can enable or disable a persistent database connection and
 re-connect if the connection was lost.
 
-Both options are set to 1 on default.
+This option is set to 1 on default.
+
+=item B<reconnect>
+
+C<reconnect> is deprecated!
 
 =item B<dbi_params>
 
@@ -191,7 +194,6 @@ Log a message to the database.
         columns    => [ qw/level ctime message/ ],
         values     => [ qw/%level %time %message/ ],
         persistent => 1,
-        reconnect  => 1,
     );
 
     $db->log(
@@ -235,7 +237,7 @@ Jonny Schulz <jschulz.cpan(at)bloonix.de>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2008 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -250,7 +252,7 @@ use Carp;
 use DBI;
 use Params::Validate;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our $ERRSTR  = '';
 
 sub new {
@@ -258,11 +260,8 @@ sub new {
     my $options = $class->_validate(@_);
     my $self    = bless $options, $class;
 
-    warn "Create a new Log::Handler::Output::DBI object" if $self->{debug};
-
-    if ($self->{persistent}) {
-        warn "Peristent connections is set to true" if $self->{debug};
-        $self->connect or croak $self->errstr;
+    if ($self->{debug}) {
+        warn "Create a new Log::Handler::Output::DBI object";
     }
 
     return $self;
@@ -273,38 +272,24 @@ sub log {
     my $message = @_ > 1 ? {@_} : shift;
     my @values  = ();
 
-    if (!$self->{persistent}) {
-        $self->connect or return undef;
-    }
-
     foreach my $v (@{$self->{values}}) {
         if (ref($v) eq 'CODE') {
             push @values, &$v();
-        } elsif ($v =~ /^%(.+)/) {
+        } elsif ($v =~ /^%(.+)/ && exists $message->{$1}) {
             push @values, $message->{$1};
         } else {
             push @values, $v;
         }
     }
 
-    warn "execute: ".@values." bind values" if $self->{debug};
+    if ($self->{debug}) {
+        warn "execute: ".@values." bind values";
+    }
+
+    $self->connect or return undef;
 
     if ( ! $self->{sth}->execute(@values) ) {
-        my $execute_error = $self->{sth}->errstr;
-        if ($self->{persistent} && $self->{reconnect}) {
-            warn "ping the database" if $self->{debug};
-
-            # if the database is reachable then it might be an error with
-            # the statemant or values
-            if ($self->{dbh}->ping) {
-                return $self->_raise_error("DBI execute error: $execute_error");
-            } else {
-                $self->connect or 
-                    return $self->_raise_error("Lost connection! ".$self->errstr);
-            }
-        } else {
-            return $self->_raise_error("DBI execute error: $execute_error");
-        }
+        return $self->_raise_error("DBI execute error: ".DBI->errstr);
     }
 
     if (!$self->{persistent}) {
@@ -317,7 +302,15 @@ sub log {
 sub connect {
     my $self = shift;
 
-    warn "Connect to the database: $self->{cstr}->[0] ..." if $self->{debug};
+    if ($self->{persistent} && $self->{dbh}) {
+        eval { $self->{dbh}->do("select 1") or die DBI->errstr };
+        return 1 unless $@;
+    }
+
+    if ($self->{debug}) {
+        warn "Connect to the database: $self->{cstr}->[0] ...";
+    }
+
 
     my $dbh = DBI->connect(@{$self->{cstr}})
         or return $self->_raise_error("DBI connect error: ".DBI->errstr);
@@ -337,13 +330,18 @@ sub disconnect {
     if ($self->{sth}) {
         $self->{sth}->finish
             or return $self->_raise_error("DBI finish error: ".$self->{sth}->errstr);
+
         delete $self->{sth};
     }
 
     if ($self->{dbh}) {
-        warn "Disconnect from database" if $self->{debug};
+        if ($self->{debug}) {
+            warn "Disconnect from database";
+        }
+
         $self->{dbh}->disconnect
             or return $self->_raise_error("DBI disconnect error: ".DBI->errstr);;
+
         delete $self->{dbh};
     }
 
@@ -400,11 +398,11 @@ sub _validate {
             type => Params::Validate::SCALAR,
             optional => 1,
         },
-        reconnect => {
+        persistent => {
             type => Params::Validate::SCALAR,
             default => 1,
         },
-        persistent => {
+        reconnect => { # not used any more
             type => Params::Validate::SCALAR,
             default => 1,
         },

@@ -145,10 +145,24 @@ This option is not used by default.
 
 =item B<newline>
 
-This helpful option appends a newline to the message if a newline not exist.
+Option C<newline> is a very helpful option. It let the logger appends a newline to
+the message if a newline doesn't exist.
 
     0 - do nothing (default)
     1 - append a newline if not exist
+
+
+    $log->add(
+        screen => {
+            newline  => 1,
+            maxlevel => 'info',
+        }
+    );
+
+    $log->info("message\n");
+    $log->info("message");
+
+In both cases the message would be logged with a newline at the end.
 
 =item B<message_layout>
 
@@ -259,6 +273,37 @@ Here a full code example:
         print "Hostname:  $msg->{hostname}\n";
         print "Message:   $msg->{message}\n";
     }
+
+=item B<prepare_message>
+
+C<prepare_message> is useful if you want to do something with the message before
+it will be logged... maybe you want to create your own layout because message_layout
+doesn't meet your claim.
+
+    $log->add(
+        screen => {
+            newline => 1,
+            message_pattern => [ qw/%T %L %H %m/ ],
+            prepare_message => \&format,
+        }
+    );
+
+    $log->error("foo bar baz");
+    $log->error("foo bar baz");
+    $log->error("foo bar baz");
+
+    sub format {
+        my $m = shift;
+
+        $m->{message} = sprintf('%-20s %-20s %-20s %s',
+            $m->{time}, $m->{level}, $m->{hostname}, $m->{message});
+    }
+
+The output looks like
+
+    Mar 07 20:06:39      ERROR                h1434036             Mar 07 20:06:39 [ERROR] foo bar baz
+    Mar 07 20:06:39      ERROR                h1434036             Mar 07 20:06:39 [ERROR] foo bar baz
+    Mar 07 20:06:39      ERROR                h1434036             Mar 07 20:06:39 [ERROR] foo bar baz
 
 =item B<priority>
 
@@ -861,6 +906,19 @@ of the distribution (Log-Handler-$VERSION/examples/logger.pl).
 
 L<Log::Handler::Examples>
 
+=head1 BENCHMARK
+
+Run examples/benchmark/benchmark.pl on a Dual-Core AMD Opteron(tm) Processor 1212 HE (1000 MHz)
+
+    simple pattern output took     :  2 wallclock secs ( 2.29 usr +  0.02 sys =  2.31 CPU) @ 43290.04/s (n=100000)
+    default pattern output took    :  4 wallclock secs ( 3.36 usr +  0.76 sys =  4.12 CPU) @ 24271.84/s (n=100000)
+    complex pattern output took    :  6 wallclock secs ( 4.85 usr +  0.91 sys =  5.76 CPU) @ 17361.11/s (n=100000)
+    message pattern output took    :  5 wallclock secs ( 4.31 usr +  0.82 sys =  5.13 CPU) @ 19493.18/s (n=100000)
+    suppressed output took         :  0 wallclock secs ( 0.17 usr +  0.00 sys =  0.17 CPU) @ 588235.29/s (n=100000)
+    filtered caller output took    :  5 wallclock secs ( 3.97 usr +  0.81 sys =  4.78 CPU) @ 20920.50/s (n=100000)
+    suppressed caller output took  :  1 wallclock secs ( 1.29 usr +  0.00 sys =  1.29 CPU) @ 77519.38/s (n=100000)
+    filtered messages output took  :  5 wallclock secs ( 3.91 usr +  0.84 sys =  4.75 CPU) @ 21052.63/s (n=100000)
+
 =head1 EXTENSIONS
 
 Send me a mail if you have questions.
@@ -917,7 +975,7 @@ If you send me a mail then add Log::Handler into the subject.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2008 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -959,7 +1017,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.50';
+our $VERSION = '0.51';
 our $ERRSTR  = '';
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1260,9 +1318,9 @@ sub _shift_options {
         maxlevel
         message_layout
         message_pattern
+        prepare_message
         minlevel
         newline
-        prepare_message
         priority
         timeformat
     );
