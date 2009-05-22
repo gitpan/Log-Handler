@@ -136,11 +136,13 @@ METHODS
         This option is not used by default.
 
     newline
-        Option "newline" is a very helpful option. It let the logger appends
-        a newline to the message if a newline doesn't exist.
+        "newline" is a very helpful option. It let the logger appends a
+        newline to the message if a newline doesn't exist.
 
             0 - do nothing (default)
             1 - append a newline if not exist
+
+        Example:
 
             $log->add(
                 screen => {
@@ -272,14 +274,15 @@ METHODS
             $log->add(
                 screen => {
                     newline => 1,
+                    message_layout  => '%m (%t)',
                     message_pattern => [ qw/%T %L %H %m/ ],
                     prepare_message => \&format,
                 }
             );
 
-            $log->error("foo bar baz");
-            $log->error("foo bar baz");
-            $log->error("foo bar baz");
+            $log->error("foo");
+            $log->error("bar");
+            $log->error("baz");
 
             sub format {
                 my $m = shift;
@@ -290,9 +293,9 @@ METHODS
 
         The output looks like
 
-            Mar 07 20:06:39      ERROR                h1434036             Mar 07 20:06:39 [ERROR] foo bar baz
-            Mar 07 20:06:39      ERROR                h1434036             Mar 07 20:06:39 [ERROR] foo bar baz
-            Mar 07 20:06:39      ERROR                h1434036             Mar 07 20:06:39 [ERROR] foo bar baz
+            Mar 08 15:14:20      ERROR                h1434036             foo (0.039694)
+            Mar 08 15:14:20      ERROR                h1434036             bar (0.000510)
+            Mar 08 15:14:20      ERROR                h1434036             baz (0.000274)
 
     priority
         With this option you can set the priority of your output objects.
@@ -421,7 +424,7 @@ METHODS
         This would only log the message from the package "Foo::Bar".
 
     except_caller
-        This options is just the opposite of "filter_caller".
+        This option is just the opposite of "filter_caller".
 
         If you want to log messages from all callers but "Foo::Bar":
 
@@ -784,6 +787,19 @@ METHODS
 
     Note: valid character for the key name are: "[%\w\-\.]+"
 
+  set_level()
+    With this method it's possible to change the log level at runtime.
+
+    To change the log level it's neccessary to use a alias - see option
+    "alias".
+
+        $log->set_level(
+            $alias => { # option alias
+                minlevel => $new_minlevel,
+                maxlevel => $new_maxlevel,
+            }
+        );
+
   create_logger()
     "create_logger()" is the same like "new()" but it creates a global
     logger.
@@ -806,7 +822,7 @@ METHODS
 
     Or
 
-        my @logger = Log::Handler->create_logger('myapp1', 'myapp2', ...);
+        my @logger = Log::Handler->get_logger('myapp1', 'myapp2', ...);
 
 GLOBAL LOG HANDLER
     Since version 0.50 it's possible to define a application logger. This
@@ -821,8 +837,8 @@ GLOBAL LOG HANDLER
     If the alias doesn't exists then a new "Log::Handler" object will be
     created.
 
-    If no acesseor is set then no accessor is exported into the namespace of
-    the caller.
+    If no accesseor is set then no accessor is exported into the namespace
+    of the caller.
 
     Example:
 

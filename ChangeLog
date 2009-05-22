@@ -1,3 +1,10 @@
+0.51_01 Released at 2009-05-22.
+        - Added method set_level() to Handler.pm to change the log
+          level at runtime.
+
+0.51    Released at 2009-03-07.
+        - Just a full release.
+
 0.50_01 Released at 2009-03-07.
         - Fixed a bug in the output DBI.pm - if the connection to
           the database was lost then the message lost as well even

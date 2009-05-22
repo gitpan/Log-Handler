@@ -34,6 +34,7 @@ my $log = Log::Handler->new();
 $log->add(
     screen => {
         newline => 1,
+        message_layout  => '%m (%t)',
         message_pattern => [ qw/%T %L %H %m/ ],
         prepare_message => \&format,
     }

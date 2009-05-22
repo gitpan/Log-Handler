@@ -5,17 +5,17 @@ WriteMakefile
           'NAME' => 'Log::Handler',
           'VERSION_FROM' => 'lib/Log/Handler.pm',
           'PREREQ_PM' => {
-                           'Carp' => '0',
-                           'Data::Dumper' => '0',
+                           'Carp' => 0,
+                           'Data::Dumper' => 0,
                            'Devel::Backtrace' => '0.05',
-                           'Fcntl' => '0',
-                           'File::Spec' => '0',
-                           'POSIX' => '0',
-                           'Params::Validate' => '0',
-                           'Sys::Hostname' => '0',
-                           'Test::More' => '0',
-                           'Time::HiRes' => '0',
-                           'UNIVERSAL::require' => '0'
+                           'Fcntl' => 0,
+                           'File::Spec' => 0,
+                           'POSIX' => 0,
+                           'Params::Validate' => 0,
+                           'Sys::Hostname' => 0,
+                           'Test::More' => 0,
+                           'Time::HiRes' => 0,
+                           'UNIVERSAL::require' => 0
                          },
           'INSTALLDIRS' => 'site',
           'EXE_FILES' => []

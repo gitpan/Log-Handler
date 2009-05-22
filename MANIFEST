@@ -16,6 +16,7 @@ examples/logger/MyApp.pm
 examples/prepare/prepare.pl
 examples/socket/client.pl
 examples/socket/server.pl
+examples/text-csv/log-as-csv-string.pl
 INSTALL
 lib/Log/Handler.pm
 lib/Log/Handler/Config.pm
@@ -50,6 +51,7 @@ t/015-handler-filter-message.t
 t/016-handler-alias.t
 t/017-handler-special-levels.t
 t/018-handler-logger.t
+t/019-handler-setlevel.t
 t/020-output-forward.t
 t/030-output-file.t
 t/040-output-email.t

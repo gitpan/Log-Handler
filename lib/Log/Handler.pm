@@ -145,12 +145,13 @@ This option is not used by default.
 
 =item B<newline>
 
-Option C<newline> is a very helpful option. It let the logger appends a newline to
+C<newline> is a very helpful option. It let the logger appends a newline to
 the message if a newline doesn't exist.
 
     0 - do nothing (default)
     1 - append a newline if not exist
 
+Example:
 
     $log->add(
         screen => {
@@ -283,14 +284,15 @@ doesn't meet your claim.
     $log->add(
         screen => {
             newline => 1,
+            message_layout  => '%m (%t)',
             message_pattern => [ qw/%T %L %H %m/ ],
             prepare_message => \&format,
         }
     );
 
-    $log->error("foo bar baz");
-    $log->error("foo bar baz");
-    $log->error("foo bar baz");
+    $log->error("foo");
+    $log->error("bar");
+    $log->error("baz");
 
     sub format {
         my $m = shift;
@@ -301,9 +303,9 @@ doesn't meet your claim.
 
 The output looks like
 
-    Mar 07 20:06:39      ERROR                h1434036             Mar 07 20:06:39 [ERROR] foo bar baz
-    Mar 07 20:06:39      ERROR                h1434036             Mar 07 20:06:39 [ERROR] foo bar baz
-    Mar 07 20:06:39      ERROR                h1434036             Mar 07 20:06:39 [ERROR] foo bar baz
+    Mar 08 15:14:20      ERROR                h1434036             foo (0.039694)
+    Mar 08 15:14:20      ERROR                h1434036             bar (0.000510)
+    Mar 08 15:14:20      ERROR                h1434036             baz (0.000274)
 
 =item B<priority>
 
@@ -433,7 +435,7 @@ This would only log the message from the package C<Foo::Bar>.
 
 =item B<except_caller>
 
-This options is just the opposite of C<filter_caller>.
+This option is just the opposite of C<filter_caller>.
 
 If you want to log messages from all callers but C<Foo::Bar>:
 
@@ -823,6 +825,19 @@ Or use it with C<message_pattern>:
 
 Note: valid character for the key name are: C<[%\w\-\.]+>
 
+=head2 set_level()
+
+With this method it's possible to change the log level at runtime.
+
+To change the log level it's neccessary to use a alias - see option C<alias>.
+
+    $log->set_level(
+        $alias => { # option alias
+            minlevel => $new_minlevel,
+            maxlevel => $new_maxlevel,
+        }
+    );
+
 =head2 create_logger()
 
 C<create_logger()> is the same like C<new()> but it creates a global
@@ -847,7 +862,7 @@ Just call
 
 Or
 
-    my @logger = Log::Handler->create_logger('myapp1', 'myapp2', ...);
+    my @logger = Log::Handler->get_logger('myapp1', 'myapp2', ...);
 
 =head1 GLOBAL LOG HANDLER
 
@@ -863,7 +878,7 @@ referenced to the alias.
 If the alias doesn't exists then a new C<Log::Handler> object
 will be created.
 
-If no acesseor is set then no accessor is exported into the
+If no accesseor is set then no accessor is exported into the
 namespace of the caller.
 
 Example:
@@ -1017,7 +1032,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.51';
+our $VERSION = '0.51_01';
 our $ERRSTR  = '';
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1251,6 +1266,67 @@ sub set_pattern {
     $self->{pattern}->{$pattern}->{code} = $code;
 }
 
+sub set_level {
+    @_ == 3 or Carp::croak 'Usage: $log->set_level( $alias => { minlevel => $min, maxlevel => $max } )';
+    my ($self, $name, $new) = @_;
+    my $alias = $self->{alias};
+
+    if (!exists $alias->{$name}) {
+        Carp::croak "alias '$name' does not exists";
+    }
+
+    if (ref($new) ne 'HASH') {
+        Carp::croak "the second parameter to set_level() must be a hash reference";
+    }
+
+    if (!defined $new->{minlevel} && !defined $new->{maxlevel}) {
+        Carp::croak "no new level given to set_level()";
+    }
+
+    foreach my $level (qw/minlevel maxlevel/) {
+        next unless defined $new->{$level};
+
+        if ($new->{$level} =~ LEVEL_RX) {
+            $alias->{$name}->{$level} = $new->{$level};
+            next if $new->{$level} =~ /^\d\z/;
+            $new->{$level} = uc($new->{$level});
+            $new->{$level} = $LEVEL_BY_STRING{ $new->{$level} };
+            $alias->{$name}->{$level} = $new->{$level};
+        } else {
+            Carp::croak "invalid level set to set_level()";
+        }
+    }
+
+    $alias->{$name}->{levels} = { };
+    my $levels = $self->{levels} = { };
+
+    foreach my $level_num ($alias->{$name}->{minlevel} .. $alias->{$name}->{maxlevel}) {
+        my $level = $LEVEL_BY_NUM[ $level_num ];
+        $alias->{$name}->{levels}->{$level} = 1;
+
+        if ($level_num < 4) {
+            $alias->{$name}->{levels}->{FATAL} = 1;
+        }
+    }
+
+    foreach my $output (@{ $self->{outputs} }) {
+        foreach my $level (keys %{$output->{levels}}) {
+            if ($levels->{$level}) {
+                my @old_order = @{$levels->{$level}};
+                $levels->{$level} = [
+                    map  { $_->[0] }
+                    sort { $a->[1] <=> $b->[1] }
+                    map  { [ $_, $_->{priority} ] } @old_order
+                ];
+            } else {
+                push @{$levels->{$level}}, $output;
+            }
+        }
+    }
+
+    return 1;
+}
+
 sub output {
     @_ == 2 or Carp::croak 'Usage: $log->output( $alias )';
     my ($self, $name) = @_;
@@ -1378,7 +1454,7 @@ sub _new_output {
 
 sub _validate_options {
     my ($self, @args) = @_;
-    my (%wanted, $is_fatal);
+    my %wanted  = ();
     my $pattern = $self->{pattern};
 
     # Option 'filter' is deprecated.
@@ -1490,7 +1566,7 @@ sub _validate_options {
     foreach my $level_num ($options{minlevel} .. $options{maxlevel}) {
         my $level = $LEVEL_BY_NUM[ $level_num ];
         $options{levels}{$level} = 1;
-        next if $is_fatal || $level_num > 3;
+        next if $level_num > 3;
         $options{levels}{FATAL} = 1;
     }
 
