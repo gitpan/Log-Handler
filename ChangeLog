@@ -1,3 +1,6 @@
+0.52    Released at 2009-05-24.
+        - No changes, just a full version.
+
 0.51_01 Released at 2009-05-22.
         - Added method set_level() to Handler.pm to change the log
           level at runtime.
