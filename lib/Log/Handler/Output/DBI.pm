@@ -13,7 +13,7 @@ Log::Handler::Output::DBI - Log messages to a database.
         host        => '127.0.0.1',
         port        => 3306,
 
-        # or with "dbname" instead "database"
+        # or with "dbname" instead of "database"
         dbname      => 'database',
         driver      => 'Pg',
         host        => '127.0.0.1',
@@ -73,7 +73,14 @@ The following options are possible:
 
 =over 4
 
-=item B<database>
+=item B<data_source>
+
+Set the dsn (data source name).
+
+You can use this parameter instead of C<database>, C<driver>, C<host>
+and C<port>.
+
+=item B<database> or B<dbname>
 
 Pass the database name.
 
@@ -263,7 +270,7 @@ use Carp;
 use DBI;
 use Params::Validate;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 our $ERRSTR  = '';
 
 sub new {
