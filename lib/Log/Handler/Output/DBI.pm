@@ -7,33 +7,44 @@ Log::Handler::Output::DBI - Log messages to a database.
     use Log::Handler::Output::DBI;
 
     my $db = Log::Handler::Output::DBI->new(
-        # database connection
-        database   => 'database',
-        driver     => 'mysql',
-        user       => 'user',
-        password   => 'password',
-        host       => '127.0.0.1',
-        port       => 3306,
+        # database source
+        database    => 'database',
+        driver      => 'mysql',
+        host        => '127.0.0.1',
+        port        => 3306,
+
+        # or with "dbname" instead "database"
+        dbname      => 'database',
+        driver      => 'Pg',
+        host        => '127.0.0.1',
+        port        => 5432,
+
+        # or with data_source
+        data_source => 'dbi:mysql:database=database;host=127.0.0.1;port=3306',
+
+        # Username and password
+        user        => 'user',
+        password    => 'password',
 
         # debugging
-        debug      => 1,
+        debug       => 1,
 
         # table, columns and values (as string)
-        table      => 'messages',
-        columns    => 'level ctime cdate pid hostname progname message',
-        values     => '%level %time %date %pid %hostname %progname %message',
+        table       => 'messages',
+        columns     => 'level ctime cdate pid hostname progname message',
+        values      => '%level %time %date %pid %hostname %progname %message',
 
         # table, columns and values (as array reference)
-        table      => 'messages',
-        columns    => [ qw/level ctime cdate pid hostname progname message/ ],
-        values     => [ qw/%level %time %date %pid %hostname %progname %message/ ],
+        table       => 'messages',
+        columns     => [ qw/level ctime cdate pid hostname progname message/ ],
+        values      => [ qw/%level %time %date %pid %hostname %progname %message/ ],
 
         # table, columns and values (your own statement)
-        statement  => 'insert into messages (level,ctime,cdate,pid,hostname,progname,message) values (?,?,?,?,?,?,?)',
-        values     => [ qw/%level %time %date %pid %hostname %progname %message/ ],
+        statement   => 'insert into messages (level,ctime,cdate,pid,hostname,progname,message) values (?,?,?,?,?,?,?)',
+        values      => [ qw/%level %time %date %pid %hostname %progname %message/ ],
 
         # if you like persistent connections and want to re-connect
-        persistent => 1,
+        persistent  => 1,
     );
 
     my %message = (
@@ -252,7 +263,7 @@ use Carp;
 use DBI;
 use Params::Validate;
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 our $ERRSTR  = '';
 
 sub new {
@@ -358,11 +369,21 @@ sub _validate {
     my $class = shift;
 
     my %options = Params::Validate::validate(@_, {
+        data_source => {
+            type => Params::Validate::SCALAR,
+            optional => 1,
+        },
         database => {
             type => Params::Validate::SCALAR,
+            optional => 1,
+        },
+        dbname => {
+            type => Params::Validate::SCALAR,
+            optional => 1,
         },
         driver => {
             type => Params::Validate::SCALAR,
+            optional => 1,
         },
         user => {
             type => Params::Validate::SCALAR,
@@ -370,12 +391,11 @@ sub _validate {
         },
         password => {
             type => Params::Validate::SCALAR,
-            depends => [ 'user' ],
+            optional => 1,
         },
         host => {
             type => Params::Validate::SCALAR,
             optional => 1,
-            depends => [ 'port' ],
         },
         port => {
             type => Params::Validate::SCALAR,
@@ -421,19 +441,33 @@ sub _validate {
         Carp::croak "Missing one of the mandatory options: 'statement' or 'table' and 'columns'";
     }
 
-    # build the connect string
-    my @cstr = ("dbi:$options{driver}:database=$options{database}");
+    # build the connect string (data source name)
+    my @cstr = ();
 
-    if ($options{host}) {
-        $cstr[0] .= ";host=$options{host}";
-        if ($options{port}) {
-            $cstr[0] .= ";port=$options{port}";
+    if (defined $options{data_source}) {
+        @cstr = ($options{data_source});
+    } elsif ($options{driver} && ($options{database} || $options{dbname})) {
+        $cstr[0] = "dbi:$options{driver}:";
+
+        if ($options{database}) {
+            $cstr[0] .= "database=$options{database}";
+        } else {
+            $cstr[0] .= "dbname=$options{dbname}";
         }
+
+        if ($options{host}) {
+            $cstr[0] .= ";host=$options{host}";
+            if ($options{port}) {
+                $cstr[0] .= ";port=$options{port}";
+            }
+        }
+    } else {
+        Carp::croak "Missing mandatory options data_source or database/dbname";
     }
 
     if ($options{user}) {
         $cstr[1] = $options{user};
-        if ($options{port}) {
+        if ($options{password}) {
             $cstr[2] = $options{password};
         }
     }

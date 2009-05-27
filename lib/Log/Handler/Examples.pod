@@ -107,19 +107,15 @@ You can add output objects on this way as well:
 
     $log->add(
         dbi => {
-            # database connection
             database   => 'database',
             driver     => 'mysql',
-            user       => 'user',
-            password   => 'password',
             host       => '127.0.0.1',
             port       => 3306,
-            debug      => 1,
+            user       => 'user',
+            password   => 'password',
             table      => 'messages',
             columns    => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
             values     => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
-            persistent => 1,
-            reconnect  => 1,
             maxlevel   => 'error',
             minlevel   => 'emergency'
             message_pattern => '%L %T %D %P %H %C %S %t %m',
@@ -127,6 +123,39 @@ You can add output objects on this way as well:
     );
 
     $log->error('log an error');
+
+Or with C<dbname>
+
+    $log->add(
+        dbi => {
+            dbname     => 'database',
+            driver     => 'Pg',
+            host       => '127.0.0.1',
+            port       => 5432,
+            user       => 'user',
+            password   => 'password',
+            table      => 'messages',
+            columns    => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
+            values     => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
+            maxlevel   => 'error',
+            minlevel   => 'emergency'
+            message_pattern => '%L %T %D %P %H %C %S %t %m',
+        }
+    );
+
+Or with C<data_source>
+
+    $log->add(
+        dbi => {
+            data_source => 'dbi:SQLite:dbname=database.sqlite',
+            table       => 'messages',
+            columns     => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
+            values      => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
+            maxlevel    => 'error',
+            minlevel    => 'emergency'
+            message_pattern => '%L %T %D %P %H %C %S %t %m',
+        }
+    );
 
 =head1 LOG VIA EMAIL
 

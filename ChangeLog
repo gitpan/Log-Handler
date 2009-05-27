@@ -1,3 +1,9 @@
+0.52_01 Released at 2009-05-27.
+        - Fixed a bug in Log::Handler::Output::DBI - it was unable
+          to create a valid dsn for sqlite (RT #46407).
+          - Added option dbname
+          - Added option data_source
+
 0.52    Released at 2009-05-24.
         - No changes, just a full version.
 

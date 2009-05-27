@@ -35,6 +35,7 @@ ok(1, 'new');
 $ret = $log->{statement} eq 'insert into messages (level,message) values (?,?)';
 ok($ret, 'checking statement');
 
+#$ret = $log->{cstr}->[0] eq 'dbi:mysql:database=dbname;host=127.0.0.1;port=3306';
 $ret = $log->{cstr}->[0] eq 'dbi:mysql:database=dbname;host=127.0.0.1;port=3306';
 ok($ret, 'checking cstr');
 
