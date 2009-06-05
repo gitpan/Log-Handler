@@ -1032,7 +1032,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.54';
+our $VERSION = '0.55_01';
 our $ERRSTR  = '';
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1371,9 +1371,9 @@ sub errstr { $ERRSTR }
 # private stuff
 #
 
-sub _shift_options {
-    my ($self, $output_opts) = @_;
-    my %handler_opts;
+sub _split_options {
+    my ($self, $opts) = @_;
+    my (%handler_opts, %output_opts);
 
     # It's possible to pass all options for the handler and for the
     # output to add(). These options must be splitted. The options
@@ -1381,7 +1381,7 @@ sub _shift_options {
     # options for the output will be passed - as example - to
     # Log::Handler::Output::File.
 
-    my @shift_options = qw(
+    my %split_options = map { $_ => 0 } qw(
         alias
         debug_mode
         debug_skip
@@ -1401,12 +1401,15 @@ sub _shift_options {
         timeformat
     );
 
-    foreach my $opt ( @shift_options ) {
-        next unless exists $output_opts->{$opt};
-        $handler_opts{$opt} = delete $output_opts->{$opt};
+    while (my ($k, $v) = each %$opts) {
+        if (exists $split_options{$k}) {
+            $handler_opts{$k} = $v;
+        } else {
+            $output_opts{$k} = $v;
+        }
     }
 
-    return \%handler_opts;
+    return (\%handler_opts, \%output_opts);
 }
 
 sub _new_output {
@@ -1414,7 +1417,7 @@ sub _new_output {
     my $type    = shift;
     my $args    = @_ > 1 ? {@_} : shift;
     my $package = ref($type);
-    my ($output, $handler_opts);
+    my ($output, $handler_opts, $output_opts);
 
     # There are two ways to add an output:
     #
@@ -1431,9 +1434,8 @@ sub _new_output {
         $output = $type;
         $handler_opts = $args;
     } else {
-        # Shift the handler options from $args. The rest in %$args
-        # will be passed to the output.
-        $handler_opts = $self->_shift_options($args);
+        # Split the handler and output options from $args.
+        ($handler_opts, $output_opts) = $self->_split_options($args);
 
         # Try to determine which output is wanted...
         if (exists $AVAILABLE_OUTPUTS{$type}) {
@@ -1445,7 +1447,8 @@ sub _new_output {
         }
 
         $package->require;
-        $output = $package->new($args) or Carp::croak $package->errstr;
+        $output = $package->new($output_opts)
+            or Carp::croak $package->errstr;
     }
 
     $handler_opts = $self->_validate_options($handler_opts);

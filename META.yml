@@ -1,6 +1,6 @@
 ---
 name: Log-Handler
-version: 0.54
+version: 0.55_01
 author:
   - Jonny Schulz
 abstract: Log messages to several outputs.
@@ -30,7 +30,7 @@ recommends:
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.54
+    version: 0.55_01
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
     version: 0.04
@@ -54,7 +54,7 @@ provides:
     version: 0.02
   Log::Handler::Output::Screen:
     file: lib/Log/Handler/Output/Screen.pm
-    version: 0.02
+    version: 0.03
   Log::Handler::Output::Socket:
     file: lib/Log/Handler/Output/Socket.pm
     version: 0.05

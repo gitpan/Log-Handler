@@ -1,3 +1,9 @@
+0.55_01 Released at 2009-06-05.
+        - Oops... there was no _raise_error routine in
+          Log::Handler::Output::Screen.
+        - Fixed a bug in Handler.pm - the hash reference that were
+          passed to add() were changed (RT #46631).
+
 0.54    Released at 2009-05-27.
         - Just a full version.
 

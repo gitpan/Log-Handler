@@ -171,7 +171,7 @@ This option is set to 1 on default.
 
 =item B<reconnect>
 
-C<reconnect> is deprecated!
+C<reconnect> is deprecated and not usable!
 
 =item B<dbi_params>
 

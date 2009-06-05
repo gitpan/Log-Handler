@@ -87,7 +87,7 @@ use warnings;
 use Data::Dumper;
 use Params::Validate;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our $ERRSTR  = '';
 
 sub new {
@@ -139,6 +139,12 @@ sub _validate {
     });
 
     return \%options;
+}
+
+sub _raise_error {
+    my $self = shift;
+    $ERRSTR = shift;
+    return undef;
 }
 
 1;
