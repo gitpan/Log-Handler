@@ -1,3 +1,6 @@
+0.56    Released at 2009-06-06.
+        - Just a full version.
+
 0.55_01 Released at 2009-06-05.
         - Oops... there was no _raise_error routine in
           Log::Handler::Output::Screen.
