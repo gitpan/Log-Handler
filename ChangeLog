@@ -1,3 +1,7 @@
+0.57    Released at 2009-10-06.
+        - Kicked UNIVERSAL::require.
+        - Kicked Devel::Backtrace.
+
 0.56    Released at 2009-06-06.
         - Just a full version.
 

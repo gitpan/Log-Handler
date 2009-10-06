@@ -20,7 +20,6 @@ Just for internal usage!
 
     Carp
     UNIVERSAL
-    Devel::Backtrace
 
 =head1 AUTHOR
 
@@ -41,9 +40,8 @@ use strict;
 use warnings;
 use Carp;
 use UNIVERSAL;
-use Devel::Backtrace;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 our $ERRSTR  = '';
 
 sub new {
@@ -142,22 +140,28 @@ sub errstr { $ERRSTR }
 
 sub _add_trace {
     my ($self, $message) = @_;
+    my @caller = ();
+    my $skip   = $self->{debug_skip};
 
     if ( $message->{message} =~ /.\z/ ) {
         $message->{message} .= "\n";
     }
 
-    my $bt = Devel::Backtrace->new($self->{debug_skip});
+    for (my $i=0; my @c = caller($i); $i++) {
+        my %frame;
+        @frame{qw/package filename line subroutine hasargs wantarray evaltext is_require/} = @c[0..7];
+        push @caller, \%frame;
+    }
 
-    foreach my $point (reverse 0..$bt->points-1) {
-        $message->{message} .= ' ' x 3 . "CALL($point):";
-        my $caller = $bt->point($point);
+    foreach my $i (reverse $skip..$#caller) {
+        $message->{message} .= ' ' x 3 . "CALL($i):";
+        my $frame = $caller[$i];
         foreach my $key (qw/package filename line subroutine hasargs wantarray evaltext is_require/) {
-            next unless defined $caller->{$key};
+            next unless defined $frame->{$key};
             if ($self->{debug_mode} == 1) { # line mode
-                $message->{message} .= " $key($caller->{$key})";
+                $message->{message} .= " $key($frame->{$key})";
             } elsif ($self->{debug_mode} == 2) { # block mode
-                $message->{message} .= "\n" . ' ' x 6 . sprintf('%-12s', $key) . $caller->{$key};
+                $message->{message} .= "\n" . ' ' x 6 . sprintf('%-12s', $key) . $frame->{$key};
             }
         }
         $message->{message} .= "\n";

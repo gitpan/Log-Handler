@@ -915,7 +915,7 @@ don't want to create an accessor.
     $log->info('message');
 
 For a little example you can take a look into the examples directory
-of the distribution (Log-Handler-$VERSION/examples/logger.pl).
+of the distribution (examples/logger/).
 
 =head1 EXAMPLES
 
@@ -950,7 +950,6 @@ Prerequisites for all modules:
     POSIX
     Time::HiRes
     Sys::Hostname
-    UNIVERSAL::require
 
 Recommended modules:
 
@@ -1026,13 +1025,12 @@ use strict;
 use warnings;
 use Carp;
 use Params::Validate;
-use UNIVERSAL::require;
 use Log::Handler::Output;
 use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.56';
+our $VERSION = '0.57';
 our $ERRSTR  = '';
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1446,7 +1444,9 @@ sub _new_output {
             $package = 'Log::Handler::Output::' . ucfirst($type);
         }
 
-        $package->require;
+        eval "require $package";
+        die $@ if $@;
+
         $output = $package->new($output_opts)
             or Carp::croak $package->errstr;
     }

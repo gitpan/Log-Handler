@@ -874,7 +874,7 @@ GLOBAL LOG HANDLER
         $log->info('message');
 
     For a little example you can take a look into the examples directory of
-    the distribution (Log-Handler-$VERSION/examples/logger.pl).
+    the distribution (examples/logger/).
 
 EXAMPLES
     Log::Handler::Examples
@@ -906,7 +906,6 @@ PREREQUISITES
         POSIX
         Time::HiRes
         Sys::Hostname
-        UNIVERSAL::require
 
     Recommended modules:
 

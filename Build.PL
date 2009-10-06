@@ -21,7 +21,6 @@ my $build = Module::Build->new(
     requires => {
         'Carp'               => 0,
         'Data::Dumper'       => 0,
-        'Devel::Backtrace'   => 0.05,
         'Fcntl'              => 0,
         'File::Spec'         => 0,
         'Params::Validate'   => 0,
@@ -29,7 +28,6 @@ my $build = Module::Build->new(
         'Test::More'         => 0,
         'Time::HiRes'        => 0,
         'Sys::Hostname'      => 0,
-        'UNIVERSAL::require' => 0,
     },
 );
 

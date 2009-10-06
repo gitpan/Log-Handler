@@ -88,14 +88,6 @@ Pass the database name.
 
 Pass the database driver.
 
-=item B<user>
-
-Pass the database user for the connect.
-
-=item B<password>
-
-Pass the users password.
-
 =item B<host>
 
 Pass the hostname where the database is running.
@@ -103,6 +95,14 @@ Pass the hostname where the database is running.
 =item B<port>
 
 Pass the port where the database is listened.
+
+=item B<user>
+
+Pass the database user for the connect.
+
+=item B<password>
+
+Pass the users password.
 
 =item B<table> and B<columns>
 

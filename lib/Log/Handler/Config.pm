@@ -334,7 +334,6 @@ Or
 
     Carp
     Params::Validate
-    UNIVERSAL::require
 
 =head1 EXPORTS
 
@@ -363,12 +362,11 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 use Carp;
 use File::Spec;
 use Params::Validate;
-use UNIVERSAL::require;
 
 sub config {
     my $self   = shift;
@@ -411,7 +409,10 @@ sub _get_config {
     if (ref($params->{config})) {
         $config = $params->{config};
     } elsif ($params->{config}) {
-        $plugin->require or croak "Unable to load plugin '$plugin'";
+        eval "require $plugin";
+        if ($@) {
+            croak "unable to load plugin '$plugin' - $@";
+        }
         $config = $plugin->get_config($params->{config});
     }
 
