@@ -944,7 +944,6 @@ Prerequisites for all modules:
 
     Carp
     Data::Dumper
-    Devel::Backtrace
     Fcntl
     Params::Validate
     POSIX
@@ -1030,7 +1029,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.57';
+our $VERSION = '0.58';
 our $ERRSTR  = '';
 
 # $TRACE and $CALLER_LEVEL are both used as global

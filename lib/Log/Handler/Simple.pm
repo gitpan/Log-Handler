@@ -1,6 +1,6 @@
 =head1 NAME
 
-Log::Handler::Simple - A simple handler to log messages to a log file.
+Log::Handler::Simple - !!! THIS MODULE IS DEPRECATED !!!
 
 =head1 SYNOPSIS
 
@@ -19,11 +19,9 @@ Log::Handler::Simple - A simple handler to log messages to a log file.
 
 =head1 DESCRIPTION
 
-Maybe you are wondering why this module exists besides C<Log::Handler::Output::File>.
+THIS MODULE IS DEPRECATED AND WILL BE KICKED AS SOON AS POSSIBLE!
 
-This module is just for backward compatibilities to the old C<Log::Handler> - version 0.38.
-If you install the current version of C<Log::Handler> you don't need to rewrite your
-programs. You can use the old style if you wish.
+Please use Log::Handler::Output::File instead!
 
 =head1 METHODS
 
@@ -627,7 +625,6 @@ Would NOT dump %hash to the $log object!
     Fcntl             -  for flock(), O_APPEND, O_WRONLY, O_EXCL and O_CREATE
     POSIX             -  to generate the time stamp with strftime()
     Params::Validate  -  to validate all options
-    Devel::Backtrace  -  to backtrace caller()
     Carp              -  to croak() on errors if die_on_errors is active
 
 =head1 EXPORTS
@@ -686,7 +683,7 @@ SUCH DAMAGES.
 
 package # hide from pause
     Log::Handler::Simple;
-our $VERSION = '0.40';
+our $VERSION = '0.41';
 
 use strict;
 use warnings;
@@ -694,7 +691,6 @@ use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
 use POSIX qw(strftime);
 use Params::Validate;
 use Carp qw(croak);
-use Devel::Backtrace;
 
 use constant EMERGENCY =>  0;
 use constant EMERG     =>  0;
@@ -1056,8 +1052,9 @@ sub _post_print {
 }
 
 sub _build_message {
-    my $self = shift;
-    my $level = shift;
+    my $self    = shift;
+    my $level   = shift;
+    my $skip    = $self->{debug_skip};
     my $message = '';
 
     if ($self->{timeformat}) {
@@ -1071,17 +1068,23 @@ sub _build_message {
     }
     if ($self->{debug} || $level eq 'TRACE') {
         $message .= "\n" if $message =~ /.\z|^\z/;
-        my $bt = Devel::Backtrace->new($self->{debug_skip});
-        my $pt = $bt->points - 1;
-        for my $p (reverse 0..$pt) {
-            $message .= ' ' x 3 . "CALL($p):";
-            my $c = $bt->point($p);
-            for my $k (qw/package filename line subroutine hasargs wantarray evaltext is_require/) {
-                next unless defined $c->{$k};
-                if ($self->{debug_mode} == 1) {
-                    $message .= " $k($c->{$k})";
-                } elsif ($self->{debug_mode} == 2) {
-                    $message .= "\n" . ' ' x 6 . sprintf('%-12s', $k) . $c->{$k};
+
+        my @caller = ();
+        for (my $i=0; my @c = caller($i); $i++) {
+            my %frame;
+            @frame{qw/package filename line subroutine hasargs wantarray evaltext is_require/} = @c[0..7];
+            push @caller, \%frame;
+        }
+
+        foreach my $i (reverse $skip..$#caller) {
+            $message .= ' ' x 3 . "CALL($i):";
+            my $frame = $caller[$i];
+            foreach my $key (qw/package filename line subroutine hasargs wantarray evaltext is_require/) {
+                next unless defined $frame->{$key};
+                if ($self->{debug_mode} == 1) { # line mode
+                    $message .= " $key($frame->{$key})";
+                } elsif ($self->{debug_mode} == 2) { # block mode
+                    $message .= "\n" . ' ' x 6 . sprintf('%-12s', $key) . $frame->{$key};
                 }
             }
             $message .= "\n";

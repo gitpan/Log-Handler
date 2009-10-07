@@ -900,7 +900,6 @@ PREREQUISITES
 
         Carp
         Data::Dumper
-        Devel::Backtrace
         Fcntl
         Params::Validate
         POSIX
