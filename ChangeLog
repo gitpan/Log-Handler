@@ -1,3 +1,10 @@
+0.59    Released at 2009-10-11.
+        - Kicked deprecated module Log::Handler::Simple.
+        - Kicked _close, _lock, _unlock in File.pm and moved the
+          functionalety into log() and close().
+        - Kicked deprecated option "reconnect" from DBI.pm.
+        - Added Log::Handler::Output::Sendmail.
+
 0.58    Released at 2009-10-07.
         - Forget to kick Devel::Backtrace from Log::Handler::Simple.
         - Log::Handler::Simple will be kicked in the next release.

@@ -169,10 +169,6 @@ re-connect if the connection was lost.
 
 This option is set to 1 on default.
 
-=item B<reconnect>
-
-C<reconnect> is deprecated and not usable!
-
 =item B<dbi_params>
 
 This option is useful if you want to pass arguments to L<DBI>. The default is
@@ -270,7 +266,7 @@ use Carp;
 use DBI;
 use Params::Validate;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 our $ERRSTR  = '';
 
 sub new {
@@ -426,10 +422,6 @@ sub _validate {
             optional => 1,
         },
         persistent => {
-            type => Params::Validate::SCALAR,
-            default => 1,
-        },
-        reconnect => { # not used any more
             type => Params::Validate::SCALAR,
             default => 1,
         },

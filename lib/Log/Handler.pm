@@ -66,6 +66,84 @@ C<debug> is the highest and C<emergency> is the lowest level.
 Level C<debug> is the highest level because it basically says to log
 every peep.
 
+=head1 LOG LEVEL METHODS
+
+=over 4
+
+=item B<debug()>
+
+=item B<info()>
+
+=item B<notice()>
+
+=item B<warning()>
+
+=item B<error()>, B<err()>
+
+=item B<critical()>, B<crit()>
+
+=item B<alert()>
+
+=item B<emergency()>, B<emerg()>
+
+=back
+
+The call of a log level method is very simple:
+
+    $log->info("Hello World! How are you?");
+
+Or maybe:
+
+    $log->info("Hello World!", "How are you?");
+
+Both calls would log - if level INFO is active:
+
+    Feb 01 12:56:31 [INFO] Hello World! How are you?
+
+=head2 is_* methods
+
+=over 4
+
+=item B<is_debug()>
+
+=item B<is_info()>
+
+=item B<is_notice()>
+
+=item B<is_warning()>, B<is_warn()>
+
+=item B<is_error()>, B<is_err()>
+
+=item B<is_critical()>, B<is_crit()>
+
+=item B<is_alert()>
+
+=item B<is_emergency()>, B<is_emerg()>
+
+=back
+
+These twelve methods could be very useful if you want to kwow if the current
+level would log the message. All methods returns TRUE if the current set
+of C<minlevel> and C<maxlevel> would log the message and FALSE if not.
+
+=head1 SPECIAL LOG METHODS
+
+=over 4
+
+=item C<fatal>, C<is_fatal>
+
+=item C<trace>
+
+=item C<dump>
+
+=item C<die>
+
+=item C<log>
+
+=back
+
+For a full list take a look into the documentation of L<Log::Handler::Levels>.
+
 =head1 METHODS
 
 =head2 new()
@@ -636,72 +714,6 @@ only if you want to do it yourself.
 
 Take a look to L<Log::Handler::Examples> for more informations.
 
-=head2 Log level methods
-
-=over 4
-
-=item B<debug()>
-
-=item B<info()>
-
-=item B<notice()>
-
-=item B<warning()>
-
-=item B<error()>, B<err()>
-
-=item B<critical()>, B<crit()>
-
-=item B<alert()>
-
-=item B<emergency()>, B<emerg()>
-
-=back
-
-The call of a log level method is very simple:
-
-    $log->info("Hello World! How are you?");
-
-Or maybe:
-
-    $log->info("Hello World!", "How are you?");
-
-Both calls would log - if level INFO is active:
-
-    Feb 01 12:56:31 [INFO] Hello World! How are you?
-
-=head2 is_* methods
-
-=over 4
-
-=item B<is_debug()>
-
-=item B<is_info()>
-
-=item B<is_notice()>
-
-=item B<is_warning()>, B<is_warn()>
-
-=item B<is_error()>, B<is_err()>
-
-=item B<is_critical()>, B<is_crit()>
-
-=item B<is_alert()>
-
-=item B<is_emergency()>, B<is_emerg()>
-
-=back
-
-These twelve methods could be very useful if you want to kwow if the current
-level would log the message. All methods returns TRUE if the current set
-of C<minlevel> and C<maxlevel> would log the message and FALSE if not.
-
-=head2 Other level methods
-
-There exists some other level methods.
-
-For a full list take a look into the documentation of L<Log::Handler::Levels>.
-
 =head2 output()
 
 Call C<output($alias)> to get the output object that you added with
@@ -1029,7 +1041,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.58';
+our $VERSION = '0.59_01';
 our $ERRSTR  = '';
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1095,12 +1107,13 @@ our @LEVEL_BY_NUM = qw(
 
 # shortcuts for each output
 our %AVAILABLE_OUTPUTS = (
-    file    => 'Log::Handler::Output::File',
-    email   => 'Log::Handler::Output::Email',
-    forward => 'Log::Handler::Output::Forward',
-    dbi     => 'Log::Handler::Output::DBI',
-    screen  => 'Log::Handler::Output::Screen',
-    socket  => 'Log::Handler::Output::Socket',
+    file     => 'Log::Handler::Output::File',
+    email    => 'Log::Handler::Output::Email',
+    sendmail => 'Log::Handler::Output::Sendmail',
+    forward  => 'Log::Handler::Output::Forward',
+    dbi      => 'Log::Handler::Output::DBI',
+    screen   => 'Log::Handler::Output::Screen',
+    socket   => 'Log::Handler::Output::Socket',
 );
 
 # use Log::Handler foo => 'LOGFOO', bar => 'LOGBAR';
@@ -1153,12 +1166,6 @@ sub create_logger {
 sub new {
     my $class = shift;
 
-    # for full backward compatibilities to v0.38
-    if (@_) {
-        require Log::Handler::Simple;
-        return  Log::Handler::Simple->new(@_);
-    }
-
     my $self = bless {
         priority => PRIORITY,   # start priority
         levels   => { },        # outputs stored by active levels
@@ -1168,12 +1175,24 @@ sub new {
             &Log::Handler::Pattern::get_pattern,
     }, $class;
 
+    if (@_) {
+        $self->add(@_);
+    }
+
     return $self;
 }
 
 sub add {
-    @_ == 3 or Carp::croak 'Usage: $log->add( $output => \%options )';
-    my $self   = shift;
+    my $self = shift;
+
+    if (@_ > 2) {
+        while (@_) {
+            my $type = shift;
+            my $conf = shift;
+            $self->add($type, $conf);
+        }
+    }
+
     my $output = $self->_new_output(@_);
     my $levels = $self->{levels};
 

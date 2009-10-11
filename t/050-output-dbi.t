@@ -27,7 +27,6 @@ $log = Log::Handler::Output::DBI->new(
     columns    => 'level message',
     values     => '%level %message',
     persistent => 0,
-    reconnect  => 0,
 );
 
 ok(1, 'new');

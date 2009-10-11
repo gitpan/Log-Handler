@@ -28,12 +28,12 @@ lib/Log/Handler/Output/Email.pm
 lib/Log/Handler/Output/File.pm
 lib/Log/Handler/Output/Forward.pm
 lib/Log/Handler/Output/Screen.pm
+lib/Log/Handler/Output/Sendmail.pm
 lib/Log/Handler/Output/Socket.pm
 lib/Log/Handler/Pattern.pm
 lib/Log/Handler/Plugin/Config/General.pm
 lib/Log/Handler/Plugin/Config/Properties.pm
 lib/Log/Handler/Plugin/YAML.pm
-lib/Log/Handler/Simple.pm
 LICENCE
 Makefile.PL
 MANIFEST			This list of files
@@ -55,8 +55,8 @@ t/019-handler-setlevel.t
 t/020-output-forward.t
 t/030-output-file.t
 t/040-output-email.t
+t/045-output-sendmail.t
 t/050-output-dbi.t
 t/060-output-socket.t
 t/090-test-undef.t
 t/100-config.t
-t/200-backward-compatibility.t

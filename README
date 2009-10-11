@@ -62,6 +62,53 @@ LOG LEVELS
     Level "debug" is the highest level because it basically says to log
     every peep.
 
+LOG LEVEL METHODS
+    debug()
+    info()
+    notice()
+    warning()
+    error(), err()
+    critical(), crit()
+    alert()
+    emergency(), emerg()
+
+    The call of a log level method is very simple:
+
+        $log->info("Hello World! How are you?");
+
+    Or maybe:
+
+        $log->info("Hello World!", "How are you?");
+
+    Both calls would log - if level INFO is active:
+
+        Feb 01 12:56:31 [INFO] Hello World! How are you?
+
+  is_* methods
+    is_debug()
+    is_info()
+    is_notice()
+    is_warning(), is_warn()
+    is_error(), is_err()
+    is_critical(), is_crit()
+    is_alert()
+    is_emergency(), is_emerg()
+
+    These twelve methods could be very useful if you want to kwow if the
+    current level would log the message. All methods returns TRUE if the
+    current set of "minlevel" and "maxlevel" would log the message and FALSE
+    if not.
+
+SPECIAL LOG METHODS
+    "fatal", "is_fatal"
+    "trace"
+    "dump"
+    "die"
+    "log"
+
+    For a full list take a look into the documentation of
+    Log::Handler::Levels.
+
 METHODS
   new()
     Call "new()" to create a new log handler object.
@@ -623,49 +670,6 @@ METHODS
     yourself, only if you want to do it yourself.
 
     Take a look to Log::Handler::Examples for more informations.
-
-  Log level methods
-    debug()
-    info()
-    notice()
-    warning()
-    error(), err()
-    critical(), crit()
-    alert()
-    emergency(), emerg()
-
-    The call of a log level method is very simple:
-
-        $log->info("Hello World! How are you?");
-
-    Or maybe:
-
-        $log->info("Hello World!", "How are you?");
-
-    Both calls would log - if level INFO is active:
-
-        Feb 01 12:56:31 [INFO] Hello World! How are you?
-
-  is_* methods
-    is_debug()
-    is_info()
-    is_notice()
-    is_warning(), is_warn()
-    is_error(), is_err()
-    is_critical(), is_crit()
-    is_alert()
-    is_emergency(), is_emerg()
-
-    These twelve methods could be very useful if you want to kwow if the
-    current level would log the message. All methods returns TRUE if the
-    current set of "minlevel" and "maxlevel" would log the message and FALSE
-    if not.
-
-  Other level methods
-    There exists some other level methods.
-
-    For a full list take a look into the documentation of
-    Log::Handler::Levels.
 
   output()
     Call "output($alias)" to get the output object that you added with the

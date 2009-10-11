@@ -173,10 +173,10 @@ package Log::Handler::Output::Email;
 
 use strict;
 use warnings;
-use Net::SMTP;
-use Params::Validate;
 use Carp;
 use Email::Date;
+use Net::SMTP;
+use Params::Validate;
 
 our $VERSION = '0.03';
 our $ERRSTR  = '';

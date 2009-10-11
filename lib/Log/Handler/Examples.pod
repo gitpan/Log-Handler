@@ -179,6 +179,24 @@ Or with C<data_source>
 
     $log->emergency('log an emergency issue');
 
+=head1 LOG VIA SENDMAIL
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(
+        sendmail => {
+            from     => 'bar@foo.example',
+            to       => 'foo@bar.example',
+            subject  => 'your subject',
+            maxlevel => 'info',
+            newline  => 1,
+        }
+    );
+
+    $log->emergency("message");
+
 =head1 LOG VIA FILE
 
     use Log::Handler;

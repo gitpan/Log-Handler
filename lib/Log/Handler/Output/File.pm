@@ -202,9 +202,9 @@ use warnings;
 use Carp;
 use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
 use File::Spec;
-use Params::Validate;
+use Params::Validate qw();
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our $ERRSTR  = '';
 
 sub new {
@@ -227,7 +227,10 @@ sub new {
     $self->{permissions} = oct($self->{permissions});
 
     # open the log file permanent
-    $self->flush or croak $self->errstr;
+    if ($self->{fileopen}) {
+        $self->_open
+            or croak $self->errstr;
+    }
 
     return $self;
 }
@@ -243,18 +246,20 @@ sub log {
     }
 
     if ($self->{filelock}) {
-        $self->_lock or return undef;
+        flock($self->{fh}, LOCK_EX)
+            or return $self->_raise_error("unable to lock logfile $self->{filename}: $!");
     }
 
     print {$self->{fh}} $message->{message} or
         return $self->_raise_error("unable to print to logfile: $!");
 
     if ($self->{filelock}) {
-        $self->_unlock or return undef;
+        flock($self->{fh}, LOCK_UN)
+            or return $self->_raise_error("unable to unlock logfile $self->{filename}: $!");
     }
 
     if (!$self->{fileopen}) {
-        $self->_close or return undef;
+        $self->close or return undef;
     }
 
     return 1;
@@ -263,12 +268,9 @@ sub log {
 sub flush {
     my $self = shift;
 
-    if ($self->{fileopen} == 1) {
-        $self->_close or return undef;
+    if ($self->{fileopen}) {
+        $self->close or return undef;
         $self->_open  or return undef;
-        if ($self->{reopen}) {
-            $self->{inode} = (stat($self->{filename}))[1];
-        }
     }
 
     return 1;
@@ -276,13 +278,21 @@ sub flush {
 
 sub close {
     my $self = shift;
-    return $self->_close;
+
+    if ($self->{fh}) {
+        CORE::close($self->{fh})
+            or return $self->_raise_error("unable to close logfile $self->{filename}: $!");
+        delete $self->{fh};
+    }
+
+    return 1;
 }
 
 sub errstr { $ERRSTR }
 
 sub DESTROY {
     my $self = shift;
+
     if ($self->{fh}) {
         CORE::close($self->{fh});
     }
@@ -305,58 +315,24 @@ sub _open {
     }
 
     if ($self->{utf8}) {
-        binmode $fh, ':utf8' if $self->{utf8};
+        binmode $fh, ':utf8';
+    }
+
+    if ($self->{reopen}) {
+        $self->{inode} = (stat($self->{filename}))[1];
     }
 
     $self->{fh} = $fh;
     return 1;
 }
 
-sub _close {
-    my $self = shift;
-
-    if ($self->{fh}) {
-        CORE::close($self->{fh})
-            or return $self->_raise_error("unable to close logfile $self->{filename}: $!");
-        delete $self->{fh};
-    }
-
-    return 1;
-}
-
 sub _checkino {
-    my $self  = shift;
+    my $self = shift;
 
-    if (-e $self->{filename}) {
-        my $ino = (stat($self->{filename}))[1];
-        unless ($self->{inode} == $ino) {
-            $self->_close or return undef;
-            $self->_open or return undef;
-            $self->{inode} = $ino;
-        }
-    } else {
-        $self->_close or return undef;
+    if (!-e $self->{filename} || $self->{inode} != (stat($self->{filename}))[1]) {
+        $self->close or return undef;
         $self->_open or return undef;
-        $self->{inode} = (stat($self->{filename}))[1];
     }
-
-    return 1;
-}
-
-sub _lock {
-    my $self = shift;
-
-    flock($self->{fh}, LOCK_EX)
-        or return $self->_raise_error("unable to lock logfile $self->{filename}: $!");
-
-    return 1;
-}
-
-sub _unlock {
-    my $self = shift;
-
-    flock($self->{fh}, LOCK_UN)
-        or return $self->_raise_error("unable to unlock logfile $self->{filename}: $!");
 
     return 1;
 }
@@ -410,8 +386,7 @@ sub _validate {
 }
 
 sub _raise_error {
-    my $self = shift;
-    $ERRSTR = shift;
+    $ERRSTR = $_[1];
     return undef;
 }
 
