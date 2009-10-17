@@ -208,7 +208,6 @@ from this section will be used as defaults.
     $log->config(config => {
         file => {
             default => { # defaults for all file-outputs
-                newline => 1,
                 mode    => 'append',
             },
             file1 => {
@@ -245,7 +244,6 @@ from this section will be used as defaults.
         debug_mode = 2
         filename = example.log
         message_layout = '%T %H[%P] [%L] %S: %m'
-        newline = 1
     </file>
 
 Or
@@ -262,7 +260,6 @@ Or
             debug_mode = 2
             filename = example.log
             message_layout = '%T %H[%P] [%L] %S: %m'
-            newline = 1
         </file1>
     </file>
 
@@ -277,7 +274,6 @@ Or
       maxlevel: info
       minlevel: warn
       mode: append
-      newline: 1
       permissions: 0640
       message_layout: '%T %H[%P] [%L] %S: %m'
       reopen: 1
@@ -294,7 +290,6 @@ Or
         maxlevel: info
         minlevel: warn
         mode: append
-        newline: 1
         permissions: 0640
         message_layout: '%T %H[%P] [%L] %S: %m'
         reopen: 1
@@ -312,7 +307,6 @@ Or
     file.timeformat = %b %d %H:%M:%S
     file.debug_mode = 2
     file.filename = example.log
-    file.newline = 1
     file.message_layout = '%T %H[%P] [%L] %S: %m'
 
 Or
@@ -327,7 +321,6 @@ Or
     file.file1.timeformat = %b %d %H:%M:%S
     file.file1.debug_mode = 2
     file.file1.filename = example.log
-    file.file1.newline = 1
     file.file1.message_layout = '%T %H[%P] [%L] %S: %m'
 
 =head1 PREREQUISITES
@@ -362,7 +355,7 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.05';
+our $VERSION = '0.07';
 
 use Carp;
 use File::Spec;
@@ -382,7 +375,8 @@ sub config {
     #   $log_config{dbi}  = [ \%a, \%b, \%c ]
     my %log_config;
 
-    while (my ($type, $output) = each %$config) {
+    foreach my $type (keys %$config) {
+        my $output = $config->{$type};
         my $ref = ref($output);
 
         if ($ref eq 'HASH') {
@@ -432,11 +426,14 @@ sub _get_hash_config {
         %default = %{ delete $config->{default} };
     }
 
-    while (my ($alias, $param) = each %$config) {
+    foreach my $alias (keys %$config) {
+        my $param = $config->{$alias};
+
         if (ref($param) ne 'HASH') {
             push @config, $config;
             last;
         }
+
         $param->{alias} = $alias;
         my %config = (%default, %$param);
         push @config, \%config;

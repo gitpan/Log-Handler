@@ -7,7 +7,7 @@ Log::Handler::Output::Screen - Log messages to the screen.
     use Log::Handler::Output::Screen;
 
     my $screen = Log::Handler::Output::Screen->new(
-        log_to => 'STDERR',
+        log_to => "STDERR",
         dump   => 1,
     );
 
@@ -29,7 +29,9 @@ The following options are possible:
 
 =item B<log_to>
 
-Where do you want to log? Possible is: STDOUT and STDERR.
+Where do you want to log? Possible is: STDOUT, STDERR and WARN.
+
+WARN means to call C<warn()>.
 
 The default is STDOUT.
 
@@ -46,7 +48,7 @@ Call C<log()> if you want to log a message to the screen.
 
 Example:
 
-    $screen->log('this message goes to the screen');
+    $screen->log("this message goes to the screen");
 
 =head2 errstr()
 
@@ -87,8 +89,8 @@ use warnings;
 use Data::Dumper;
 use Params::Validate;
 
-our $VERSION = '0.03';
-our $ERRSTR  = '';
+our $VERSION = "0.04";
+our $ERRSTR  = "";
 
 sub new {
     my $class   = shift;
@@ -105,12 +107,14 @@ sub log {
         $message->{message} = Dumper($message);
     }
 
-    if ($self->{log_to} eq 'STDOUT') {
+    if ($self->{log_to} eq "STDOUT") {
         print STDOUT $message->{message}
             or return $self->_raise_error($!);
-    } else {
+    } elsif ($self->{log_to} eq "STDERR") {
         print STDERR $message->{message}
             or return $self->_raise_error($!);
+    } elsif ($self->{log_to} eq "WARN") {
+        warn $message->{message};
     }
 
     return 1;
@@ -128,8 +132,8 @@ sub _validate {
     my %options = Params::Validate::validate(@_, {
         log_to => {
             type => Params::Validate::SCALAR,
-            regex => qr/^STD(?:ERR|OUT)\z/,
-            default => 'STDOUT',
+            regex => qr/^(?:STDOUT|STDERR|WARN)\z/,
+            default => "STDOUT",
         },
         dump => {
             type => Params::Validate::SCALAR,

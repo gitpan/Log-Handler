@@ -13,27 +13,27 @@ Quite simple
 
 Create a application logger and accessor LOG
 
-    use Log::Handler myapp => 'LOG';
+    use Log::Handler myapp => "LOG";
 
     LOG->add( screen => \%options );
 
 Create a application logger without accessor
 
-    use Log::Handler 'myapp';
+    use Log::Handler "myapp";
 
-    my $log = Log::Handler->get_logger('myapp');
+    my $log = Log::Handler->get_logger("myapp");
     $log->add( screen => \%options );
 
 Create application logger with C<create_logger()>
 
     use Log::Handler;
 
-    my $log = Log::Handler->create_logger('myapp');
+    my $log = Log::Handler->create_logger("myapp");
     $log->add( screen => \%options );
 
 Another self-explanatory examples
 
-    use Log::Handler l1 => 'LOG1', l2 => 'LOG2', l3 => 'LOG3';
+    use Log::Handler l1 => "LOG1", l2 => "LOG2", l3 => "LOG3";
 
     @logger = Log::Handler->create_logger(qw/l1 l2 l3/);
 
@@ -43,19 +43,19 @@ Once created you can import a application logger into all
 modules of your project:
 
     package MyApp;
-    use Log::Handler myapp => 'LOG';
+    use Log::Handler myapp => "LOG";
     LOG->add( screen => \%options );
 
     package MyApp::Foo;
     # Import it with an accessor
-    use Log::Handler myapp => 'LOG';
-    LOG->info('message');
+    use Log::Handler myapp => "LOG";
+    LOG->info("message");
 
     package MyApp::Bar;
     use Log::Handler;
     # Import it with get_logger()
-    my $log = Log::Handler->get_logger('myapp');
-    $log->info('message');
+    my $log = Log::Handler->get_logger("myapp");
+    $log->info("message");
 
 =head1 ADD OUTPUTS
 
@@ -72,12 +72,12 @@ modules of your project:
 
 This is the same like
 
-    $log->add( 'Log::Handler::Output::DBI'     => \%options );
-    $log->add( 'Log::Handler::Output::Email'   => \%options );
-    $log->add( 'Log::Handler::Output::File'    => \%options );
-    $log->add( 'Log::Handler::Output::Forward' => \%options );
-    $log->add( 'Log::Handler::Output::Screen'  => \%options );
-    $log->add( 'Log::Handler::Output::Socket'  => \%options );
+    $log->add( "Log::Handler::Output::DBI"     => \%options );
+    $log->add( "Log::Handler::Output::Email"   => \%options );
+    $log->add( "Log::Handler::Output::File"    => \%options );
+    $log->add( "Log::Handler::Output::Forward" => \%options );
+    $log->add( "Log::Handler::Output::Screen"  => \%options );
+    $log->add( "Log::Handler::Output::Socket"  => \%options );
 
 You can add output objects on this way as well:
 
@@ -85,13 +85,12 @@ You can add output objects on this way as well:
     use Log::Handler::Output::File;
 
     my %file_options = (
-        filename => 'file1.log',
-        mode     => 'append'
+        filename => "file1.log",
+        mode     => "append"
     );
 
     my %handler_options = (
-        maxlevel => 'info',
-        newline  => 1
+        maxlevel => "info",
     );
 
     my $log  = Log::Handler->new();
@@ -107,39 +106,41 @@ You can add output objects on this way as well:
 
     $log->add(
         dbi => {
-            database   => 'database',
-            driver     => 'mysql',
-            host       => '127.0.0.1',
+            database   => "database",
+            driver     => "mysql",
+            host       => "127.0.0.1",
             port       => 3306,
-            user       => 'user',
-            password   => 'password',
-            table      => 'messages',
+            user       => "user",
+            password   => "password",
+            table      => "messages",
             columns    => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
             values     => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
-            maxlevel   => 'error',
-            minlevel   => 'emergency'
-            message_pattern => '%L %T %D %P %H %C %S %t %m',
+            maxlevel   => "error",
+            minlevel   => "emergency"
+            newline    => 0,
+            message_pattern => "%L %T %D %P %H %C %S %t %m",
         }
     );
 
-    $log->error('log an error');
+    $log->error("log an error");
 
 Or with C<dbname>
 
     $log->add(
         dbi => {
-            dbname     => 'database',
-            driver     => 'Pg',
-            host       => '127.0.0.1',
+            dbname     => "database",
+            driver     => "Pg",
+            host       => "127.0.0.1",
             port       => 5432,
-            user       => 'user',
-            password   => 'password',
-            table      => 'messages',
+            user       => "user",
+            password   => "password",
+            table      => "messages",
             columns    => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
             values     => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
-            maxlevel   => 'error',
-            minlevel   => 'emergency'
-            message_pattern => '%L %T %D %P %H %C %S %t %m',
+            maxlevel   => "error",
+            minlevel   => "emergency"
+            newline    => 0,
+            message_pattern => "%L %T %D %P %H %C %S %t %m",
         }
     );
 
@@ -147,13 +148,14 @@ Or with C<data_source>
 
     $log->add(
         dbi => {
-            data_source => 'dbi:SQLite:dbname=database.sqlite',
-            table       => 'messages',
+            data_source => "dbi:SQLite:dbname=database.sqlite",
+            table       => "messages",
             columns     => [ qw/level ctime cdate pid hostname caller progname mtime message/ ],
             values      => [ qw/%level %time %date %pid %hostname %caller %progname %mtime %message/ ],
-            maxlevel    => 'error',
-            minlevel    => 'emergency'
-            message_pattern => '%L %T %D %P %H %C %S %t %m',
+            maxlevel    => "error",
+            minlevel    => "emergency"
+            newline     => 0,
+            message_pattern => "%L %T %D %P %H %C %S %t %m",
         }
     );
 
@@ -165,19 +167,19 @@ Or with C<data_source>
 
     $log->add(
         email => {
-            host     => 'mx.bar.example',
-            hello    => 'EHLO my.domain.example',
+            host     => "mx.bar.example",
+            hello    => "EHLO my.domain.example",
             timeout  => 30,
-            from     => 'bar@foo.example',
-            to       => 'foo@bar.example',
-            subject  => 'your subject',
+            from     => "bar@foo.example",
+            to       => "foo@bar.example",
+            subject  => "your subject",
             buffer   => 0,
-            maxlevel => 'emergency',
-            minlevel => 'emergency',
+            maxlevel => "emergency",
+            minlevel => "emergency",
         }
     );
 
-    $log->emergency('log an emergency issue');
+    $log->emergency("log an emergency issue");
 
 =head1 LOG VIA SENDMAIL
 
@@ -187,11 +189,10 @@ Or with C<data_source>
 
     $log->add(
         sendmail => {
-            from     => 'bar@foo.example',
-            to       => 'foo@bar.example',
-            subject  => 'your subject',
-            maxlevel => 'info',
-            newline  => 1,
+            from     => "bar@foo.example",
+            to       => "foo@bar.example",
+            subject  => "your subject",
+            maxlevel => "info",
         }
     );
 
@@ -205,15 +206,14 @@ Or with C<data_source>
 
     $log->add(
         file => {
-            filename => 'file1.log',
-            mode     => 'append',
-            newline  => 1,
+            filename => "file1.log",
+            mode     => "append",
             maxlevel => 7,
             minlevel => 0
         }
     );
 
-    $log->error('log an error');
+    $log->error("log an error");
 
 =head1 LOG VIA FORWARD
 
@@ -225,12 +225,12 @@ Or with C<data_source>
         forward => {
             forward_to      => \&my_func,
             message_pattern => [ qw/%L %T %P %H %C %S %t/ ],
-            message_layout  => '%m',
-            maxlevel        => 'info',
+            message_layout  => "%m",
+            maxlevel        => "info",
         }
     );
 
-    $log->info('log a information');
+    $log->info("log a information");
 
     sub my_func {
         my $params = shift;
@@ -245,13 +245,12 @@ Or with C<data_source>
 
     $log->add(
         screen => {
-            log_to   => 'STDERR',
-            newline  => 1,
-            maxlevel => 'info',
+            log_to   => "STDERR",
+            maxlevel => "info",
         }
     );
 
-    $log->info('log to the screen');
+    $log->info("log to the screen");
 
 =head1 LOG VIA SOCKET
 
@@ -261,16 +260,15 @@ Or with C<data_source>
 
     $log->add(
         socket => {
-            peeraddr => '127.0.0.1',
+            peeraddr => "127.0.0.1",
             peerport => 44444,
-            newline  => 1,
-            maxlevel => 'info',
+            maxlevel => "info",
             die_on_errors => 0,
         }
     );
 
     while ( 1 ) {
-        $log->info('test')
+        $log->info("test")
             or warn "unable to send message: ", $log->errstr;
         sleep 1;
     }
@@ -283,14 +281,14 @@ Or with C<data_source>
     use Log::Handler::Output::File;
 
     my $sock = IO::Socket::INET->new(
-        LocalAddr => '127.0.0.1',
+        LocalAddr => "127.0.0.1",
         LocalPort => 44444,
         Listen    => 2,
     ) or die $!;
 
     my $file = Log::Handler::Output::File->new(
-        filename => 'file.log',
-        mode     => 'append',
+        filename => "file.log",
+        mode     => "append",
         fileopen => 1,
         reopen   => 1,
     );
@@ -299,7 +297,7 @@ Or with C<data_source>
         $file->log(message => "waiting for next connection\n");
 
         while (my $request = $sock->accept) {
-            my $ipaddr = sprintf('%-15s', $request->peerhost);
+            my $ipaddr = sprintf("%-15s", $request->peerhost);
             while (my $message = <$request>) {
                 $file->log(message => "$ipaddr - $message");
             }
@@ -314,8 +312,8 @@ Or with C<data_source>
 
     $log->add(
         file => {
-            filename => 'common.log',
-            mode     => 'append',
+            filename => "common.log",
+            mode     => "append",
             maxlevel => 6,
             minlevel => 5,
         }
@@ -323,8 +321,8 @@ Or with C<data_source>
 
     $log->add(
         file => {
-            filename => 'error.log',
-            mode     => 'append',
+            filename => "error.log",
+            mode     => "append",
             maxlevel => 4,
             minlevel => 0,
         }
@@ -332,12 +330,12 @@ Or with C<data_source>
 
     $log->add(
         email => {
-            host     => 'mx.bar.example',
-            hello    => 'EHLO my.domain.example',
+            host     => "mx.bar.example",
+            hello    => "EHLO my.domain.example",
             timeout  => 120,
-            from     => 'bar@foo.example',
-            to       => 'foo@bar.example',
-            subject  => 'your subject',
+            from     => "bar@foo.example",
+            to       => "foo@bar.example",
+            subject  => "your subject",
             buffer   => 0,
             maxlevel => 0,
         }
@@ -358,20 +356,19 @@ Or with C<data_source>
 
     $log->add(
         screen => {
-            newline  => 1,
             maxlevel => 6,
             filter_message => {
-                match1    => 'foo',
-                match2    => 'bar',
-                match3    => 'baz',
-                condition => '(match1 && match2) && !match3'
+                match1    => "foo",
+                match2    => "bar",
+                match3    => "baz",
+                condition => "(match1 && match2) && !match3"
             }
         }
     );
 
-    $log->info('foo');
-    $log->info('foo bar');
-    $log->info('foo baz');
+    $log->info("foo");
+    $log->info("foo bar");
+    $log->info("foo baz");
 
 =head2 FILTER CALLER
 
@@ -382,31 +379,29 @@ only from a special namespace.
 
     $log->add(
         file => {
-            filename => 'file1.log',
-            mode     => 'append',
-            newline  => 1,
-            maxlevel => 'warning',
+            filename => "file1.log",
+            mode     => "append",
+            maxlevel => "warning",
         }
     );
 
     $log->add(
         screen => {
-            maxlevel => 'debug',
-            newline  => 1,
-            message_layout => 'message from %p - %m',
+            maxlevel => "debug",
+            message_layout => "message from %p - %m",
             filter_caller  => qr/^Foo::Bar\z/,
         }
     );
 
-    $log->warning('a warning here');
+    $log->warning("a warning here");
 
     package Foo::Bar;
-    $log->info('an info here');
+    $log->info("an info here");
     1;
 
 =head2 ANOTHER FILTER
 
-    filter_message => 'as string'
+    filter_message => "as string"
 
     filter_message => qr/as regexp/
 
@@ -415,12 +410,12 @@ only from a special namespace.
     # or with conditions
 
     filter_message => {
-        match1    => 'as string',
-        match2    => qr/as regexp/',
-        condition => 'match1 || match2',
+        match1    => "as string",
+        match2    => qr/as regexp/,
+        condition => "match1 || match2",
     }
 
-    filter_caller => 'as string'
+    filter_caller => "as string"
 
     filter_caller => qr/as regexp/
 
@@ -460,7 +455,6 @@ Or
 
     <file>
         <default>
-            newline        = 1
             permissions    = 0640
             timeformat     = %b %d %H:%M:%S
             fileopen       = 1
@@ -504,7 +498,7 @@ Script:
 
     my $log = Log::Handler->new();
 
-    $log->config(config => 'file.conf');
+    $log->config(config => "file.conf");
 
 =head1 CHECK FOR ACTIVE LEVELS
 
@@ -517,8 +511,8 @@ It can be very useful if you want to check if a level is active.
 
     $log->add(
         file => {
-            filename   => 'file1.log',
-            mode       => 'append',
+            filename   => "file1.log",
+            mode       => "append",
             maxlevel   => 4,
         }
     );

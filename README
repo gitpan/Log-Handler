@@ -6,35 +6,64 @@ SYNOPSIS
 
         my $log = Log::Handler->new();
 
-        $log->add(file => {
-            filename => 'file.log',
-            mode     => 'append',
-            maxlevel => 'debug',
-            minlevel => 'warning',
-            newline  => 1,
-        });
+        $log->add(
+            file => {
+                filename => "file.log",
+                mode     => "append",
+                maxlevel => "debug",
+                minlevel => "warning",
+            }
+        );
 
-        $log->warning("warn message");
+        $log->warning("message");
+
+    Or
+
+        use Log::Handler;
+
+        my $log = Log::Handler->new(
+            screen => {
+                log_to   => "STDOUT",
+                maxlevel => "debug",
+                minlevel => "debug",
+                message_layout => "%T [%L] %m (%C)",
+            screen => {
+                log_to   => "STDOUT",
+                maxlevel => "info",
+                minlevel => "notice",
+            },
+            screen => {
+                log_to   => "STDERR",
+                maxlevel => "warning",
+                minlevel => "emergency",
+            },
+        );
 
     Or
 
         # init myapp logger with accessor LOG
         package MyApp;
-        use Log::Handler myapp => 'LOG';
+        use Log::Handler myapp => "LOG";
 
-        LOG->add(screen => { maxlevel => 'info' });
+        LOG->add(screen => { maxlevel => "info" });
         LOG->info("info message");
 
         # import myapp logger with accessor LOG
         package MyApp::Foo;
-        use Log::Handler myapp => 'LOG';
+        use Log::Handler myapp => "LOG";
         LOG->info("info message from MyApp::Foo");
 
         # get myapp logger with get_logger()
         package MyApp::Bar;
         use Log::Handler;
-        my $log = Log::Handler->get_logger('myapp');
+        my $log = Log::Handler->get_logger("myapp");
         $log->info("info message from MyApp::Bar");
+
+    Or very fast
+
+        use Log::Handler;
+
+        my $log = Log::Handler->new("screen");
 
 DESCRIPTION
     The "Log::Handler" is a object oriented handler for logging, tracing and
@@ -44,6 +73,14 @@ DESCRIPTION
     define priorities and create patterns to format the messages.
 
     See the documentation for details.
+
+IMPORTANT NOTE
+    Note that the default for option "newline" is now set to TRUE and
+    newlines will be appended automatically to each message if no newline
+    exists.
+
+    A long time I have thought about this serious change and have come to
+    the decision to move the change.
 
 LOG LEVELS
     There are eigth levels available:
@@ -126,13 +163,13 @@ METHODS
 
         Example:
 
-            maxlevel => 'error'
-            minlevel => 'emergency'
+            maxlevel => "error"
+            minlevel => "emergency"
 
             # or
 
-            maxlevel => 'err'
-            minlevel => 'emerg'
+            maxlevel => "err"
+            minlevel => "emerg"
 
             # or
 
@@ -168,10 +205,10 @@ METHODS
         the date and time:
 
             $log->add(file => {
-                filename       => 'file.log',
-                dateformat     => '%Y-%m-%d',
-                timeformat     => '%H:%M:%S',
-                message_layout => '%D %T %L %m',
+                filename       => "file.log",
+                dateformat     => "%Y-%m-%d",
+                timeformat     => "%H:%M:%S",
+                message_layout => "%D %T %L %m",
             });
 
             $log->error("an error here");
@@ -186,15 +223,15 @@ METHODS
         "newline" is a very helpful option. It let the logger appends a
         newline to the message if a newline doesn't exist.
 
-            0 - do nothing (default)
-            1 - append a newline if not exist
+            0 - do nothing
+            1 - append a newline if not exist (default)
 
         Example:
 
             $log->add(
                 screen => {
                     newline  => 1,
-                    maxlevel => 'info',
+                    maxlevel => "info",
                 }
             );
 
@@ -239,7 +276,7 @@ METHODS
 
         If you set "message_layout" to
 
-            message_layout => '%T foo %L bar %m (%C)'
+            message_layout => "%T foo %L bar %m (%C)"
 
         and call
 
@@ -266,7 +303,7 @@ METHODS
             message_pattern => [ qw/%T %L %H %m/ ]
 
             # or as a string
-            message_pattern => '%T %L %H %m'
+            message_pattern => "%T %L %H %m"
 
         The patterns will be replaced with real names as hash keys.
 
@@ -297,11 +334,11 @@ METHODS
             $log->add(forward => {
                 forward_to      => \&my_func,
                 message_pattern => [ qw/%T %L %H %m/ ],
-                message_layout  => '%m',
-                maxlevel        => 'info',
+                message_layout  => "%m",
+                maxlevel        => "info",
             });
 
-            $log->info('a forwarded message');
+            $log->info("a forwarded message");
 
             # now you can access it
 
@@ -321,7 +358,7 @@ METHODS
             $log->add(
                 screen => {
                     newline => 1,
-                    message_layout  => '%m (%t)',
+                    message_layout  => "%m (%t)",
                     message_pattern => [ qw/%T %L %H %m/ ],
                     prepare_message => \&format,
                 }
@@ -334,7 +371,7 @@ METHODS
             sub format {
                 my $m = shift;
 
-                $m->{message} = sprintf('%-20s %-20s %-20s %s',
+                $m->{message} = sprintf("%-20s %-20s %-20s %s",
                     $m->{time}, $m->{level}, $m->{hostname}, $m->{message});
             }
 
@@ -353,11 +390,11 @@ METHODS
 
         We add a output with no priority
 
-            $log->add(file => { filename => 'file1.log' });
+            $log->add(file => { filename => "file1.log" });
 
         This output gets the priority of 10. Now we add another output
 
-            $log->add(file => { filename => 'file2.log' });
+            $log->add(file => { filename => "file2.log" });
 
         This output gets the priority of 11... and so on.
 
@@ -379,7 +416,7 @@ METHODS
         If you set "die_on_errors" to 0 then you have to controll it
         yourself.
 
-            $log->info('info message') or die $log->errstr();
+            $log->info("info message") or die $log->errstr();
 
             # or Log::Handler->errstr()
             # or Log::Handler::errstr()
@@ -391,26 +428,24 @@ METHODS
         pass a regexp, a code reference or a simple string. Example:
 
             $log->add(file => {
-                filename => 'file.log',
-                mode     => 'append',
-                newline  => 1,
+                filename => "file.log",
+                mode     => "append",
                 maxlevel => 6,
                 filter_message => qr/log this/,
                 # or
-                # filter_message => 'log this',
+                # filter_message => "log this",
                 # filter_message => '^log only this$',
             });
 
-            $log->info('log this');
-            $log->info('but not that');
+            $log->info("log this");
+            $log->info("but not that");
 
         If you pass your own code then you have to check the message
         yourself.
 
             $log->add(file => {
-                filename => 'file.log',
-                mode     => 'append',
-                newline  => 1,
+                filename => "file.log",
+                mode     => "append",
                 maxlevel => 6,
                 filter_message => \&my_filter
             });
@@ -426,15 +461,14 @@ METHODS
         Example:
 
             $log->add(file => {
-                filename => 'file.log',
-                mode     => 'append',
-                newline  => 1,
+                filename => "file.log",
+                mode     => "append",
                 maxlevel => 6,
                 filter_message => {
-                    match1    => 'log this',
+                    match1    => "log this",
                     match2    => qr/with that/,
-                    match3    => '(?:or this|or that)',
-                    condition => '(match1 && match2) || match3',
+                    match3    => "(?:or this|or that)",
+                    condition => "(match1 && match2) || match3",
                 }
             });
 
@@ -453,18 +487,17 @@ METHODS
             my $log = Log::Handler->new();
 
             $log->add(screen => {
-                maxlevel => 'info',
-                newline  => 1,
+                maxlevel => "info",
                 filter_caller  => qr/^Foo::Bar\z/,
                 # or
-                # filter_caller => '^Foo::Bar\z',
+                # filter_caller => "^Foo::Bar\z",
             });
 
             package Foo::Bar;
-            $log->info('log this');
+            $log->info("log this");
 
             package Foo::Baz;
-            $log->info('but not that');
+            $log->info("but not that");
 
             1;
 
@@ -485,16 +518,16 @@ METHODS
 
             $log->add(screen => {
                 maxlevel => 7,
-                alias    => 'screen-out',
+                alias    => "screen-out",
             });
 
-            my $screen = $log->output('screen-out');
+            my $screen = $log->output("screen-out");
 
-            $screen->log(message => 'foo');
+            $screen->log(message => "foo");
 
             # or in one step
 
-            $log->output('screen-out')->log(message => 'foo');
+            $log->output("screen-out")->log(message => "foo");
 
     debug_trace
         You can activate a debugger that writes "caller()" informations for
@@ -515,8 +548,8 @@ METHODS
             my $log = Log::Handler->new()
 
             $log->add(file => {
-                filename    => '*STDOUT',
-                maxlevel    => 'debug',
+                filename    => "*STDOUT",
+                maxlevel    => "debug",
                 debug_trace => 1,
                 debug_mode  => 1
             });
@@ -597,11 +630,10 @@ METHODS
 
         # the handler options - how to handle the output
         my %handler_options = (
-            timeformat      => '%Y/%m/%d %H:%M:%S',
-            newline         => 1,
-            message_layout  => '%T [%L] %S: %m',
-            maxlevel        => 'debug',
-            minlevel        => 'emergency',
+            timeformat      => "%Y/%m/%d %H:%M:%S",
+            message_layout  => "%T [%L] %S: %m",
+            maxlevel        => "debug",
+            minlevel        => "emergency",
             die_on_errors   => 1,
             debug_trace     => 0,
             debug_mode      => 2,
@@ -610,13 +642,13 @@ METHODS
 
         # the file options - how to handle the file
         my %file_options = (
-            filename        => 'file.log',
+            filename        => "file.log",
             filelock        => 1,
             fileopen        => 1,
             reopen          => 1,
-            mode            => 'append',
+            mode            => "append",
             autoflush       => 1,
-            permissions     => '0660',
+            permissions     => "0660",
             utf8            => 1,
         );
 
@@ -643,24 +675,23 @@ METHODS
             file => {
 
                 # handler options
-                timeformat      => '%Y/%m/%d %H:%M:%S',
-                newline         => 1,
-                message_layout  => '%T [%L] %S: %m',
-                maxlevel        => 'debug',
-                minlevel        => 'emergency',
+                timeformat      => "%Y/%m/%d %H:%M:%S",
+                message_layout  => "%T [%L] %S: %m",
+                maxlevel        => "debug",
+                minlevel        => "emergency",
                 die_on_errors   => 1,
                 debug_trace     => 0,
                 debug_mode      => 2,
                 debug_skip      => 0,
 
                 # file options
-                filename        => 'file.log',
+                filename        => "file.log",
                 filelock        => 1,
                 fileopen        => 1,
                 reopen          => 1,
-                mode            => 'append',
+                mode            => "append",
                 autoflush       => 1,
-                permissions     => '0660',
+                permissions     => "0660",
                 utf8            => 1,
 
             }
@@ -677,7 +708,7 @@ METHODS
 
     It's possible to access a output directly:
 
-        $log->output($alias)->log(message => 'booo');
+        $log->output($alias)->log(message => "booo");
 
     For more informations take a look to the option "alias".
 
@@ -689,7 +720,7 @@ METHODS
     If you want to send it only to some outputs you can pass the aliases.
 
         $log->flush(); # flush all
-        $log->flush('foo', 'bar'); # flush only foo and bar
+        $log->flush("foo", "bar"); # flush only foo and bar
 
     If option "die_on_errors" is set to 0 then you can intercept errors
     with:
@@ -706,9 +737,9 @@ METHODS
         my $log = Log::Handler->new();
 
         $log->add(file => {
-            filename      => 'file.log',
-            maxlevel      => 'info',
-            mode          => 'append',
+            filename      => "file.log",
+            maxlevel      => "info",
+            mode          => "append",
             die_on_errors => 0,
         });
 
@@ -728,27 +759,26 @@ METHODS
     With this method it's possible to load your output configuration from a
     file.
 
-        $log->config(config => 'file.conf');
+        $log->config(config => "file.conf");
 
     Or
 
         $log->config(config => {
             file => {
                 default => {
-                    newline       => 1,
                     debug_mode    => 2,
                     die_on_errors => 0
                 },
                 error_log => {
-                    filename      => 'error.log',
-                    maxlevel      => 'warning',
-                    minlevel      => 'emerg',
+                    filename      => "error.log",
+                    maxlevel      => "warning",
+                    minlevel      => "emerg",
                     priority      => 1
                 },
                 common_log => {
-                    filename      => 'common.log',
-                    maxlevel      => 'info',
-                    minlevel      => 'emerg',
+                    filename      => "common.log",
+                    maxlevel      => "info",
+                    minlevel      => "emerg",
                     priority      => 2
                 },
             }
@@ -763,18 +793,18 @@ METHODS
   set_pattern()
     With this option you can set your own placeholders. Example:
 
-        $log->set_pattern('%X', 'key_name', sub { 'value' });
+        $log->set_pattern("%X", "key_name", sub { "value" });
 
         # or
 
-        $log->set_pattern('%X', 'key_name', 'value');
+        $log->set_pattern("%X", "key_name", "value");
 
     Then you can use this pattern in your message layout:
 
         $log->add(file => {
-            filename        => 'file.log',
-            mode            => 'append',
-            message_layout  => '%X %m%N',
+            filename        => "file.log",
+            mode            => "append",
+            message_layout  => "%X %m%N",
         });
 
     Or use it with "message_pattern":
@@ -786,7 +816,7 @@ METHODS
 
         $log->add(forward => {
             forward_to      => \&func,
-            message_pattern => '%X %m',
+            message_pattern => "%X %m",
         });
 
     Note: valid character for the key name are: "[%\w\-\.]+"
@@ -808,25 +838,25 @@ METHODS
     "create_logger()" is the same like "new()" but it creates a global
     logger.
 
-        my $log = Log::Handler->create_logger('myapp');
+        my $log = Log::Handler->create_logger("myapp");
 
     If you want to create more than one object you can call
 
-        my @logger = Log::Handler->create_logger('myapp1', 'myapp2', ...);
+        my @logger = Log::Handler->create_logger("myapp1", "myapp2", ...);
 
   get_logger()
     With "get_logger()" it's possible to get a logger that was created with
     "create_logger()" or with
 
-        use Log::Handler 'myapp';
+        use Log::Handler "myapp";
 
     Just call
 
-        my $log = Log::Handler->get_logger('myapp');
+        my $log = Log::Handler->get_logger("myapp");
 
     Or
 
-        my @logger = Log::Handler->get_logger('myapp1', 'myapp2', ...);
+        my @logger = Log::Handler->get_logger("myapp1", "myapp2", ...);
 
 GLOBAL LOG HANDLER
     Since version 0.50 it's possible to define a application logger. This
@@ -849,24 +879,24 @@ GLOBAL LOG HANDLER
         package MyAPP;
         use strict;
         use warnings;
-        use Log::Handler myapp => 'LOG';
+        use Log::Handler myapp => "LOG";
 
-        LOG->config(config => 'myapp.conf');
-        LOG->info('hello world');
+        LOG->config(config => "myapp.conf");
+        LOG->info("hello world");
 
     Now you can access the logger after you import it.
 
         package MyAPP::Foo; 
-        use Log::Handler myapp => 'LOG';
+        use Log::Handler myapp => "LOG";
 
-        LOG->info('message');
+        LOG->info("message");
 
     If you want to import another accessor name ...
 
         package MyAPP::Bar;
-        use Log::Handler myapp => 'MYLOG';
+        use Log::Handler myapp => "MYLOG";
 
-        MYLOG->info('message');
+        MYLOG->info("message");
 
     Another way to get the logger is to call "get_logger()" if you don't
     want to create an accessor.
@@ -874,8 +904,8 @@ GLOBAL LOG HANDLER
         package MyAPP::Foo::Bar;
         use Log::Handler;
 
-        my $log = Log::Handler->get_logger('myapp');
-        $log->info('message');
+        my $log = Log::Handler->get_logger("myapp");
+        $log->info("message");
 
     For a little example you can take a look into the examples directory of
     the distribution (examples/logger/).

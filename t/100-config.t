@@ -1,12 +1,11 @@
 use strict;
 use warnings;
-use Test::More tests => 15;
+use Test::More tests => 14;
 use Log::Handler;
 
 my %config = (
     file => {
         default => {
-            newline        => 1,
             timeformat     => '%b %d %H:%M:%S',
             mode           => 'excl',
             message_layout => '%T %H[%P] [%L] %S: %m',
@@ -24,7 +23,6 @@ my %config = (
         {
             alias    => 'screen1',
             dump     => 1,
-            newline  => 1,
             priority => 2,
             maxlevel => 'info',
         },
@@ -71,7 +69,6 @@ my %cmp = (
             maxlevel        => 6,
         },
         screen1 => {
-            newline  => 1,
             priority => 2,
             maxlevel => 6,
         },

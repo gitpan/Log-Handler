@@ -1,4 +1,7 @@
-0.59    Released at 2009-10-11.
+0.59_02 Released at 2009-10-17.
+        - Default for option newline is now 1.
+
+0.59_01 Released at 2009-10-11.
         - Kicked deprecated module Log::Handler::Simple.
         - Kicked _close, _lock, _unlock in File.pm and moved the
           functionalety into log() and close().

@@ -17,7 +17,6 @@ $log->add(file => {
     autoflush       => 1,
     permissions     => '0664',
     timeformat      => '',
-    newline         => 1,
     message_layout  => 'prefix [%L] %m',
     maxlevel        => 'debug',
     minlevel        => 'emergency',

@@ -8,35 +8,64 @@ Log::Handler - Log messages to several outputs.
 
     my $log = Log::Handler->new();
 
-    $log->add(file => {
-        filename => 'file.log',
-        mode     => 'append',
-        maxlevel => 'debug',
-        minlevel => 'warning',
-        newline  => 1,
-    });
+    $log->add(
+        file => {
+            filename => "file.log",
+            mode     => "append",
+            maxlevel => "debug",
+            minlevel => "warning",
+        }
+    );
 
-    $log->warning("warn message");
+    $log->warning("message");
+
+Or
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new(
+        screen => {
+            log_to   => "STDOUT",
+            maxlevel => "debug",
+            minlevel => "debug",
+            message_layout => "%T [%L] %m (%C)",
+        screen => {
+            log_to   => "STDOUT",
+            maxlevel => "info",
+            minlevel => "notice",
+        },
+        screen => {
+            log_to   => "STDERR",
+            maxlevel => "warning",
+            minlevel => "emergency",
+        },
+    );
 
 Or
 
     # init myapp logger with accessor LOG
     package MyApp;
-    use Log::Handler myapp => 'LOG';
+    use Log::Handler myapp => "LOG";
 
-    LOG->add(screen => { maxlevel => 'info' });
+    LOG->add(screen => { maxlevel => "info" });
     LOG->info("info message");
 
     # import myapp logger with accessor LOG
     package MyApp::Foo;
-    use Log::Handler myapp => 'LOG';
+    use Log::Handler myapp => "LOG";
     LOG->info("info message from MyApp::Foo");
 
     # get myapp logger with get_logger()
     package MyApp::Bar;
     use Log::Handler;
-    my $log = Log::Handler->get_logger('myapp');
+    my $log = Log::Handler->get_logger("myapp");
     $log->info("info message from MyApp::Bar");
+
+Or very fast
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new("screen");
 
 =head1 DESCRIPTION
 
@@ -47,6 +76,14 @@ easily filter the amount of logged information on a per-output base,
 define priorities and create patterns to format the messages.
 
 See the documentation for details.
+
+=head1 IMPORTANT NOTE
+
+Note that the default for option C<newline> is now set to TRUE and newlines
+will be appended automatically to each message if no newline exists.
+
+A long time I have thought about this serious change and have come to
+the decision to move the change.
 
 =head1 LOG LEVELS
 
@@ -166,13 +203,13 @@ With these options it's possible to set the log levels for your program.
 
 Example:
 
-    maxlevel => 'error'
-    minlevel => 'emergency'
+    maxlevel => "error"
+    minlevel => "emergency"
 
     # or
 
-    maxlevel => 'err'
-    minlevel => 'emerg'
+    maxlevel => "err"
+    minlevel => "emerg"
 
     # or
 
@@ -207,10 +244,10 @@ This options works like C<timeformat>. You can set a format that is used for
 the placeholder C<%D>. It's just useful if you want to split the date and time:
 
     $log->add(file => {
-        filename       => 'file.log',
-        dateformat     => '%Y-%m-%d',
-        timeformat     => '%H:%M:%S',
-        message_layout => '%D %T %L %m',
+        filename       => "file.log",
+        dateformat     => "%Y-%m-%d",
+        timeformat     => "%H:%M:%S",
+        message_layout => "%D %T %L %m",
     });
 
     $log->error("an error here");
@@ -226,15 +263,15 @@ This option is not used by default.
 C<newline> is a very helpful option. It let the logger appends a newline to
 the message if a newline doesn't exist.
 
-    0 - do nothing (default)
-    1 - append a newline if not exist
+    0 - do nothing
+    1 - append a newline if not exist (default)
 
 Example:
 
     $log->add(
         screen => {
             newline  => 1,
-            maxlevel => 'info',
+            maxlevel => "info",
         }
     );
 
@@ -279,7 +316,7 @@ would log
 
 If you set C<message_layout> to
 
-    message_layout => '%T foo %L bar %m (%C)'
+    message_layout => "%T foo %L bar %m (%C)"
 
 and call
 
@@ -306,7 +343,7 @@ The option expects a list of placeholders:
     message_pattern => [ qw/%T %L %H %m/ ]
 
     # or as a string
-    message_pattern => '%T %L %H %m'
+    message_pattern => "%T %L %H %m"
 
 The patterns will be replaced with real names as hash keys.
 
@@ -337,11 +374,11 @@ Here a full code example:
     $log->add(forward => {
         forward_to      => \&my_func,
         message_pattern => [ qw/%T %L %H %m/ ],
-        message_layout  => '%m',
-        maxlevel        => 'info',
+        message_layout  => "%m",
+        maxlevel        => "info",
     });
 
-    $log->info('a forwarded message');
+    $log->info("a forwarded message");
 
     # now you can access it
 
@@ -362,7 +399,7 @@ doesn't meet your claim.
     $log->add(
         screen => {
             newline => 1,
-            message_layout  => '%m (%t)',
+            message_layout  => "%m (%t)",
             message_pattern => [ qw/%T %L %H %m/ ],
             prepare_message => \&format,
         }
@@ -375,7 +412,7 @@ doesn't meet your claim.
     sub format {
         my $m = shift;
 
-        $m->{message} = sprintf('%-20s %-20s %-20s %s',
+        $m->{message} = sprintf("%-20s %-20s %-20s %s",
             $m->{time}, $m->{level}, $m->{hostname}, $m->{message});
     }
 
@@ -394,11 +431,11 @@ increased +1 with each output. Example:
 
 We add a output with no priority
 
-    $log->add(file => { filename => 'file1.log' });
+    $log->add(file => { filename => "file1.log" });
 
 This output gets the priority of 10. Now we add another output
 
-    $log->add(file => { filename => 'file2.log' });
+    $log->add(file => { filename => "file2.log" });
 
 This output gets the priority of 11... and so on.
 
@@ -420,7 +457,7 @@ write operations.
 
 If you set C<die_on_errors> to 0 then you have to controll it yourself.
 
-    $log->info('info message') or die $log->errstr();
+    $log->info("info message") or die $log->errstr();
 
     # or Log::Handler->errstr()
     # or Log::Handler::errstr()
@@ -433,25 +470,23 @@ only messages will be logged that match the filter. You can pass a regexp,
 a code reference or a simple string. Example:
 
     $log->add(file => {
-        filename => 'file.log',
-        mode     => 'append',
-        newline  => 1,
+        filename => "file.log",
+        mode     => "append",
         maxlevel => 6,
         filter_message => qr/log this/,
         # or
-        # filter_message => 'log this',
+        # filter_message => "log this",
         # filter_message => '^log only this$',
     });
 
-    $log->info('log this');
-    $log->info('but not that');
+    $log->info("log this");
+    $log->info("but not that");
 
 If you pass your own code then you have to check the message yourself.
 
     $log->add(file => {
-        filename => 'file.log',
-        mode     => 'append',
-        newline  => 1,
+        filename => "file.log",
+        mode     => "append",
         maxlevel => 6,
         filter_message => \&my_filter
     });
@@ -466,15 +501,14 @@ It's also possible to define a simple condition with matches. Just pass a
 hash reference with the options C<matchN> and C<condition>. Example:
 
     $log->add(file => {
-        filename => 'file.log',
-        mode     => 'append',
-        newline  => 1,
+        filename => "file.log",
+        mode     => "append",
         maxlevel => 6,
         filter_message => {
-            match1    => 'log this',
+            match1    => "log this",
             match2    => qr/with that/,
-            match3    => '(?:or this|or that)',
-            condition => '(match1 && match2) || match3',
+            match3    => "(?:or this|or that)",
+            condition => "(match1 && match2) || match3",
         }
     });
 
@@ -494,18 +528,17 @@ Example:
     my $log = Log::Handler->new();
 
     $log->add(screen => {
-        maxlevel => 'info',
-        newline  => 1,
+        maxlevel => "info",
         filter_caller  => qr/^Foo::Bar\z/,
         # or
-        # filter_caller => '^Foo::Bar\z',
+        # filter_caller => "^Foo::Bar\z",
     });
 
     package Foo::Bar;
-    $log->info('log this');
+    $log->info("log this");
 
     package Foo::Baz;
-    $log->info('but not that');
+    $log->info("but not that");
 
     1;
 
@@ -527,16 +560,16 @@ You can set an alias if you want to get the output object later. Example:
 
     $log->add(screen => {
         maxlevel => 7,
-        alias    => 'screen-out',
+        alias    => "screen-out",
     });
 
-    my $screen = $log->output('screen-out');
+    my $screen = $log->output("screen-out");
 
-    $screen->log(message => 'foo');
+    $screen->log(message => "foo");
 
     # or in one step
 
-    $log->output('screen-out')->log(message => 'foo');
+    $log->output("screen-out")->log(message => "foo");
 
 =item B<debug_trace>
 
@@ -558,8 +591,8 @@ The line mode looks like this:
     my $log = Log::Handler->new()
 
     $log->add(file => {
-        filename    => '*STDOUT',
-        maxlevel    => 'debug',
+        filename    => "*STDOUT",
+        maxlevel    => "debug",
         debug_trace => 1,
         debug_mode  => 1
     });
@@ -641,11 +674,10 @@ Example:
 
     # the handler options - how to handle the output
     my %handler_options = (
-        timeformat      => '%Y/%m/%d %H:%M:%S',
-        newline         => 1,
-        message_layout  => '%T [%L] %S: %m',
-        maxlevel        => 'debug',
-        minlevel        => 'emergency',
+        timeformat      => "%Y/%m/%d %H:%M:%S",
+        message_layout  => "%T [%L] %S: %m",
+        maxlevel        => "debug",
+        minlevel        => "emergency",
         die_on_errors   => 1,
         debug_trace     => 0,
         debug_mode      => 2,
@@ -654,13 +686,13 @@ Example:
 
     # the file options - how to handle the file
     my %file_options = (
-        filename        => 'file.log',
+        filename        => "file.log",
         filelock        => 1,
         fileopen        => 1,
         reopen          => 1,
-        mode            => 'append',
+        mode            => "append",
         autoflush       => 1,
-        permissions     => '0660',
+        permissions     => "0660",
         utf8            => 1,
     );
 
@@ -686,24 +718,23 @@ in one step, you just need to tell the handler what do you want to add.
         file => {
 
             # handler options
-            timeformat      => '%Y/%m/%d %H:%M:%S',
-            newline         => 1,
-            message_layout  => '%T [%L] %S: %m',
-            maxlevel        => 'debug',
-            minlevel        => 'emergency',
+            timeformat      => "%Y/%m/%d %H:%M:%S",
+            message_layout  => "%T [%L] %S: %m",
+            maxlevel        => "debug",
+            minlevel        => "emergency",
             die_on_errors   => 1,
             debug_trace     => 0,
             debug_mode      => 2,
             debug_skip      => 0,
 
             # file options
-            filename        => 'file.log',
+            filename        => "file.log",
             filelock        => 1,
             fileopen        => 1,
             reopen          => 1,
-            mode            => 'append',
+            mode            => "append",
             autoflush       => 1,
-            permissions     => '0660',
+            permissions     => "0660",
             utf8            => 1,
 
         }
@@ -721,7 +752,7 @@ the option C<alias>.
 
 It's possible to access a output directly:
 
-    $log->output($alias)->log(message => 'booo');
+    $log->output($alias)->log(message => "booo");
 
 For more informations take a look to the option C<alias>.
 
@@ -734,7 +765,7 @@ Flush means to flush buffers and/or close and re-open outputs.
 If you want to send it only to some outputs you can pass the aliases.
 
     $log->flush(); # flush all
-    $log->flush('foo', 'bar'); # flush only foo and bar
+    $log->flush("foo", "bar"); # flush only foo and bar
 
 If option S<"die_on_errors"> is set to 0 then you can intercept errors with:
 
@@ -751,9 +782,9 @@ write operations.
     my $log = Log::Handler->new();
 
     $log->add(file => {
-        filename      => 'file.log',
-        maxlevel      => 'info',
-        mode          => 'append',
+        filename      => "file.log",
+        maxlevel      => "info",
+        mode          => "append",
         die_on_errors => 0,
     });
 
@@ -773,27 +804,26 @@ C<add()> fails because on missing or wrong settings!
 
 With this method it's possible to load your output configuration from a file.
 
-    $log->config(config => 'file.conf');
+    $log->config(config => "file.conf");
 
 Or
 
     $log->config(config => {
         file => {
             default => {
-                newline       => 1,
                 debug_mode    => 2,
                 die_on_errors => 0
             },
             error_log => {
-                filename      => 'error.log',
-                maxlevel      => 'warning',
-                minlevel      => 'emerg',
+                filename      => "error.log",
+                maxlevel      => "warning",
+                minlevel      => "emerg",
                 priority      => 1
             },
             common_log => {
-                filename      => 'common.log',
-                maxlevel      => 'info',
-                minlevel      => 'emerg',
+                filename      => "common.log",
+                maxlevel      => "info",
+                minlevel      => "emerg",
                 priority      => 2
             },
         }
@@ -809,18 +839,18 @@ informations.
 
 With this option you can set your own placeholders. Example:
 
-    $log->set_pattern('%X', 'key_name', sub { 'value' });
+    $log->set_pattern("%X", "key_name", sub { "value" });
 
     # or
 
-    $log->set_pattern('%X', 'key_name', 'value');
+    $log->set_pattern("%X", "key_name", "value");
 
 Then you can use this pattern in your message layout:
 
     $log->add(file => {
-        filename        => 'file.log',
-        mode            => 'append',
-        message_layout  => '%X %m%N',
+        filename        => "file.log",
+        mode            => "append",
+        message_layout  => "%X %m%N",
     });
 
 Or use it with C<message_pattern>:
@@ -832,7 +862,7 @@ Or use it with C<message_pattern>:
 
     $log->add(forward => {
         forward_to      => \&func,
-        message_pattern => '%X %m',
+        message_pattern => "%X %m",
     });
 
 Note: valid character for the key name are: C<[%\w\-\.]+>
@@ -855,26 +885,26 @@ To change the log level it's neccessary to use a alias - see option C<alias>.
 C<create_logger()> is the same like C<new()> but it creates a global
 logger.
 
-    my $log = Log::Handler->create_logger('myapp');
+    my $log = Log::Handler->create_logger("myapp");
 
 If you want to create more than one object you can call
 
-    my @logger = Log::Handler->create_logger('myapp1', 'myapp2', ...);
+    my @logger = Log::Handler->create_logger("myapp1", "myapp2", ...);
 
 =head2 get_logger()
 
 With C<get_logger()> it's possible to get a logger that was created
 with C<create_logger()> or with
 
-    use Log::Handler 'myapp';
+    use Log::Handler "myapp";
 
 Just call
 
-    my $log = Log::Handler->get_logger('myapp');
+    my $log = Log::Handler->get_logger("myapp");
 
 Or
 
-    my @logger = Log::Handler->get_logger('myapp1', 'myapp2', ...);
+    my @logger = Log::Handler->get_logger("myapp1", "myapp2", ...);
 
 =head1 GLOBAL LOG HANDLER
 
@@ -898,24 +928,24 @@ Example:
     package MyAPP;
     use strict;
     use warnings;
-    use Log::Handler myapp => 'LOG';
+    use Log::Handler myapp => "LOG";
 
-    LOG->config(config => 'myapp.conf');
-    LOG->info('hello world');
+    LOG->config(config => "myapp.conf");
+    LOG->info("hello world");
 
 Now you can access the logger after you import it.
 
     package MyAPP::Foo; 
-    use Log::Handler myapp => 'LOG';
+    use Log::Handler myapp => "LOG";
 
-    LOG->info('message');
+    LOG->info("message");
 
 If you want to import another accessor name ...
 
     package MyAPP::Bar;
-    use Log::Handler myapp => 'MYLOG';
+    use Log::Handler myapp => "MYLOG";
 
-    MYLOG->info('message');
+    MYLOG->info("message");
 
 Another way to get the logger is to call C<get_logger()> if you
 don't want to create an accessor.
@@ -923,8 +953,8 @@ don't want to create an accessor.
     package MyAPP::Foo::Bar;
     use Log::Handler;
 
-    my $log = Log::Handler->get_logger('myapp');
-    $log->info('message');
+    my $log = Log::Handler->get_logger("myapp");
+    $log->info("message");
 
 For a little example you can take a look into the examples directory
 of the distribution (examples/logger/).
@@ -1041,8 +1071,8 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = '0.59_01';
-our $ERRSTR  = '';
+our $VERSION = "0.59_02";
+our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
 # variables in other packages as well. You shouldn't
@@ -1107,16 +1137,16 @@ our @LEVEL_BY_NUM = qw(
 
 # shortcuts for each output
 our %AVAILABLE_OUTPUTS = (
-    file     => 'Log::Handler::Output::File',
-    email    => 'Log::Handler::Output::Email',
-    sendmail => 'Log::Handler::Output::Sendmail',
-    forward  => 'Log::Handler::Output::Forward',
-    dbi      => 'Log::Handler::Output::DBI',
-    screen   => 'Log::Handler::Output::Screen',
-    socket   => 'Log::Handler::Output::Socket',
+    file     => "Log::Handler::Output::File",
+    email    => "Log::Handler::Output::Email",
+    sendmail => "Log::Handler::Output::Sendmail",
+    forward  => "Log::Handler::Output::Forward",
+    dbi      => "Log::Handler::Output::DBI",
+    screen   => "Log::Handler::Output::Screen",
+    socket   => "Log::Handler::Output::Socket",
 );
 
-# use Log::Handler foo => 'LOGFOO', bar => 'LOGBAR';
+# use Log::Handler foo => "LOGFOO", bar => "LOGBAR";
 # use Log::Handler qw/foo LOGFOO bar LOGBAR/;
 sub import {
     return unless @_ > 1;
@@ -1124,7 +1154,8 @@ sub import {
     my %create = @_ > 1 ? @_ : (@_, undef);
     my $caller = (caller)[0];
 
-    while (my ($appl, $export) = each %create) {
+    foreach my $appl (keys %create) {
+        my $export = $create{$appl};
         my $logger = ();
 
         if (!exists $LOGGER{$appl}) {
@@ -1132,8 +1163,8 @@ sub import {
         }
 
         if ($export) {
-            no strict 'refs';
-            my $method = $caller.'::'.$export;
+            no strict "refs";
+            my $method = $caller."::".$export;
             *{$method} = sub { $LOGGER{$appl} };
         }
     }
@@ -1241,15 +1272,15 @@ sub add {
 
 sub config {
     @_ > 1 or Carp::croak 'Usage: $log->config( %param )';
-    my $self = shift;
-    my $configs = Log::Handler::Config->config(@_);
+    my $self   = shift;
+    my $config = Log::Handler::Config->config(@_);
 
     # Structure:
     #   $configs->{file} = [ output configs ];
     #   $configs->{dbi}  = [ output configs ];
 
-    while ( my ($type, $config) = each %$configs ) {
-        for my $c (@$config) {
+    foreach my $type (keys %$config) {
+        for my $c (@{$config->{$type}}) {
             $self->add($type, $c);
         }
     }
@@ -1276,8 +1307,8 @@ sub set_pattern {
     }
 
     # Structure:
-    #   $self->{pattern}->{'%X'}->{name} = 'name-of-x';
-    #   $self->{pattern}->{'%X'}->{code} = 'value-of-x';
+    #   $self->{pattern}->{"%X"}->{name} = "name-of-x";
+    #   $self->{pattern}->{"%X"}->{code} = "value-of-x";
     $self->{pattern}->{$pattern}->{name} = $name;
     $self->{pattern}->{$pattern}->{code} = $code;
 }
@@ -1291,7 +1322,7 @@ sub set_level {
         Carp::croak "alias '$name' does not exists";
     }
 
-    if (ref($new) ne 'HASH') {
+    if (ref($new) ne "HASH") {
         Carp::croak "the second parameter to set_level() must be a hash reference";
     }
 
@@ -1360,7 +1391,7 @@ sub flush {
             next unless $output;
             if ( !$output->flush ) {
                 if ( defined $errors ) {
-                    $errors .= '; ' . $output->errstr;
+                    $errors .= "; " . $output->errstr;
                 } else {
                     $errors = $output->errstr;
                 }
@@ -1370,7 +1401,7 @@ sub flush {
         foreach my $output (@{$self->{outputs}}) {
             if ( !$output->flush ) {
                 if ( defined $errors ) {
-                    $errors .= '; ' . $output->errstr;
+                    $errors .= "; " . $output->errstr;
                 } else {
                     $errors = $output->errstr;
                 }
@@ -1417,11 +1448,11 @@ sub _split_options {
         timeformat
     );
 
-    while (my ($k, $v) = each %$opts) {
-        if (exists $split_options{$k}) {
-            $handler_opts{$k} = $v;
+    foreach my $key (keys %$opts) {
+        if (exists $split_options{$key}) {
+            $handler_opts{$key} = $opts->{$key};
         } else {
-            $output_opts{$k} = $v;
+            $output_opts{$key} = $opts->{$key};
         }
     }
 
@@ -1459,7 +1490,7 @@ sub _new_output {
         } elsif ($type =~ /::/) {
             $package = $type;
         } else {
-            $package = 'Log::Handler::Output::' . ucfirst($type);
+            $package = "Log::Handler::Output::" . ucfirst($type);
         }
 
         eval "require $package";
@@ -1478,7 +1509,7 @@ sub _validate_options {
     my %wanted  = ();
     my $pattern = $self->{pattern};
 
-    # Option 'filter' is deprecated.
+    # Option "filter" is deprecated.
     if (exists $args[0]{filter}) {
         $args[0]{filter_message} = delete $args[0]{filter};
     }
@@ -1486,15 +1517,15 @@ sub _validate_options {
     my %options = Params::Validate::validate(@args, {
         timeformat => {
             type => Params::Validate::SCALAR,
-            default => '%b %d %H:%M:%S',
+            default => "%b %d %H:%M:%S",
         },
         dateformat => {
             type => Params::Validate::SCALAR,
-            default => '%b %d %Y',
+            default => "%b %d %Y",
         },
         message_layout => {
             type => Params::Validate::SCALAR,
-            default => '%T [%L] %m',
+            default => "%T [%L] %m",
         },
         message_pattern => {
             type => Params::Validate::SCALAR
@@ -1508,7 +1539,7 @@ sub _validate_options {
         newline => {
             type => Params::Validate::SCALAR,
             regex => BOOL_RX,
-            default => 0,
+            default => 1,
         },
         minlevel => {
             type => Params::Validate::SCALAR,
@@ -1550,7 +1581,7 @@ sub _validate_options {
             optional => 1,
         },
         filter_message => {
-            type => Params::Validate::SCALAR    # 'foo'
+            type => Params::Validate::SCALAR    # "foo"
                   | Params::Validate::SCALARREF # qr/foo/
                   | Params::Validate::CODEREF   # sub { shift->{message} =~ /foo/ }
                   | Params::Validate::HASHREF,  # matchN, condition
@@ -1602,7 +1633,7 @@ sub _validate_options {
             $wanted{$p} = undef;
         }
 
-        # If message_pattern is set to '%T %L %m' then the code
+        # If message_pattern is set to "%T %L %m" then the code
         # should looks like:
         #
         #   sub {
@@ -1611,8 +1642,8 @@ sub _validate_options {
         #   }
 
         my $func = 'sub { my ($w, $m) = @_; $m->{$_} = $w->{$_} for qw/';
-        $func .= join(' ', map { $pattern->{$_}->{name} } keys %wanted);
-        $func .= '/ }';
+        $func .= join(" ", map { $pattern->{$_}->{name} } keys %wanted);
+        $func .= "/ }";
         $options{message_pattern_func} = $func;
         $options{message_pattern_code} = eval $func;
         Carp::croak $@ if $@;
@@ -1621,17 +1652,17 @@ sub _validate_options {
     if ($options{message_layout}) {
         my (@chunks, $func);
 
-        # If the message layout is set to '%T [%L] %m' then the code
+        # If the message layout is set to "%T [%L] %m" then the code
         # should looks like:
         #
         #   sub {
         #       my ($w, $m) = @_; # %wanted pattern, %message
-        #       $m->{'message'} =
-        #           $w->{'time'}
-        #           . ' ['
-        #           . $w->{'level'}
-        #           . '] '
-        #           . $w->{'message'}
+        #       $m->{"message"} =
+        #           $w->{"time"}
+        #           . " ["
+        #           . $w->{"level"}
+        #           . "] "
+        #           . $w->{"message"}
         #       );
         #   }
 
@@ -1651,8 +1682,8 @@ sub _validate_options {
 
         if (@chunks) {
             $func  = 'sub { my ($w, $m) = @_; $m->{message} = ';
-            $func .= join('.', @chunks);
-            $func .= ' }';
+            $func .= join(".", @chunks);
+            $func .= " }";
         }
 
         $options{message_layout_func} = $func;
@@ -1661,7 +1692,7 @@ sub _validate_options {
     }
 
     # %m is default
-    delete $wanted{'%m'};
+    delete $wanted{"%m"};
 
     # The references to the patterns are stored to all outputs.
     # If a pattern will be changed with set_pattern() then the
@@ -1678,9 +1709,9 @@ sub _validate_filter {
     # A filter can be passed as CODE, as a Regexp, as a simple string
     # that will be embed in a Regexp or as a condition.
 
-    if ($ref eq 'CODE') {
+    if ($ref eq "CODE") {
         $filter{code} = $args;
-    } elsif ($ref eq 'Regexp') {
+    } elsif ($ref eq "Regexp") {
         $filter{code} = sub { $_[0]->{message} =~ $args };
     } elsif (!$ref) {
         $filter{code} = sub { $_[0]->{message} =~ /$args/ };
@@ -1703,7 +1734,7 @@ sub _validate_filter {
         #   filter => {
         #       match1    => qr/foo/,
         #       match2    => qr/bar/,
-        #       condition => '(match1 && match2)',
+        #       condition => "(match1 && match2)",
         #   }
         #
         # Then the bool results will be saved:
@@ -1742,14 +1773,14 @@ sub _validate_filter {
             $ref = ref($filter{$m});
             if (!$ref) {
                 $filter{$m} = qr/$filter{$m}/;
-            } elsif ($ref ne 'Regexp') {
+            } elsif ($ref ne "Regexp") {
                 Carp::croak "invalid value for option 'filter:$m'";
             }
-            $filter{result}{$m} = '';
+            $filter{result}{$m} = "";
         }
 
         $filter{func}  =  'sub { my $m = shift; ';
-        $filter{func} .=  $filter{condition}.'; }';
+        $filter{func} .=  $filter{condition}."; }";
         $filter{func}  =~ s/(match\d+)/\$m->{$1}/g;
         $filter{code}  =  eval $filter{func};
     }

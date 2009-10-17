@@ -18,6 +18,7 @@ $log->add(
         maxlevel       => 6,
         filter_caller  => 'Foo::Bar',
         message_layout => '%p',
+        newline        => 0,
     }
 );
 

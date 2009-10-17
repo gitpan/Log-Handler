@@ -167,7 +167,7 @@ use warnings;
 use Carp;
 use Params::Validate;
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 our $ERRSTR  = '';
 our $TEST    =  0; # is needed to disable flush() for tests
 
@@ -340,8 +340,8 @@ sub _validate {
         my $header = ();
 
         if (ref($options{header}) eq 'HASH') {
-            while (my ($n, $v) = each %{ $options{header} }) {
-                $header .= "$n: $v\n";
+            foreach my $n (keys %{ $options{header} }) {
+                $header .= "$n: $options{header}{$n}\n";
             }
         } elsif (ref($options{header}) eq 'ARRAY') {
             foreach my $h (@{ $options{header} }) {

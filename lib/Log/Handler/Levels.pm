@@ -175,7 +175,7 @@ use warnings;
 use Carp;
 use Data::Dumper;
 
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 
 my %LEVELS_BY_ROUTINE = (
     debug     => 'DEBUG',
@@ -193,7 +193,9 @@ my %LEVELS_BY_ROUTINE = (
     fatal     => 'FATAL',
 );
 
-while ( my ($routine, $level) = each %LEVELS_BY_ROUTINE ) {
+foreach my $routine (keys %LEVELS_BY_ROUTINE) {
+    my $level = $LEVELS_BY_ROUTINE{$routine};
+
     {   # start "no strict 'refs'" block
         no strict 'refs';
 
