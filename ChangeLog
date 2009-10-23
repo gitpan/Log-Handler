@@ -1,3 +1,8 @@
+0.60    Released at 2009-10-23.
+        - File.pm: "append" is now the default for option
+          "mode"
+        - Full release.
+
 0.59_02 Released at 2009-10-17.
         - Default for option newline is now 1.
 

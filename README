@@ -74,13 +74,16 @@ DESCRIPTION
 
     See the documentation for details.
 
-IMPORTANT NOTE
+IMPORTANT NOTES
     Note that the default for option "newline" is now set to TRUE and
     newlines will be appended automatically to each message if no newline
     exists.
 
     A long time I have thought about this serious change and have come to
     the decision to move the change.
+
+    The default for option "mode" from Log::Handler::Output::File is now
+    "append" and not "excl" anymore.
 
 LOG LEVELS
     There are eigth levels available:

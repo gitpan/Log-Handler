@@ -7,13 +7,13 @@ Log::Handler::Output::File - Log messages to a file.
     use Log::Handler::Output::File;
 
     my $log = Log::Handler::Output::File->new(
-        filename    => 'file.log',
+        filename    => "file.log",
         filelock    => 1,
         fileopen    => 1,
         reopen      => 1,
-        mode        => 'append',
+        mode        => "append",
         autoflush   => 1,
-        permissions => '0664',
+        permissions => "0664",
         utf8        => 0,
     );
 
@@ -41,17 +41,17 @@ C<File::Spec>.
 
 Set a file name:
 
-    my $log = Log::Handler::Output::File->new( filename => 'file.log'  );
+    my $log = Log::Handler::Output::File->new( filename => "file.log"  );
 
 Set a array reference:
 
     my $log = Log::Handler::Output::File->new(
 
         # foo/bar/baz.log
-        filename => [ 'foo', 'bar', 'baz.log' ],
+        filename => [ "foo", "bar", "baz.log" ],
 
         # /foo/bar/baz.log
-        filename => [ '', 'foo', 'bar', 'baz.log' ],
+        filename => [ "", "foo", "bar", "baz.log" ],
 
     );
 
@@ -89,8 +89,8 @@ To write your code independent you should control it:
     my $os_is_win = $^O =~ /win/i ? 0 : 1;
 
     my $log = Log::Handler::Output::File->new(
-       filename => 'file.log',
-       mode     => 'append',
+       filename => "file.log",
+       mode     => "append",
        fileopen => $os_is_win
     );
 
@@ -100,15 +100,14 @@ If you set C<fileopen> to 0 then it implies that C<reopen> has no importance.
 
 There are three possible modes to open a log file.
 
-    append - O_WRONLY | O_APPEND | O_CREAT
-    excl   - O_WRONLY | O_EXCL   | O_CREAT (default)
+    append - O_WRONLY | O_APPEND | O_CREAT (default)
+    excl   - O_WRONLY | O_EXCL   | O_CREAT
     trunc  - O_WRONLY | O_TRUNC  | O_CREAT
 
 C<append> would open the log file in any case and appends the messages at
 the end of the log file.
 
 C<excl> would fail by open the log file if the log file already exists.
-This is the default option because some security reasons.
 
 C<trunc> would truncate the complete log file if it exists. Please take care
 to use this option.
@@ -146,7 +145,7 @@ Call C<log()> if you want to log messages to the log file.
 
 Example:
 
-    $log->log(message => 'this message goes to the logfile');
+    $log->log(message => "this message goes to the logfile");
 
 =head2 flush()
 
@@ -204,23 +203,23 @@ use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
 use File::Spec;
 use Params::Validate qw();
 
-our $VERSION = '0.03';
-our $ERRSTR  = '';
+our $VERSION = "0.04";
+our $ERRSTR  = "";
 
 sub new {
     my $class   = shift;
     my $options = $class->_validate(@_);
     my $self    = bless $options, $class;
 
-    if (ref($self->{filename}) eq 'ARRAY') {
+    if (ref($self->{filename}) eq "ARRAY") {
         $self->{filename} = File::Spec->catfile(@{$self->{filename}});
     }
 
-    if ($self->{mode} eq 'append') {
+    if ($self->{mode} eq "append") {
         $self->{mode} = O_WRONLY | O_APPEND | O_CREAT;
-    } elsif ($self->{mode} eq 'excl') {
+    } elsif ($self->{mode} eq "excl") {
         $self->{mode} = O_WRONLY | O_EXCL | O_CREAT;
-    } elsif ($self->{mode} eq 'trunc') {
+    } elsif ($self->{mode} eq "trunc") {
         $self->{mode} = O_WRONLY | O_TRUNC | O_CREAT;
     }
 
@@ -315,7 +314,7 @@ sub _open {
     }
 
     if ($self->{utf8}) {
-        binmode $fh, ':utf8';
+        binmode $fh, ":utf8";
     }
 
     if ($self->{reopen}) {
@@ -363,7 +362,7 @@ sub _validate {
         mode => {
             type => Params::Validate::SCALAR,
             regex => qr/^(append|excl|trunc)\z/,
-            default => 'excl',
+            default => "append",
         },
         autoflush => {
             type => Params::Validate::SCALAR,
@@ -373,7 +372,7 @@ sub _validate {
         permissions => {
             type => Params::Validate::SCALAR,
             regex => qr/^[0-7]{3,4}\z/,
-            default => '0640',
+            default => "0640",
         },
         utf8 => {
             type => Params::Validate::SCALAR,

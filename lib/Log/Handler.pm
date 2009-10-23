@@ -77,13 +77,16 @@ define priorities and create patterns to format the messages.
 
 See the documentation for details.
 
-=head1 IMPORTANT NOTE
+=head1 IMPORTANT NOTES
 
 Note that the default for option C<newline> is now set to TRUE and newlines
 will be appended automatically to each message if no newline exists.
 
 A long time I have thought about this serious change and have come to
 the decision to move the change.
+
+The default for option C<mode> from Log::Handler::Output::File is now
+C<append> and not C<excl> anymore.
 
 =head1 LOG LEVELS
 
@@ -1071,7 +1074,7 @@ use Log::Handler::Config;
 use Log::Handler::Pattern;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.59_02";
+our $VERSION = "0.60";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1465,6 +1468,9 @@ sub _new_output {
     my $args    = @_ > 1 ? {@_} : shift;
     my $package = ref($type);
     my ($output, $handler_opts, $output_opts);
+
+    # add("screen")
+    $args ||= { };
 
     # There are two ways to add an output:
     #
