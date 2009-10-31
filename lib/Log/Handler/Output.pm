@@ -12,6 +12,8 @@ Just for internal usage!
 
 =head2 log()
 
+=head2 reload()
+
 =head2 flush()
 
 =head2 errstr()
@@ -41,8 +43,8 @@ use warnings;
 use Carp;
 use UNIVERSAL;
 
-our $VERSION = '0.07';
-our $ERRSTR  = '';
+our $VERSION = "0.08";
+our $ERRSTR  = "";
 
 sub new {
     my ($class, $options, $output) = @_;
@@ -65,7 +67,7 @@ sub log {
 
     my $output  = $self->{output};
     my $message = { };
-    my $wanted  = { message => join(' ', grep defined, @_) };
+    my $wanted  = { message => join(" ", grep defined, @_) };
 
     # The patterns must be generated for each output. The reason
     # is that each output can have their own time/date format
@@ -124,7 +126,7 @@ sub flush {
     my $self   = shift;
     my $output = $self->{output};
 
-    if ( UNIVERSAL::can($output, 'flush') ) {
+    if ( UNIVERSAL::can($output, "flush") ) {
         $output->flush
             or return $self->_raise_error($output->errstr);
     }
@@ -132,7 +134,17 @@ sub flush {
     return 1;
 }
 
-sub errstr { $ERRSTR }
+sub reload {
+    my ($self, $opts) = @_;
+
+    foreach my $key (keys %$opts) {
+        $self->{$key} = $opts->{$key};
+    }
+}
+
+sub errstr {
+    return $ERRSTR;
+}
 
 #
 # private stuff
@@ -154,14 +166,14 @@ sub _add_trace {
     }
 
     foreach my $i (reverse $skip..$#caller) {
-        $message->{message} .= ' ' x 3 . "CALL($i):";
+        $message->{message} .= " " x 3 . "CALL($i):";
         my $frame = $caller[$i];
         foreach my $key (qw/package filename line subroutine hasargs wantarray evaltext is_require/) {
             next unless defined $frame->{$key};
             if ($self->{debug_mode} == 1) { # line mode
                 $message->{message} .= " $key($frame->{$key})";
             } elsif ($self->{debug_mode} == 2) { # block mode
-                $message->{message} .= "\n" . ' ' x 6 . sprintf('%-12s', $key) . $frame->{$key};
+                $message->{message} .= "\n" . " " x 6 . sprintf("%-12s", $key) . $frame->{$key};
             }
         }
         $message->{message} .= "\n";

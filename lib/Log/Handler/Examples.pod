@@ -86,7 +86,6 @@ You can add output objects on this way as well:
 
     my %file_options = (
         filename => "file1.log",
-        mode     => "append"
     );
 
     my %handler_options = (
@@ -207,7 +206,6 @@ Or with C<data_source>
     $log->add(
         file => {
             filename => "file1.log",
-            mode     => "append",
             maxlevel => 7,
             minlevel => 0
         }
@@ -288,7 +286,6 @@ Or with C<data_source>
 
     my $file = Log::Handler::Output::File->new(
         filename => "file.log",
-        mode     => "append",
         fileopen => 1,
         reopen   => 1,
     );
@@ -313,7 +310,6 @@ Or with C<data_source>
     $log->add(
         file => {
             filename => "common.log",
-            mode     => "append",
             maxlevel => 6,
             minlevel => 5,
         }
@@ -322,7 +318,6 @@ Or with C<data_source>
     $log->add(
         file => {
             filename => "error.log",
-            mode     => "append",
             maxlevel => 4,
             minlevel => 0,
         }
@@ -380,7 +375,6 @@ only from a special namespace.
     $log->add(
         file => {
             filename => "file1.log",
-            mode     => "append",
             maxlevel => "warning",
         }
     );
@@ -459,7 +453,6 @@ Or
             timeformat     = %b %d %H:%M:%S
             fileopen       = 1
             reopen         = 1
-            mode           = append
             debug_mode     = 2
             message_layout = %T %H[%P] [%L] %S: %m
         </default>
@@ -512,7 +505,6 @@ It can be very useful if you want to check if a level is active.
     $log->add(
         file => {
             filename   => "file1.log",
-            mode       => "append",
             maxlevel   => 4,
         }
     );

@@ -8,39 +8,39 @@ Log::Handler::Output::DBI - Log messages to a database.
 
     my $db = Log::Handler::Output::DBI->new(
         # database source
-        database    => 'database',
-        driver      => 'mysql',
-        host        => '127.0.0.1',
+        database    => "database",
+        driver      => "mysql",
+        host        => "127.0.0.1",
         port        => 3306,
 
         # or with "dbname" instead of "database"
-        dbname      => 'database',
-        driver      => 'Pg',
-        host        => '127.0.0.1',
+        dbname      => "database",
+        driver      => "Pg",
+        host        => "127.0.0.1",
         port        => 5432,
 
         # or with data_source
-        data_source => 'dbi:mysql:database=database;host=127.0.0.1;port=3306',
+        data_source => "dbi:mysql:database=database;host=127.0.0.1;port=3306",
 
         # Username and password
-        user        => 'user',
-        password    => 'password',
+        user        => "user",
+        password    => "password",
 
         # debugging
         debug       => 1,
 
         # table, columns and values (as string)
-        table       => 'messages',
-        columns     => 'level ctime cdate pid hostname progname message',
-        values      => '%level %time %date %pid %hostname %progname %message',
+        table       => "messages",
+        columns     => "level ctime cdate pid hostname progname message",
+        values      => "%level %time %date %pid %hostname %progname %message",
 
         # table, columns and values (as array reference)
-        table       => 'messages',
+        table       => "messages",
         columns     => [ qw/level ctime cdate pid hostname progname message/ ],
         values      => [ qw/%level %time %date %pid %hostname %progname %message/ ],
 
         # table, columns and values (your own statement)
-        statement   => 'insert into messages (level,ctime,cdate,pid,hostname,progname,message) values (?,?,?,?,?,?,?)',
+        statement   => "insert into messages (level,ctime,cdate,pid,hostname,progname,message) values (?,?,?,?,?,?,?)",
         values      => [ qw/%level %time %date %pid %hostname %progname %message/ ],
 
         # if you like persistent connections and want to re-connect
@@ -48,13 +48,13 @@ Log::Handler::Output::DBI - Log messages to a database.
     );
 
     my %message = (
-        level       => 'ERROR',
-        time        => '10:12:13',
-        date        => '1999-12-12',
+        level       => "ERROR",
+        time        => "10:12:13",
+        date        => "1999-12-12",
         pid         => $$,
-        hostname    => 'localhost',
+        hostname    => "localhost",
         progname    => $0,
-        message     => 'an error here'
+        message     => "an error here"
     );
 
     $db->log(\%message);
@@ -110,10 +110,10 @@ With this options you can pass the table name for the insert and the columns.
 You can pass the columns as string or as array. Example:
 
     # the table name
-    table => 'messages',
+    table => "messages",
 
     # columns as string
-    columns => 'level, ctime, cdate, pid, hostname, progname, message',
+    columns => "level, ctime, cdate, pid, hostname, progname, message",
 
     # columns as array
     columns => [ qw/level ctime cdate pid hostname progname message/ ],
@@ -128,14 +128,14 @@ The statement would created as follows
 With this option you can pass your own statement if you don't want to you the
 options C<table> and C<columns>.
 
-    statement => 'insert into message (level, ctime, cdate, pid, hostname, progname, mtime, message)'
-                 .' values (?,?,?,?,?,?,?)'
+    statement => "insert into message (level, ctime, cdate, pid, hostname, progname, mtime, message)"
+                 ." values (?,?,?,?,?,?,?)"
 
 =item B<values>
 
 With this option you have to set the values for the insert.
 
-        values => '%level, %time, %date, %pid, %hostname, %progname, %message',
+        values => "%level, %time, %date, %pid, %hostname, %progname, %message",
 
         # or
 
@@ -198,22 +198,22 @@ intercepted with C<$SIG{__WARN__}>.
 Log a message to the database.
 
     my $db = Log::Handler::Output::DBI->new(
-        database   => 'database',
-        driver     => 'mysql',
-        user       => 'user',
-        password   => 'password',
-        host       => '127.0.0.1',
+        database   => "database",
+        driver     => "mysql",
+        user       => "user",
+        password   => "password",
+        host       => "127.0.0.1",
         port       => 3306,
-        table      => 'messages',
+        table      => "messages",
         columns    => [ qw/level ctime message/ ],
         values     => [ qw/%level %time %message/ ],
         persistent => 1,
     );
 
     $db->log(
-        message => 'your message',
-        level   => 'INFO',
-        time    => '2008-10-10 10:12:23',
+        message => "your message",
+        level   => "INFO",
+        time    => "2008-10-10 10:12:23",
     );
 
 =head2 connect()
@@ -223,6 +223,10 @@ Connect to the database.
 =head2 disconnect()
 
 Disconnect from the database.
+
+=head2 reload()
+
+Reload with a new configuration.
 
 =head2 errstr()
 
@@ -266,13 +270,13 @@ use Carp;
 use DBI;
 use Params::Validate;
 
-our $VERSION = '0.07';
-our $ERRSTR  = '';
+our $VERSION = "0.08";
+our $ERRSTR  = "";
 
 sub new {
-    my $class   = shift;
-    my $options = $class->_validate(@_);
-    my $self    = bless $options, $class;
+    my $class = shift;
+    my $opts  = $class->_validate(@_);
+    my $self  = bless $opts, $class;
 
     if ($self->{debug}) {
         warn "Create a new Log::Handler::Output::DBI object";
@@ -287,7 +291,7 @@ sub log {
     my @values  = ();
 
     foreach my $v (@{$self->{values}}) {
-        if (ref($v) eq 'CODE') {
+        if (ref($v) eq "CODE") {
             push @values, &$v();
         } elsif ($v =~ /^%(.+)/ && exists $message->{$1}) {
             push @values, $message->{$1};
@@ -362,6 +366,25 @@ sub disconnect {
     return 1;
 }
 
+sub reload {
+    my $self = shift;
+    my $opts = ();
+
+    eval { $opts = $self->_validate(@_) };
+
+    if ($@) {
+        return $self->_raise_error($@);
+    }
+    
+    $self->disconnect;
+
+    foreach my $key (keys %$opts) {
+        $self->{$key} = $opts->{$key};
+    }
+
+    return 1;
+}
+
 sub errstr { $ERRSTR }
 
 #
@@ -406,12 +429,12 @@ sub _validate {
         },
         table => {
             type => Params::Validate::SCALAR,
-            depends => [ 'columns' ],
+            depends => [ "columns" ],
             optional => 1,
         },
         columns => {
             type => Params::Validate::SCALAR | Params::Validate::ARRAYREF,
-            depends => [ 'table' ],
+            depends => [ "table" ],
             optional => 1,
         },
         values => {
@@ -485,22 +508,22 @@ sub _validate {
         $options{statement} = "insert into $options{table} (";
 
         if (ref($options{columns})) {
-            $options{statement} .= join(',', @{$options{columns}});
+            $options{statement} .= join(",", @{$options{columns}});
         } else {
-            $options{statement} .= join(',', split /[\s,]+/, $options{columns});
+            $options{statement} .= join(",", split /[\s,]+/, $options{columns});
         }
 
-        $options{statement} .= ') values (';
+        $options{statement} .= ") values (";
 
         my @binds;
         foreach my $v (@{$options{values}}) {
             $v =~ s/^\s+//;
             $v =~ s/\s+\z//;
-            push @binds, '?';
+            push @binds, "?";
         }
 
-        $options{statement} .= join(',', @binds);
-        $options{statement} .= ')';
+        $options{statement} .= join(",", @binds);
+        $options{statement} .= ")";
     }
 
     return \%options;

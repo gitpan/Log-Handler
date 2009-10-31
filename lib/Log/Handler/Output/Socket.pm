@@ -7,9 +7,9 @@ Log::Handler::Output::Socket - Send messages to a socket.
     use Log::Handler::Output::Socket;
 
     my $sock = Log::Handler::Output::Socket->new(
-        peeraddr    => '127.0.0.1',
+        peeraddr    => "127.0.0.1",
         peerport    => 44444,
-        proto       => 'tcp',
+        proto       => "tcp",
         timeout     => 10
     );
 
@@ -80,7 +80,7 @@ C<IO::Socket::INET> and don't want use C<peeraddr> and C<peerhost>.
 Example:
 
         connect => {
-            PerrAddr  => '127.0.0.1',
+            PerrAddr  => "127.0.0.1",
             PeerPort  => 44444,
             LocalPort => 44445
         }
@@ -95,7 +95,7 @@ Call C<log()> if you want to send a message over the socket.
 
 Example:
 
-    $sock->log('message');
+    $sock->log("message");
 
 =head2 connect()
 
@@ -104,6 +104,10 @@ Connect to the socket.
 =head2 disconnect()
 
 Disconnect from socket.
+
+=head2 reload()
+
+Reload with a new configuration.
 
 =head2 errstr()
 
@@ -144,21 +148,23 @@ package Log::Handler::Output::Socket;
 use strict;
 use warnings;
 use Carp;
+use Data::Dumper;
 use Params::Validate;
 use IO::Socket::INET;
-use Data::Dumper;
 
-our $VERSION = '0.05';
-our $ERRSTR  = '';
+our $VERSION = "0.06";
+our $ERRSTR  = "";
 
 sub new {
-    my $class   = shift;
-    my $options = $class->_validate(@_);
-    my $self    = bless $options, $class;
+    my $class = shift;
+    my $opts  = $class->_validate(@_);
+    my $self  = bless $opts, $class;
+
     if ($self->{persistent}) {
         $self->connect
             or croak $self->errstr;
     }
+
     return $self;
 }
 
@@ -222,12 +228,37 @@ sub disconnect {
     $self->{socket} = undef;
 }
 
+sub reload {
+    my $self = shift;
+    my $opts = ();
+
+    eval { $opts = $self->_validate(@_) };
+
+    if ($@) {
+        return $self->_raise_error($@);
+    }
+
+    $self->disconnect;
+
+    foreach my $key (keys %$opts) {
+        $self->{$key} = $opts->{$key};
+    }
+
+    if ($self->{persistent}) {
+        $self->connect
+            or croak $self->errstr;
+    }
+
+    return 1;
+}
+
 sub errstr {
     return $ERRSTR;
 }
 
 sub DESTROY {
     my $self = shift;
+
     if ($self->{socket}) {
         $self->{socket}->close;
     }
@@ -255,7 +286,7 @@ sub _validate {
         },
         proto => {
             type => Params::Validate::SCALAR,
-            default => 'tcp',
+            default => "tcp",
         },
         timeout => {
             type => Params::Validate::SCALAR,

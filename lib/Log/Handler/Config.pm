@@ -202,7 +202,7 @@ The hash keys "file1" and "file2" will be used as aliases.
     });
 
 If you pass the configuration with the alias as a hash key then
-it's also possible to pass a section called "section". The options
+it's also possible to pass a section called "default". The options
 from this section will be used as defaults.
 
     $log->config(config => {

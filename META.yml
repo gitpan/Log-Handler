@@ -1,12 +1,12 @@
 ---
 name: Log-Handler
-version: 0.60
+version: 0.61_01
 author:
   - Jonny Schulz
 abstract: Log messages to several outputs.
 license: perl
 resources:
-  license: ~
+  license: http://dev.perl.org/licenses/
 requires:
   Carp: 0
   Data::Dumper: 0
@@ -25,10 +25,12 @@ recommends:
   IO::Socket: 0
   Net::SMTP: 0
   YAML: 0
+configure_requires:
+  Module::Build: 0.35
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.60
+    version: 0.61_01
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
     version: 0.07
@@ -37,28 +39,28 @@ provides:
     version: 0.06
   Log::Handler::Output:
     file: lib/Log/Handler/Output.pm
-    version: 0.07
+    version: 0.08
   Log::Handler::Output::DBI:
     file: lib/Log/Handler/Output/DBI.pm
-    version: 0.07
+    version: 0.08
   Log::Handler::Output::Email:
     file: lib/Log/Handler/Output/Email.pm
-    version: 0.03
+    version: 0.04
   Log::Handler::Output::File:
     file: lib/Log/Handler/Output/File.pm
-    version: 0.04
+    version: 0.05
   Log::Handler::Output::Forward:
     file: lib/Log/Handler/Output/Forward.pm
     version: 0.02
   Log::Handler::Output::Screen:
     file: lib/Log/Handler/Output/Screen.pm
-    version: 0.04
+    version: 0.0
   Log::Handler::Output::Sendmail:
     file: lib/Log/Handler/Output/Sendmail.pm
-    version: 0.02
+    version: 0.03
   Log::Handler::Output::Socket:
     file: lib/Log/Handler/Output/Socket.pm
-    version: 0.05
+    version: 0.06
   Log::Handler::Pattern:
     file: lib/Log/Handler/Pattern.pm
     version: 0.03
@@ -71,7 +73,7 @@ provides:
   Log::Handler::Plugin::YAML:
     file: lib/Log/Handler/Plugin/YAML.pm
     version: 0.03
-generated_by: Module::Build version 0.32
+generated_by: Module::Build version 0.35
 meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.2.html
-  version: 1.2
+  url: http://module-build.sourceforge.net/META-spec-v1.4.html
+  version: 1.4

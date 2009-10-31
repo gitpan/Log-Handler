@@ -63,6 +63,10 @@ Example:
 
     $forwarder->log('this message will be forwarded to all sub routines');
 
+=head2 reload()
+
+Reload with a new configuration.
+
 =head2 errstr()
 
 This function returns the last error message.
@@ -137,7 +141,27 @@ sub log {
     return 1;
 }
 
-sub errstr { $ERRSTR }
+sub reload {
+    my $self = shift;
+    my $opts = ();
+
+    eval { $opts = $self->_validate(@_) };
+
+    if ($@) {
+        $ERRSTR = $@;
+        return undef;
+    }
+
+    foreach my $key (keys %$opts) {
+        $self->{$key} = $opts->{$key};
+    }
+
+    return 1;
+}
+
+sub errstr {
+    return $ERRSTR;
+}
 
 #
 # private stuff

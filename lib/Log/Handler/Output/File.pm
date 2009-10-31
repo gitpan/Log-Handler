@@ -155,6 +155,10 @@ This is useful if you don't want to use option S<"reopen">. As example
 if a rotate mechanism moves the logfile and you want to re-open a new
 one.
 
+=head2 reload()
+
+Reload with a new configuration.
+
 =head2 errstr()
 
 Call C<errstr()> to get the last error message.
@@ -203,27 +207,13 @@ use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
 use File::Spec;
 use Params::Validate qw();
 
-our $VERSION = "0.04";
+our $VERSION = "0.05";
 our $ERRSTR  = "";
 
 sub new {
-    my $class   = shift;
-    my $options = $class->_validate(@_);
-    my $self    = bless $options, $class;
-
-    if (ref($self->{filename}) eq "ARRAY") {
-        $self->{filename} = File::Spec->catfile(@{$self->{filename}});
-    }
-
-    if ($self->{mode} eq "append") {
-        $self->{mode} = O_WRONLY | O_APPEND | O_CREAT;
-    } elsif ($self->{mode} eq "excl") {
-        $self->{mode} = O_WRONLY | O_EXCL | O_CREAT;
-    } elsif ($self->{mode} eq "trunc") {
-        $self->{mode} = O_WRONLY | O_TRUNC | O_CREAT;
-    }
-
-    $self->{permissions} = oct($self->{permissions});
+    my $class = shift;
+    my $opts  = $class->_validate(@_);
+    my $self  = bless $opts, $class;
 
     # open the log file permanent
     if ($self->{fileopen}) {
@@ -287,7 +277,33 @@ sub close {
     return 1;
 }
 
-sub errstr { $ERRSTR }
+sub reload {
+    my $self = shift;
+    my $opts = ();
+
+    eval { $opts = $self->_validate(@_) };
+
+    if ($@) {
+        return $self->_raise_error($@);
+    }
+
+    $self->close;
+
+    foreach my $key (keys %$opts) {
+        $self->{$key} = $opts->{$key};
+    }
+
+    if ($self->{fileopen}) {
+        $self->_open
+            or croak $self->errstr;
+    }
+
+    return 1;
+}
+
+sub errstr {
+    return $ERRSTR;
+}
 
 sub DESTROY {
     my $self = shift;
@@ -340,7 +356,7 @@ sub _validate {
     my $class   = shift;
     my $bool_rx = qr/^[10]\z/;
 
-    my %options = Params::Validate::validate(@_, {
+    my %opts = Params::Validate::validate(@_, {
         filename => {
             type => Params::Validate::SCALAR | Params::Validate::ARRAYREF,
         },
@@ -381,7 +397,21 @@ sub _validate {
         },
     });
 
-    return \%options;
+    if (ref($opts{filename}) eq "ARRAY") {
+        $opts{filename} = File::Spec->catfile(@{$opts{filename}});
+    }
+
+    if ($opts{mode} eq "append") {
+        $opts{mode} = O_WRONLY | O_APPEND | O_CREAT;
+    } elsif ($opts{mode} eq "excl") {
+        $opts{mode} = O_WRONLY | O_EXCL | O_CREAT;
+    } elsif ($opts{mode} eq "trunc") {
+        $opts{mode} = O_WRONLY | O_TRUNC | O_CREAT;
+    }
+
+    $opts{permissions} = oct($opts{permissions});
+
+    return \%opts;
 }
 
 sub _raise_error {

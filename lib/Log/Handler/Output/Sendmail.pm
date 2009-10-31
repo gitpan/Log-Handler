@@ -118,11 +118,15 @@ The messages can be fetched with $SIG{__WARN__}.
 
 Call C<log()> if you want to log a message as email.
 
-    $email->log(message => 'this message will be mailed');
+    $email->log(message => "this message will be mailed");
 
 =head2 flush()
 
 Call C<flush()> if you want to flush the buffered messages.
+
+=head2 reload()
+
+Reload with a new configuration.
 
 =head2 errstr()
 
@@ -167,8 +171,8 @@ use warnings;
 use Carp;
 use Params::Validate;
 
-our $VERSION = '0.02';
-our $ERRSTR  = '';
+our $VERSION = "0.03";
+our $ERRSTR  = "";
 our $TEST    =  0; # is needed to disable flush() for tests
 
 sub new {
@@ -224,7 +228,31 @@ sub flush {
     return $self->_sendmail;
 }
 
-sub errstr  { $ERRSTR }
+sub reload {
+    my $self = shift;
+    my $opts = ();
+
+    eval { $opts = $self->_validate(@_) };
+
+    if ($@) {
+        return $self->_raise_error($@);
+    }
+
+    $self->flush;
+
+    foreach my $key (keys %$opts) {
+        $self->{$key} = $opts->{$key};
+    }
+
+    $self->{message} = "";
+    $self->{length}  = 0;
+
+    return 1;
+}
+
+sub errstr {
+    return $ERRSTR;
+}
 
 sub DESTROY {
     my $self = shift;
@@ -309,11 +337,11 @@ sub _validate {
         },
         sendmail => {
             type => Params::Validate::SCALAR,
-            default => '/usr/sbin/sendmail',
+            default => "/usr/sbin/sendmail",
         },
         params => {
             type => Params::Validate::SCALAR,
-            default => '-t',
+            default => "-t",
         },
         debug => {
             type => Params::Validate::SCALAR,
@@ -339,11 +367,11 @@ sub _validate {
     if (ref($options{header})) {
         my $header = ();
 
-        if (ref($options{header}) eq 'HASH') {
+        if (ref($options{header}) eq "HASH") {
             foreach my $n (keys %{ $options{header} }) {
                 $header .= "$n: $options{header}{$n}\n";
             }
-        } elsif (ref($options{header}) eq 'ARRAY') {
+        } elsif (ref($options{header}) eq "ARRAY") {
             foreach my $h (@{ $options{header} }) {
                 $header .= "$h\n";
             }

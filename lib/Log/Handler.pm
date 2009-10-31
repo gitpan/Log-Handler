@@ -11,7 +11,6 @@ Log::Handler - Log messages to several outputs.
     $log->add(
         file => {
             filename => "file.log",
-            mode     => "append",
             maxlevel => "debug",
             minlevel => "warning",
         }
@@ -170,15 +169,15 @@ of C<minlevel> and C<maxlevel> would log the message and FALSE if not.
 
 =over 4
 
-=item C<fatal>, C<is_fatal>
+=item B<fatal>, B<is_fatal>
 
-=item C<trace>
+=item B<trace>
 
-=item C<dump>
+=item B<dump>
 
-=item C<die>
+=item B<die>
 
-=item C<log>
+=item B<log>
 
 =back
 
@@ -337,8 +336,8 @@ You can create your own placeholders with the method C<set_pattern()>.
 
 This option is just useful if you want to forward messages to output
 modules that needs the parts of a message as a hash reference - as
-example L<Log::Handler::Output::Forward>, L<Log::Handler::Output::DBI>,
-L<Log::Handler::Output::Email> or L<Log::Handler::Output::Screen>.
+example L<Log::Handler::Output::Forward>, L<Log::Handler::Output::DBI>
+L<Log::Handler::Output::Screen>.
 
 The option expects a list of placeholders:
 
@@ -465,6 +464,13 @@ If you set C<die_on_errors> to 0 then you have to controll it yourself.
     # or Log::Handler->errstr()
     # or Log::Handler::errstr()
     # or $Log::Handler::ERRSTR
+
+=item B<remove_on_reload>
+
+This option is set to 1 by default.
+
+Take a look to the decription of the method C<reload> for more
+informations to this option.
 
 =item B<filter_message>
 
@@ -663,53 +669,9 @@ This option let skip the C<caller()> informations the count of C<debug_skip>.
 
 The method C<add()> excepts 2 parts of options; the options for the handler and
 the options for the output module you want to use. The output modules got it's own
-documentation for all options. As example if you want to add a file-output then
-take a look into the documentation of L<Log::Handler::Output::File> to see which
-options are available.
-
-There are different ways to add a new output to the handler. One way is to create
-the output object yourself and pass it with the handler options to C<add()>.
+documentation for all options.
 
 Example:
-
-    use Log::Handler;
-    use Log::Handler::Output::File;
-
-    # the handler options - how to handle the output
-    my %handler_options = (
-        timeformat      => "%Y/%m/%d %H:%M:%S",
-        message_layout  => "%T [%L] %S: %m",
-        maxlevel        => "debug",
-        minlevel        => "emergency",
-        die_on_errors   => 1,
-        debug_trace     => 0,
-        debug_mode      => 2,
-        debug_skip      => 0,
-    );
-
-    # the file options - how to handle the file
-    my %file_options = (
-        filename        => "file.log",
-        filelock        => 1,
-        fileopen        => 1,
-        reopen          => 1,
-        mode            => "append",
-        autoflush       => 1,
-        permissions     => "0660",
-        utf8            => 1,
-    );
-
-    # create the file object
-    my $file = Log::Handler::Output::File->new( \%file_options );
-
-    # create a new handler object
-    my $log = Log::Handler->new();
-
-    # now we add the file object to the handler with the handler options
-    $log->add( $file => \%handler_options );
-
-But it can be simplier! You can merge all options and pass them to C<add()>
-in one step, you just need to tell the handler what do you want to add.
 
     use Log::Handler;
 
@@ -717,10 +679,10 @@ in one step, you just need to tell the handler what do you want to add.
 
     $log->add(
 
-        # what do you want to add - a file output
+        # Add "file output"
         file => {
 
-            # handler options
+            # handler options (see Log::Handler)
             timeformat      => "%Y/%m/%d %H:%M:%S",
             message_layout  => "%T [%L] %S: %m",
             maxlevel        => "debug",
@@ -730,7 +692,7 @@ in one step, you just need to tell the handler what do you want to add.
             debug_mode      => 2,
             debug_skip      => 0,
 
-            # file options
+            # file options (see Log::Handler::Output::File)
             filename        => "file.log",
             filelock        => 1,
             fileopen        => 1,
@@ -742,9 +704,6 @@ in one step, you just need to tell the handler what do you want to add.
 
         }
     );
-
-The options will be splitted internal and you don't need to split it yourself,
-only if you want to do it yourself.
 
 Take a look to L<Log::Handler::Examples> for more informations.
 
@@ -837,6 +796,65 @@ outputs. All other keys (C<error_log>, C<common_log>) are used as aliases.
 
 Take a look into the documentation of L<Log::Handler::Config> for more
 informations.
+
+=head2 reload()
+
+With the method C<reload()> it's possible to reload the logging
+machine. Just pass the complete new configuration for all outputs.
+
+Example:
+
+logger.conf
+
+    <file>
+        alias    = debug
+        filename = debug.log
+        maxlevel = debug
+        minlevel = emerg
+    </file>
+
+    <file>
+        alias    = common
+        filename = common.log
+        maxlevel = info
+        minlevel = emerg
+    </file>
+
+Load the configuration
+
+    $log->config(config => "logger.conf");
+
+Now change the configuration in logger.conf
+
+    <file>
+        alias    = common
+        filename = common.log
+        maxlevel = notice
+        minlevel = emerg
+    </file>
+
+What happends now...
+
+The file-output with the alias C<debug> will be removed
+and the file-output with the alias C<common> will be
+reloaded.
+
+If you don't want that output-objects will be removed
+because they were added internal you can set the option
+C<remove_on_reload> to 0.
+
+Example:
+
+    $log->config(config => "logger.conf");
+
+    $log->add(
+        forward => {
+            forward_to => \&my_func,
+            remove_on_reload => 0,
+        }
+    );
+
+The forward-output is not removed after a reload.
 
 =head2 set_pattern()
 
@@ -994,6 +1012,7 @@ Prerequisites for all modules:
     POSIX
     Time::HiRes
     Sys::Hostname
+    UNIVERSAL
 
 Recommended modules:
 
@@ -1072,9 +1091,10 @@ use Params::Validate;
 use Log::Handler::Output;
 use Log::Handler::Config;
 use Log::Handler::Pattern;
+use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.60";
+our $VERSION = "0.61_01";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1202,9 +1222,9 @@ sub new {
 
     my $self = bless {
         priority => PRIORITY,   # start priority
-        levels   => { },        # outputs stored by active levels
-        alias    => { },        # outputs stored by an alias
-        output   => [ ],        # all outputs needed for flush()
+        levels   => { },        # outputs (Output.pm) stored by active levels
+        alias    => { },        # outputs (Output.pm) stored by an alias
+        outputs  => [ ],        # all Output::* objects - for flush()
         pattern  =>             # default pattern
             &Log::Handler::Pattern::get_pattern,
     }, $class;
@@ -1279,12 +1299,103 @@ sub config {
     my $config = Log::Handler::Config->config(@_);
 
     # Structure:
-    #   $configs->{file} = [ output configs ];
-    #   $configs->{dbi}  = [ output configs ];
+    #   $config->{file} = [ output config ];
+    #   $config->{dbi}  = [ output config ];
 
     foreach my $type (keys %$config) {
         for my $c (@{$config->{$type}}) {
             $self->add($type, $c);
+        }
+    }
+
+    return 1;
+}
+
+sub reload {
+    my $self   = shift;
+    my $class  = ref($self);
+    my %reloaded = (); # store all reloaded or new aliases
+
+    # Because the new configuration could be blemished
+    # it's better to use eval - daemons shouldn't die.
+
+    eval {
+        local $SIG{__DIE__} = sub { $self->_raise_error($@) };
+        my $parsed = Log::Handler::Config->config(@_);
+
+        # At first it's necessary to check if a alias
+        # is defined for each output.
+
+        foreach my $output (keys %$parsed) {
+            foreach my $config (@{ $parsed->{$output} }) {
+                if (!defined $config->{alias}) {
+                    die "$class: unable to reload the logging machine because of missing aliases";
+                }
+
+                $reloaded{ $config->{alias} } = 1;
+            }
+        }
+
+        foreach my $output (keys %$parsed) {
+            foreach my $config (@{ $parsed->{$output} }) {
+                my $alias  = $config->{alias};
+
+                if (!$self->output($alias)) {
+                    # Add the output over the normal way
+                    $self->add($output, $config);
+                } else {
+                    my ($h_opts, $o_opts) = $self->_split_options($config);
+                    $h_opts = $self->_validate_options($h_opts);
+                    $self->output($alias)->reload($o_opts)
+                        or die $self->{alias}->{$alias}->errstr;
+                    $self->{alias}->{$alias}->reload($h_opts);
+                }
+            }
+        }
+    };
+
+    # Something wents wrong.
+    # The error message should be in $ERRSTR.
+    if ($@) {
+        return undef;
+    }
+
+    # Rebuild the arrays...
+    my $levels  = { };
+    my $outputs = [ ];
+    $self->{levels}  = $levels;
+    $self->{outputs} = $outputs;
+
+    foreach my $alias (keys %{ $self->{alias} }) {
+        my $output = $self->{alias}->{$alias};
+
+        # Delete all objects that wasn't reloaded and have
+        # set the flag "remove_on_reload".
+
+        if (!exists $reloaded{$alias} && $output->{remove_on_reload}) {
+            # At this point the output object should be destroyed,
+            # because the last reference was stored here.
+            eval { delete $self->{alias}->{$alias} };
+
+            if ($@) {
+                warn $@;
+            }
+        } else {
+            push @$outputs, $self->output($alias);
+
+            foreach my $level (keys %{$output->{levels}}) {
+                if ($levels->{$level}) {
+                    my @old_order = @{$levels->{$level}};
+                    push @old_order, $output;
+                    $levels->{$level} = [
+                        map  { $_->[0] }
+                        sort { $a->[1] <=> $b->[1] }
+                        map  { [ $_, $_->{priority} ] } @old_order
+                    ];
+                } else {
+                    push @{$levels->{$level}}, $output;
+                }
+            }
         }
     }
 
@@ -1391,7 +1502,8 @@ sub flush {
     if (@alias) {
         foreach my $name (@alias) {
             my $output = $self->output($name);
-            next unless $output;
+            next unless $output && UNIVERSAL::can($output, "flush");
+
             if ( !$output->flush ) {
                 if ( defined $errors ) {
                     $errors .= "; " . $output->errstr;
@@ -1402,6 +1514,8 @@ sub flush {
         }
     } else {
         foreach my $output (@{$self->{outputs}}) {
+            next unless UNIVERSAL::can($output, "flush");
+
             if ( !$output->flush ) {
                 if ( defined $errors ) {
                     $errors .= "; " . $output->errstr;
@@ -1415,7 +1529,9 @@ sub flush {
     return defined $errors ? $self->_raise_error($errors) : 1;
 }
 
-sub errstr { $ERRSTR }
+sub errstr {
+    return $ERRSTR;
+}
 
 #
 # private stuff
@@ -1449,6 +1565,7 @@ sub _split_options {
         newline
         priority
         timeformat
+        remove_on_reload
     );
 
     foreach my $key (keys %$opts) {
@@ -1500,7 +1617,10 @@ sub _new_output {
         }
 
         eval "require $package";
-        die $@ if $@;
+
+        if ($@) {
+            Carp::croak($@);
+        }
 
         $output = $package->new($output_opts)
             or Carp::croak $package->errstr;
@@ -1600,6 +1720,10 @@ sub _validate_options {
         except_caller => {
             type => Params::Validate::SCALAR | Params::Validate::SCALARREF,
             optional => 1,
+        },
+        remove_on_reload => {
+            type => Params::Validate::SCALAR,
+            default => 1,
         },
     });
 

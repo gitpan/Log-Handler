@@ -7,13 +7,13 @@ Log::Handler::Output::Email - Log messages as email (via Net::SMTP).
     use Log::Handler::Output::Email;
 
     my $email = Log::Handler::Output::Email->new(
-        host     => 'mx.bar.example',
-        hello    => 'EHLO my.domain.example',
+        host     => "mx.bar.example",
+        hello    => "EHLO my.domain.example",
         timeout  => 120,
         debug    => 0,
         from     => 'bar@foo.example',
         to       => 'foo@bar.example',
-        subject  => 'your subject',
+        subject  => "your subject",
         buffer   => 0
     );
 
@@ -40,11 +40,11 @@ The following options are possible:
 
 With this option you has to define the SMTP host to connect to.
 
-    host => 'mx.host.com'
+    host => "mx.host.com"
 
     # or
 
-    host => [ 'mx.host.example', 'mx.host-backup.example' ]
+    host => [ "mx.host.example", "mx.host-backup.example" ]
 
 =item B<hello>
 
@@ -99,14 +99,14 @@ If you set a buffer size then the message will be pushed into the buffer first.
 
 Example:
 
-    $email->log(message => 'this message will be mailed');
+    $email->log(message => "this message will be mailed");
 
     # or
 
     $email->log(
-        message => 'this message will be mailed',
-        subject => 'your subject',
-        level   => 'INFO',
+        message => "this message will be mailed",
+        subject => "your subject",
+        level   => "INFO",
     );
 
 If you pass C<"level => 'INFO'"> then the level is placed into the subject:
@@ -115,7 +115,7 @@ If you pass C<"level => 'INFO'"> then the level is placed into the subject:
 
 As example you can use message_pattern from L<Log::Handler> to pass the level:
 
-    message_pattern => '%L'
+    message_pattern => "%L"
 
 then the level is placed into the subject.
 
@@ -130,6 +130,10 @@ Call C<flush()> if you want to flush the buffered lines.
 Call C<sendmail()> if you want to send an email.
 
 The difference to C<log()> is that the message won't be buffered.
+
+=head2 reload()
+
+Reload with a new configuration.
 
 =head2 errstr()
 
@@ -178,13 +182,13 @@ use Email::Date;
 use Net::SMTP;
 use Params::Validate;
 
-our $VERSION = '0.03';
-our $ERRSTR  = '';
+our $VERSION = "0.04";
+our $ERRSTR  = "";
 our $TEST    =  0; # is needed to disable flush() for tests
 
 sub new {
-    my $class   = shift;
-    my $options = $class->_validate(@_);
+    my $class = shift;
+    my $opts  = $class->_validate(@_);
     return bless $options, $class;
 }
 
@@ -210,7 +214,7 @@ sub log {
 sub flush {
     my $self    = shift;
     my $message = ();
-    my $string  = '';
+    my $string  = "";
 
     if ($TEST || !@{$self->{MESSAGE_BUFFER}}) {
         return 1;
@@ -249,7 +253,7 @@ sub sendmail {
     }
 
     if (!$smtp) {
-        return $self->_raise_error("smtp error: unable to connect to ".join(', ', @{$self->{host}}));
+        return $self->_raise_error("smtp error: unable to connect to ".join(", ", @{$self->{host}}));
     }
 
     my $success = 0;
@@ -271,8 +275,33 @@ sub sendmail {
     return 1;
 }
 
-sub errstr  { $ERRSTR }
-sub DESTROY { $_[0]->flush }
+sub reload {
+    my $self = shift;
+    my $opts = ();
+
+    eval { $opts = $self->_validate(@_) };
+
+    if ($@) {
+        return $self->_raise_error($@);
+    }
+
+    $self->flush;
+
+    foreach my $key (keys %$opts) {
+        $self->{$key} = $opts->{$key};
+    }
+
+    return 1;
+}
+
+sub errstr {
+    return $ERRSTR;
+}
+
+sub DESTROY {
+    my $self = shift;
+    $self->flush;
+}
 
 #
 # private stuff
@@ -290,7 +319,7 @@ sub _validate {
         },
         hello => {
             type => Params::Validate::SCALAR,
-            default => 'EHLO BELO',
+            default => "EHLO BELO",
         },
         timeout => {
             type => Params::Validate::SCALAR,

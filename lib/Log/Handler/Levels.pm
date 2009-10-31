@@ -150,11 +150,6 @@ Please report all bugs to <jschulz.cpan(at)bloonix.de>.
 
 If you send me a mail then add Log::Handler into the subject.
 
-=head1 PREREQUISITES
-
-    Carp
-    Data::Dumper
-
 =head1 AUTHOR
 
 Jonny Schulz <jschulz.cpan(at)bloonix.de>.

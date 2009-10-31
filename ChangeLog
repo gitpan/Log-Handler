@@ -1,3 +1,7 @@
+0.61_01 Released at 2009-10-31.
+        - Added a reload functionallety to Log::Handler and
+          all output-modules.
+
 0.60    Released at 2009-10-23.
         - File.pm: "append" is now the default for option
           "mode"
