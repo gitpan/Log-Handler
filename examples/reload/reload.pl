@@ -9,11 +9,9 @@ my $log = Log::Handler->new();
 $log->config(config => "logger1.conf");
 $log->warning("foo");
 $log->info("foo");
-#print Dumper($log);
 
 print "--------------------------------------\n";
 
 $log->reload(config => "logger2.conf") or die $log->errstr;
 $log->warning("bar");
 $log->info("bar");
-#print Dumper($log);

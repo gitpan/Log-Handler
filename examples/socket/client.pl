@@ -17,7 +17,7 @@ This is a client example for Log::Handler::Output::Socket.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007-2008 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

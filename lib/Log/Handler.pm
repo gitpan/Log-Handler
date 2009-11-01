@@ -107,6 +107,8 @@ every peep.
 
 =head1 LOG LEVEL METHODS
 
+=head2 Level methods
+
 =over 4
 
 =item B<debug()>
@@ -480,7 +482,6 @@ a code reference or a simple string. Example:
 
     $log->add(file => {
         filename => "file.log",
-        mode     => "append",
         maxlevel => 6,
         filter_message => qr/log this/,
         # or
@@ -495,7 +496,6 @@ If you pass your own code then you have to check the message yourself.
 
     $log->add(file => {
         filename => "file.log",
-        mode     => "append",
         maxlevel => 6,
         filter_message => \&my_filter
     });
@@ -511,7 +511,6 @@ hash reference with the options C<matchN> and C<condition>. Example:
 
     $log->add(file => {
         filename => "file.log",
-        mode     => "append",
         maxlevel => 6,
         filter_message => {
             match1    => "log this",
@@ -667,7 +666,7 @@ This option let skip the C<caller()> informations the count of C<debug_skip>.
 
 =head2 HowTo use add()
 
-The method C<add()> excepts 2 parts of options; the options for the handler and
+The method C<add()> expects 2 parts of options; the options for the handler and
 the options for the output module you want to use. The output modules got it's own
 documentation for all options.
 
@@ -697,7 +696,6 @@ Example:
             filelock        => 1,
             fileopen        => 1,
             reopen          => 1,
-            mode            => "append",
             autoflush       => 1,
             permissions     => "0660",
             utf8            => 1,
@@ -746,7 +744,6 @@ write operations.
     $log->add(file => {
         filename      => "file.log",
         maxlevel      => "info",
-        mode          => "append",
         die_on_errors => 0,
     });
 
@@ -777,16 +774,16 @@ Or
                 die_on_errors => 0
             },
             error_log => {
-                filename      => "error.log",
-                maxlevel      => "warning",
-                minlevel      => "emerg",
-                priority      => 1
+                filename => "error.log",
+                maxlevel => "warning",
+                minlevel => "emerg",
+                priority => 1
             },
             common_log => {
-                filename      => "common.log",
-                maxlevel      => "info",
-                minlevel      => "emerg",
-                priority      => 2
+                filename => "common.log",
+                maxlevel => "info",
+                minlevel => "emerg",
+                priority => 2
             },
         }
     });
@@ -801,6 +798,11 @@ informations.
 
 With the method C<reload()> it's possible to reload the logging
 machine. Just pass the complete new configuration for all outputs.
+
+At first you should know that it's highly recommended to set a alias for
+each output. If you don't set a alias then the logger doesn't know which
+output-objects to reload. If a output-objects doesn't have a alias then
+the objects will be removed and the new configuration will be added.
 
 Example:
 
@@ -833,15 +835,22 @@ Now change the configuration in logger.conf
         minlevel = emerg
     </file>
 
+    <sendmail>
+        alias   = email
+        from    = bar@foo.example
+        to      = foo@bar.example
+        subject = your subject
+    </sendmail>
+
 What happends now...
 
-The file-output with the alias C<debug> will be removed
-and the file-output with the alias C<common> will be
-reloaded.
+The file-output with the alias C<debug> will be removed,
+the file-output with the alias C<common> will be
+reloaded and the output with the alias C<email> will be added.
 
 If you don't want that output-objects will be removed
-because they were added internal you can set the option
-C<remove_on_reload> to 0.
+because they were added internal, then you can set the
+option C<remove_on_reload> to 0.
 
 Example:
 
@@ -870,7 +879,6 @@ Then you can use this pattern in your message layout:
 
     $log->add(file => {
         filename        => "file.log",
-        mode            => "append",
         message_layout  => "%X %m%N",
     });
 
@@ -1052,33 +1060,10 @@ If you send me a mail then add Log::Handler into the subject.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007-2008 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
-
-=head1 DISCLAIMER OF WARRANTY
-
-BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
-FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
-OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
-PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
-EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
-ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
-YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-NECESSARY SERVICING, REPAIR, OR CORRECTION.
-
-IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE
-LIABLE TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL,
-OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE
-THE SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
-RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
-FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
-SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGES.
 
 =cut
 
@@ -1094,7 +1079,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.61_01";
+our $VERSION = "0.61_02";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1167,6 +1152,7 @@ our %AVAILABLE_OUTPUTS = (
     dbi      => "Log::Handler::Output::DBI",
     screen   => "Log::Handler::Output::Screen",
     socket   => "Log::Handler::Output::Socket",
+    gearman  => "Log::Handler::Output::Gearman",
 );
 
 # use Log::Handler foo => "LOGFOO", bar => "LOGBAR";
@@ -1248,47 +1234,7 @@ sub add {
     }
 
     my $output = $self->_new_output(@_);
-    my $levels = $self->{levels};
-
-    # Structure:
-    #   $self->{levels}->{INFO} = [ outputs ordered by priority ]
-    #
-    # All outputs that would log the level INFO will be stored to the
-    # hash-tree $self->{levels}->{INFO}. On this way it's possible
-    # to check very fast if the level is active
-    #
-    #   my $levels = $self->{levels};
-    #   if (exists $levels->{INFO}) { ... }
-    #
-    # and loop over all output objects and pass the message to it.
-
-    foreach my $level (keys %{$output->{levels}}) {
-        if ($levels->{$level}) {
-            my @old_order = @{$levels->{$level}};
-            push @old_order, $output;
-            $levels->{$level} = [
-                map  { $_->[0] }
-                sort { $a->[1] <=> $b->[1] }
-                map  { [ $_, $_->{priority} ] } @old_order
-            ];
-        } else {
-            push @{$levels->{$level}}, $output;
-        }
-    }
-
-    # Structure:
-    #   $self->{alias}->{$alias} = $output_object
-    #
-    # All outputs with an alias are stored to this hash tree.
-    # Each output can be fetched with output($alias);
-
-    if ($output->{alias}) {
-        my $alias = $output->{alias};
-        $self->{alias}->{$alias} = $output;
-    }
-
-    # save all outputs here
-    push @{$self->{outputs}}, $output;
+    $self->_add_output($output);
 
     return 1;
 }
@@ -1312,9 +1258,11 @@ sub config {
 }
 
 sub reload {
-    my $self   = shift;
-    my $class  = ref($self);
-    my %reloaded = (); # store all reloaded or new aliases
+    my $self  = shift;
+    my $class = ref($self);
+
+    # Store all aliases that were reloaded or added
+    my %reloaded = ();
 
     # Because the new configuration could be blemished
     # it's better to use eval - daemons shouldn't die.
@@ -1323,22 +1271,10 @@ sub reload {
         local $SIG{__DIE__} = sub { $self->_raise_error($@) };
         my $parsed = Log::Handler::Config->config(@_);
 
-        # At first it's necessary to check if a alias
-        # is defined for each output.
-
         foreach my $output (keys %$parsed) {
             foreach my $config (@{ $parsed->{$output} }) {
-                if (!defined $config->{alias}) {
-                    die "$class: unable to reload the logging machine because of missing aliases";
-                }
-
+                my $alias = $config->{alias};
                 $reloaded{ $config->{alias} } = 1;
-            }
-        }
-
-        foreach my $output (keys %$parsed) {
-            foreach my $config (@{ $parsed->{$output} }) {
-                my $alias  = $config->{alias};
 
                 if (!$self->output($alias)) {
                     # Add the output over the normal way
@@ -1361,10 +1297,8 @@ sub reload {
     }
 
     # Rebuild the arrays...
-    my $levels  = { };
-    my $outputs = [ ];
-    $self->{levels}  = $levels;
-    $self->{outputs} = $outputs;
+    $self->{levels}  = { };
+    $self->{outputs} = [ ];
 
     foreach my $alias (keys %{ $self->{alias} }) {
         my $output = $self->{alias}->{$alias};
@@ -1381,21 +1315,7 @@ sub reload {
                 warn $@;
             }
         } else {
-            push @$outputs, $self->output($alias);
-
-            foreach my $level (keys %{$output->{levels}}) {
-                if ($levels->{$level}) {
-                    my @old_order = @{$levels->{$level}};
-                    push @old_order, $output;
-                    $levels->{$level} = [
-                        map  { $_->[0] }
-                        sort { $a->[1] <=> $b->[1] }
-                        map  { [ $_, $_->{priority} ] } @old_order
-                    ];
-                } else {
-                    push @{$levels->{$level}}, $output;
-                }
-            }
+            $self->_add_output($output);
         }
     }
 
@@ -1537,48 +1457,6 @@ sub errstr {
 # private stuff
 #
 
-sub _split_options {
-    my ($self, $opts) = @_;
-    my (%handler_opts, %output_opts);
-
-    # It's possible to pass all options for the handler and for the
-    # output to add(). These options must be splitted. The options
-    # for the handler will be passed to Log::Handler::Output. The
-    # options for the output will be passed - as example - to
-    # Log::Handler::Output::File.
-
-    my %split_options = map { $_ => 0 } qw(
-        alias
-        debug_mode
-        debug_skip
-        debug_trace
-        die_on_errors
-        filter
-        filter_message
-        filter_caller
-        except_caller
-        maxlevel
-        message_layout
-        message_pattern
-        prepare_message
-        minlevel
-        newline
-        priority
-        timeformat
-        remove_on_reload
-    );
-
-    foreach my $key (keys %$opts) {
-        if (exists $split_options{$key}) {
-            $handler_opts{$key} = $opts->{$key};
-        } else {
-            $output_opts{$key} = $opts->{$key};
-        }
-    }
-
-    return (\%handler_opts, \%output_opts);
-}
-
 sub _new_output {
     my $self    = shift;
     my $type    = shift;
@@ -1630,10 +1508,98 @@ sub _new_output {
     return Log::Handler::Output->new($handler_opts, $output);
 }
 
+sub _split_options {
+    my ($self, $opts) = @_;
+    my (%handler_opts, %output_opts);
+
+    # It's possible to pass all options for the handler and for the
+    # output to add(). These options must be splitted. The options
+    # for the handler will be passed to Log::Handler::Output. The
+    # options for the output will be passed - as example - to
+    # Log::Handler::Output::File.
+
+    my %split_options = map { $_ => 0 } qw(
+        alias
+        debug_mode
+        debug_skip
+        debug_trace
+        die_on_errors
+        filter
+        filter_message
+        filter_caller
+        except_caller
+        maxlevel
+        message_layout
+        message_pattern
+        prepare_message
+        minlevel
+        newline
+        priority
+        timeformat
+        remove_on_reload
+    );
+
+    foreach my $key (keys %$opts) {
+        if (exists $split_options{$key}) {
+            $handler_opts{$key} = $opts->{$key};
+        } else {
+            $output_opts{$key} = $opts->{$key};
+        }
+    }
+
+    return (\%handler_opts, \%output_opts);
+}
+
+sub _add_output {
+    my ($self, $output) = @_;
+    my $levels = $self->{levels};
+
+    # Structure:
+    #   $self->{levels}->{INFO} = [ outputs ordered by priority ]
+    #
+    # All outputs that would log the level INFO will be stored to the
+    # hash-tree $self->{levels}->{INFO}. On this way it's possible
+    # to check very fast if the level is active
+    #
+    #   my $levels = $self->{levels};
+    #   if (exists $levels->{INFO}) { ... }
+    #
+    # and loop over all output objects and pass the message to it.
+
+    foreach my $level (keys %{$output->{levels}}) {
+        if ($levels->{$level}) {
+            my @old_order = @{$levels->{$level}};
+            push @old_order, $output;
+            $levels->{$level} = [
+                map  { $_->[0] }
+                sort { $a->[1] <=> $b->[1] }
+                map  { [ $_, $_->{priority} ] } @old_order
+            ];
+        } else {
+            push @{$levels->{$level}}, $output;
+        }
+    }
+
+    # Structure:
+    #   $self->{alias}->{$alias} = $output_object
+    #
+    # All outputs with an alias are stored to this hash tree.
+    # Each output can be fetched with output($alias);
+
+    if ($output->{alias}) {
+        my $alias = $output->{alias};
+        $self->{alias}->{$alias} = $output;
+    }
+
+    # save all outputs here
+    push @{$self->{outputs}}, $output;
+}
+
 sub _validate_options {
     my ($self, @args) = @_;
-    my %wanted  = ();
     my $pattern = $self->{pattern};
+    my $alias   = $self->{alias};
+    my %wanted  = ();
 
     # Option "filter" is deprecated.
     if (exists $args[0]{filter}) {
@@ -1726,6 +1692,19 @@ sub _validate_options {
             default => 1,
         },
     });
+
+    if (!$options{alias}) {
+        for (;;) {
+            my $rand = rand();
+
+            if (exists $alias->{$rand}) {
+                next;
+            }
+
+            $options{alias} = $rand;
+            last;
+        }
+    }
 
     if ($options{filter_message}) {
         $options{filter_message} = $self->_validate_filter($options{filter_message});

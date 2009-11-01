@@ -136,7 +136,7 @@ Jonny Schulz <jschulz.cpan(at)bloonix.de>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007-2008 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -152,7 +152,7 @@ use Data::Dumper;
 use Params::Validate;
 use IO::Socket::INET;
 
-our $VERSION = "0.06";
+our $VERSION = "0.07";
 our $ERRSTR  = "";
 
 sub new {
@@ -213,7 +213,7 @@ sub connect {
     if (@_) {
         $opts = @_ > 1 ? {@_} : shift;
     } else {
-        $opts = $self->{sock_opts};
+        $opts = $self->{sockopts};
     }
 
     $self->{socket} = IO::Socket::INET->new(%$opts)
@@ -224,8 +224,12 @@ sub connect {
 
 sub disconnect {
     my $self = shift;
-    $self->{socket}->close;
-    $self->{socket} = undef;
+
+    if ($self->{socket}) {
+        $self->{socket}->close;
+    }
+
+    delete $self->{socket};
 }
 
 sub reload {
@@ -314,10 +318,10 @@ sub _validate {
     });
 
     if ($options{peeraddr} && $options{peerport}) {
-        $options{sock_opts}{PeerAddr} = delete $options{peeraddr};
-        $options{sock_opts}{PeerPort} = delete $options{peerport};
-        $options{sock_opts}{Proto}    = delete $options{proto};
-        $options{sock_opts}{Timeout}  = delete $options{timeout};
+        $options{sockopts}{PeerAddr} = delete $options{peeraddr};
+        $options{sockopts}{PeerPort} = delete $options{peerport};
+        $options{sockopts}{Proto}    = delete $options{proto};
+        $options{sockopts}{Timeout}  = delete $options{timeout};
     } elsif (!$options{connect}) {
         Carp::croak "missing mandatory parameter connect or peeraddr/peerport";
     }

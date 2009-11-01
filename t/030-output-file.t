@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More tests => 5;
+use Test::More tests => 6;
 use File::Spec;
 use Log::Handler::Output::File;
 
@@ -15,8 +15,6 @@ my $log      = Log::Handler::Output::File->new(
     filelock     => 0,
     reopen       => 0,
 );
-
-ok(1, 'new');
 
 # write a string to the file
 $log->log(message => "test\n") or die $!;
@@ -41,3 +39,15 @@ if ( unlink($logfile) ) {
 } else {
     ok(0, "unlink logfile ($logfile)");
 }
+
+$log->reload(
+    {
+        filename  => [ 't', "Log-Handler-$rand_num.log" ],
+        autoflush => 1,
+        fileopen  => 0,
+        reopen    => 0,
+    }
+);
+
+ok($log->{autoflush} == 1, "checking reload ($log->{autoflush})");
+ok($log->{filename}  =~ /$rand_num/, "checking reload ($log->{filename})");

@@ -13,7 +13,8 @@ WriteMakefile
                            'Params::Validate' => 0,
                            'Sys::Hostname' => 0,
                            'Test::More' => 0,
-                           'Time::HiRes' => 0
+                           'Time::HiRes' => 0,
+                           'UNIVERSAL' => 0
                          },
           'INSTALLDIRS' => 'site',
           'EXE_FILES' => [],

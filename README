@@ -102,6 +102,7 @@ LOG LEVELS
     every peep.
 
 LOG LEVEL METHODS
+  Level methods
     debug()
     info()
     notice()
@@ -437,7 +438,6 @@ METHODS
 
             $log->add(file => {
                 filename => "file.log",
-                mode     => "append",
                 maxlevel => 6,
                 filter_message => qr/log this/,
                 # or
@@ -453,7 +453,6 @@ METHODS
 
             $log->add(file => {
                 filename => "file.log",
-                mode     => "append",
                 maxlevel => 6,
                 filter_message => \&my_filter
             });
@@ -470,7 +469,6 @@ METHODS
 
             $log->add(file => {
                 filename => "file.log",
-                mode     => "append",
                 maxlevel => 6,
                 filter_message => {
                     match1    => "log this",
@@ -621,7 +619,7 @@ METHODS
         "debug_skip".
 
   HowTo use add()
-    The method "add()" excepts 2 parts of options; the options for the
+    The method "add()" expects 2 parts of options; the options for the
     handler and the options for the output module you want to use. The
     output modules got it's own documentation for all options.
 
@@ -651,7 +649,6 @@ METHODS
                 filelock        => 1,
                 fileopen        => 1,
                 reopen          => 1,
-                mode            => "append",
                 autoflush       => 1,
                 permissions     => "0660",
                 utf8            => 1,
@@ -698,7 +695,6 @@ METHODS
         $log->add(file => {
             filename      => "file.log",
             maxlevel      => "info",
-            mode          => "append",
             die_on_errors => 0,
         });
 
@@ -729,16 +725,16 @@ METHODS
                     die_on_errors => 0
                 },
                 error_log => {
-                    filename      => "error.log",
-                    maxlevel      => "warning",
-                    minlevel      => "emerg",
-                    priority      => 1
+                    filename => "error.log",
+                    maxlevel => "warning",
+                    minlevel => "emerg",
+                    priority => 1
                 },
                 common_log => {
-                    filename      => "common.log",
-                    maxlevel      => "info",
-                    minlevel      => "emerg",
-                    priority      => 2
+                    filename => "common.log",
+                    maxlevel => "info",
+                    minlevel => "emerg",
+                    priority => 2
                 },
             }
         });
@@ -752,6 +748,11 @@ METHODS
   reload()
     With the method "reload()" it's possible to reload the logging machine.
     Just pass the complete new configuration for all outputs.
+
+    At first you should know that it's highly recommended to set a alias for
+    each output. If you don't set a alias then the logger doesn't know which
+    output-objects to reload. If a output-objects doesn't have a alias then
+    the objects will be removed and the new configuration will be added.
 
     Example:
 
@@ -784,13 +785,21 @@ METHODS
             minlevel = emerg
         </file>
 
+        <sendmail>
+            alias   = email
+            from    = bar@foo.example
+            to      = foo@bar.example
+            subject = your subject
+        </sendmail>
+
     What happends now...
 
-    The file-output with the alias "debug" will be removed and the
-    file-output with the alias "common" will be reloaded.
+    The file-output with the alias "debug" will be removed, the file-output
+    with the alias "common" will be reloaded and the output with the alias
+    "email" will be added.
 
     If you don't want that output-objects will be removed because they were
-    added internal you can set the option "remove_on_reload" to 0.
+    added internal, then you can set the option "remove_on_reload" to 0.
 
     Example:
 
@@ -818,7 +827,6 @@ METHODS
 
         $log->add(file => {
             filename        => "file.log",
-            mode            => "append",
             message_layout  => "%X %m%N",
         });
 
@@ -989,30 +997,8 @@ QUESTIONS
     If you send me a mail then add Log::Handler into the subject.
 
 COPYRIGHT
-    Copyright (C) 2007-2008 by Jonny Schulz. All rights reserved.
+    Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
 
     This program is free software; you can redistribute it and/or modify it
     under the same terms as Perl itself.
-
-DISCLAIMER OF WARRANTY
-    BECAUSE THIS SOFTWARE IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY
-    FOR THE SOFTWARE, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
-    OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
-    PROVIDE THE SOFTWARE "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER
-    EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-    WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE
-    ENTIRE RISK AS TO THE QUALITY AND PERFORMANCE OF THE SOFTWARE IS WITH
-    YOU. SHOULD THE SOFTWARE PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL
-    NECESSARY SERVICING, REPAIR, OR CORRECTION.
-
-    IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING
-    WILL ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR
-    REDISTRIBUTE THE SOFTWARE AS PERMITTED BY THE ABOVE LICENCE, BE LIABLE
-    TO YOU FOR DAMAGES, INCLUDING ANY GENERAL, SPECIAL, INCIDENTAL, OR
-    CONSEQUENTIAL DAMAGES ARISING OUT OF THE USE OR INABILITY TO USE THE
-    SOFTWARE (INCLUDING BUT NOT LIMITED TO LOSS OF DATA OR DATA BEING
-    RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD PARTIES OR A
-    FAILURE OF THE SOFTWARE TO OPERATE WITH ANY OTHER SOFTWARE), EVEN IF
-    SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH
-    DAMAGES.
 

@@ -15,28 +15,29 @@ BEGIN {
     } 
 };
 
-plan tests => 3;
+plan tests => 4;
 
 use Log::Handler::Output::Email;
 $Log::Handler::Output::Email::TEST = 1;
 
 my $log = Log::Handler::Output::Email->new(
-    host     => [ 'bloonix.de' ],
-    hello    => 'EHLO bloonix.de',
+    host     => [ "bloonix.de" ],
+    hello    => "EHLO bloonix.de",
     timeout  => 60,
     debug    => 0,
     from     => 'jschulz.cpan@bloonix.de',
     to       => 'jschulz.cpan@bloonix.de',
-    subject  => 'Log::Handler::Output::Email test',
+    subject  => "Log::Handler::Output::Email test",
     buffer   => 20,
 );
 
-ok(1, 'new');
+ok(1, "new");
 
 # checking all log levels for would()
 foreach my $i (1..10) {
     $log->log(message => "test $i\n") or die $!;
 }
+
 ok(1, "checking log()");
 
 # checking all lines
@@ -54,3 +55,18 @@ if ($match_lines == 10) {
 } else {
    ok(0, "checking buffer ($all_lines:$match_lines)");
 }
+
+$log->reload(
+    {
+        host     => [ "bloonix.de" ],
+        hello    => "EHLO bloonix.de",
+        timeout  => 60,
+        debug    => 0,
+        from     => 'jschulz.cpan@bloonix.de',
+        to       => 'jschulz.cpan@bloonix.de',
+        subject  => "Log::Handler::Output::Email test",
+        buffer   => 100,
+    }
+);
+
+ok($log->{buffer} == 100, "checking reload ($log->{buffer})");

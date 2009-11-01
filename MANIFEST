@@ -50,6 +50,7 @@ t/010-handler.t
 t/011-handler-set-pattern.t
 t/012-handler-message-pattern.t
 t/013-handler-priority.t
+t/014-handler-reload.t
 t/015-handler-filter-caller.t
 t/015-handler-filter-message.t
 t/016-handler-alias.t

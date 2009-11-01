@@ -23,8 +23,8 @@ eval {
 };
 
 my $sock = IO::Socket::INET->new(
-    LocalAddr => '127.0.0.1',
-    Proto     => 'tcp',
+    LocalAddr => "127.0.0.1",
+    Proto     => "tcp",
     Listen    => 1,
     Timeout   => 15
 ) or die $!;
@@ -34,8 +34,8 @@ my $pid  = fork;
 
 if (!$pid) {
     my $r = $sock->accept;
-    my $m = <$r> || 'empty';
-    if ($m ne 'test message from logger') {
+    my $m = <$r> || "empty";
+    if ($m ne "test message from logger") {
         die "something wents wrong ($m)";
     }
     $sock->close;
@@ -45,22 +45,35 @@ if (!$pid) {
 
 $sock->close;
 sleep 1;
-plan tests => 3;
-ok(1, 'fork');
+plan tests => 4;
+ok(1, "fork");
 
 my $log = Log::Handler::Output::Socket->new(
-    peeraddr    => '127.0.0.1',
+    peeraddr    => "127.0.0.1",
     peerport    => $port,
-    proto       => 'tcp',
+    proto       => "tcp",
     timeout     => 15,
     persistent  => 0,
     reconnect   => 0,
 );
 
-ok(1, 'new');
+ok(1, "new");
 
-$log->log(message => 'test message from logger') or do {
-    ok(0, 'testing log() - '.$log->errstr);
+$log->log(message => "test message from logger") or do {
+    ok(0, "testing log() - ".$log->errstr);
 };
 
-ok(1, 'testing log()');
+ok(1, "testing log()");
+
+$log->reload(
+    {
+        peeraddr    => "localhost",
+        peerport    => $port,
+        proto       => "tcp",
+        timeout     => 15,
+        persistent  => 0,
+        reconnect   => 0,
+    }
+);
+
+ok($log->{sockopts}->{PeerAddr} eq "localhost", "checking reload ($log->{sockopts}->{PeerAddr})");
