@@ -8,7 +8,7 @@ Log::Handler::Output::Forward - Forward messages to routines.
 
     my $forwarder = Log::Handler::Output::Forward->new(
         forward_to => sub { },
-        arguments  => [ 'foo' ],
+        arguments  => [ "foo" ],
     );
 
     $forwarder->log(message => $message);
@@ -44,7 +44,7 @@ C<Class::method()>.
 
     my $forwarder = Log::Handler::Output::Forward->new(
         forward_to => \&Class::method,
-        arguments  => [ $self, 'foo' ],
+        arguments  => [ $self, "foo" ],
     );
 
 This would call intern:
@@ -61,7 +61,11 @@ Call C<log()> if you want to forward messages to the subroutines.
 
 Example:
 
-    $forwarder->log('this message will be forwarded to all sub routines');
+    $forwarder->log("this message will be forwarded to all sub routines");
+
+=head2 validate()
+
+Validate a configuration.
 
 =head2 reload()
 
@@ -112,10 +116,10 @@ package Log::Handler::Output::Forward;
 use strict;
 use warnings;
 use Carp;
-use Params::Validate;
+use Params::Validate qw();
 
-our $VERSION = '0.02';
-our $ERRSTR  = '';
+our $VERSION = "0.03";
+our $ERRSTR  = "";
 
 sub new {
     my $class   = shift;
@@ -141,7 +145,7 @@ sub log {
     return 1;
 }
 
-sub reload {
+sub validate {
     my $self = shift;
     my $opts = ();
 
@@ -149,6 +153,17 @@ sub reload {
 
     if ($@) {
         $ERRSTR = $@;
+        return undef;
+    }
+
+    return $opts;
+}
+
+sub reload {
+    my $self = shift;
+    my $opts = $self->validate(@_);
+
+    if (!$opts) {
         return undef;
     }
 

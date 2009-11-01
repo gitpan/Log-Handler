@@ -224,6 +224,10 @@ Connect to the database.
 
 Disconnect from the database.
 
+=head2 validate()
+
+Validate a configuration.
+
 =head2 reload()
 
 Reload with a new configuration.
@@ -266,11 +270,11 @@ package Log::Handler::Output::DBI;
 
 use strict;
 use warnings;
-use Carp;
 use DBI;
-use Params::Validate;
+use Carp;
+use Params::Validate qw();
 
-our $VERSION = "0.08";
+our $VERSION = "0.09";
 our $ERRSTR  = "";
 
 sub new {
@@ -366,7 +370,7 @@ sub disconnect {
     return 1;
 }
 
-sub reload {
+sub validate {
     my $self = shift;
     my $opts = ();
 
@@ -375,7 +379,18 @@ sub reload {
     if ($@) {
         return $self->_raise_error($@);
     }
-    
+
+    return $opts;
+}
+
+sub reload {
+    my $self = shift;
+    my $opts = $self->validate(@_);
+
+    if (!$opts) {
+        return undef;
+    }
+
     $self->disconnect;
 
     foreach my $key (keys %$opts) {
@@ -385,7 +400,9 @@ sub reload {
     return 1;
 }
 
-sub errstr { $ERRSTR }
+sub errstr {
+    return $ERRSTR;
+}
 
 #
 # private stuff

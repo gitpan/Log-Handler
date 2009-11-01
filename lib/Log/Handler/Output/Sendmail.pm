@@ -124,6 +124,10 @@ Call C<log()> if you want to log a message as email.
 
 Call C<flush()> if you want to flush the buffered messages.
 
+=head2 validate()
+
+Validate a configuration.
+
 =head2 reload()
 
 Reload with a new configuration.
@@ -169,9 +173,9 @@ package Log::Handler::Output::Sendmail;
 use strict;
 use warnings;
 use Carp;
-use Params::Validate;
+use Params::Validate qw();
 
-our $VERSION = "0.03";
+our $VERSION = "0.04";
 our $ERRSTR  = "";
 our $TEST    =  0; # is needed to disable flush() for tests
 
@@ -228,7 +232,7 @@ sub flush {
     return $self->_sendmail;
 }
 
-sub reload {
+sub validate {
     my $self = shift;
     my $opts = ();
 
@@ -237,6 +241,13 @@ sub reload {
     if ($@) {
         return $self->_raise_error($@);
     }
+
+    return $opts;
+}
+
+sub reload {
+    my $self = shift;
+    my $opts = $self->validate(@_);
 
     $self->flush;
 

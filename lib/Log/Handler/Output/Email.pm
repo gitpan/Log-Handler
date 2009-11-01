@@ -131,6 +131,10 @@ Call C<sendmail()> if you want to send an email.
 
 The difference to C<log()> is that the message won't be buffered.
 
+=head2 validate()
+
+Validate a configuration.
+
 =head2 reload()
 
 Reload with a new configuration.
@@ -180,9 +184,9 @@ use warnings;
 use Carp;
 use Email::Date;
 use Net::SMTP;
-use Params::Validate;
+use Params::Validate qw();
 
-our $VERSION = "0.05";
+our $VERSION = "0.06";
 our $ERRSTR  = "";
 our $TEST    =  0; # is needed to disable flush() for tests
 
@@ -275,7 +279,7 @@ sub sendmail {
     return 1;
 }
 
-sub reload {
+sub validate {
     my $self = shift;
     my $opts = ();
 
@@ -283,6 +287,17 @@ sub reload {
 
     if ($@) {
         return $self->_raise_error($@);
+    }
+
+    return $opts;
+}
+
+sub reload {
+    my $self = shift;
+    my $opts = $self->validate(@_);
+
+    if (!$opts) {
+        return undef;
     }
 
     $self->flush;

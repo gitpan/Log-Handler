@@ -105,6 +105,10 @@ Connect to the socket.
 
 Disconnect from socket.
 
+=head2 validate()
+
+Validate a configuration.
+
 =head2 reload()
 
 Reload with a new configuration.
@@ -149,10 +153,10 @@ use strict;
 use warnings;
 use Carp;
 use Data::Dumper;
-use Params::Validate;
 use IO::Socket::INET;
+use Params::Validate qw();
 
-our $VERSION = "0.07";
+our $VERSION = "0.08";
 our $ERRSTR  = "";
 
 sub new {
@@ -232,7 +236,7 @@ sub disconnect {
     delete $self->{socket};
 }
 
-sub reload {
+sub validate {
     my $self = shift;
     my $opts = ();
 
@@ -241,6 +245,13 @@ sub reload {
     if ($@) {
         return $self->_raise_error($@);
     }
+
+    return $opts;
+}
+
+sub reload {
+    my $self = shift;
+    my $opts = $self->validate(@_);
 
     $self->disconnect;
 

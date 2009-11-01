@@ -155,6 +155,10 @@ This is useful if you don't want to use option S<"reopen">. As example
 if a rotate mechanism moves the logfile and you want to re-open a new
 one.
 
+=head2 validate()
+
+Validate a configuration.
+
 =head2 reload()
 
 Reload with a new configuration.
@@ -207,7 +211,7 @@ use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
 use File::Spec;
 use Params::Validate qw();
 
-our $VERSION = "0.05";
+our $VERSION = "0.06";
 our $ERRSTR  = "";
 
 sub new {
@@ -277,7 +281,7 @@ sub close {
     return 1;
 }
 
-sub reload {
+sub validate {
     my $self = shift;
     my $opts = ();
 
@@ -286,6 +290,13 @@ sub reload {
     if ($@) {
         return $self->_raise_error($@);
     }
+
+    return $opts;
+}
+
+sub reload {
+    my $self = shift;
+    my $opts = $self->validate(@_);
 
     $self->close;
 

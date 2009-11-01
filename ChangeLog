@@ -1,3 +1,7 @@
+0.61_03 Released at 2009-11-01.
+        - Added a validate() functionality. It's really
+          useable to validate() before reload().
+
 0.61_02 Released at 2009-11-01.
         - Fixed a bug in Email.pm - $options -> $opts.
         - Made some code improvements in Log::Handler.
@@ -5,7 +9,7 @@
         - Added UNIVERSAL to the dependencies.
 
 0.61_01 Released at 2009-10-31.
-        - Added a reload functionallety to Log::Handler and
+        - Added a reload functionality to Log::Handler and
           all output-modules.
 
 0.60    Released at 2009-10-23.

@@ -42,6 +42,18 @@ Or
 
 Or
 
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->config( config => "logger.conf" );
+
+    # and maybe later
+
+    $log->reload( config => "logger.conf" );
+
+Or
+
     # init myapp logger with accessor LOG
     package MyApp;
     use Log::Handler myapp => "LOG";
@@ -59,12 +71,6 @@ Or
     use Log::Handler;
     my $log = Log::Handler->get_logger("myapp");
     $log->info("info message from MyApp::Bar");
-
-Or very fast
-
-    use Log::Handler;
-
-    my $log = Log::Handler->new("screen");
 
 =head1 DESCRIPTION
 
@@ -196,6 +202,45 @@ Call C<new()> to create a new log handler object.
 =head2 add()
 
 Call C<add()> to add a new output object.
+
+The method expects 2 parts of options; the options for the handler and
+the options for the output module you want to use. The output modules got it's own
+documentation for all options.
+
+Example:
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->add(
+
+        # Add "file output"
+        file => {
+
+            # handler options (see Log::Handler)
+            timeformat      => "%Y/%m/%d %H:%M:%S",
+            message_layout  => "%T [%L] %S: %m",
+            maxlevel        => "debug",
+            minlevel        => "emergency",
+            die_on_errors   => 1,
+            debug_trace     => 0,
+            debug_mode      => 2,
+            debug_skip      => 0,
+
+            # file options (see Log::Handler::Output::File)
+            filename        => "file.log",
+            filelock        => 1,
+            fileopen        => 1,
+            reopen          => 1,
+            autoflush       => 1,
+            permissions     => "0660",
+            utf8            => 1,
+
+        }
+    );
+
+Take a look to L<Log::Handler::Examples> for more examples.
 
 The following options are possible for the handler:
 
@@ -664,47 +709,6 @@ This option let skip the C<caller()> informations the count of C<debug_skip>.
 
 =back
 
-=head2 HowTo use add()
-
-The method C<add()> expects 2 parts of options; the options for the handler and
-the options for the output module you want to use. The output modules got it's own
-documentation for all options.
-
-Example:
-
-    use Log::Handler;
-
-    my $log = Log::Handler->new();
-
-    $log->add(
-
-        # Add "file output"
-        file => {
-
-            # handler options (see Log::Handler)
-            timeformat      => "%Y/%m/%d %H:%M:%S",
-            message_layout  => "%T [%L] %S: %m",
-            maxlevel        => "debug",
-            minlevel        => "emergency",
-            die_on_errors   => 1,
-            debug_trace     => 0,
-            debug_mode      => 2,
-            debug_skip      => 0,
-
-            # file options (see Log::Handler::Output::File)
-            filename        => "file.log",
-            filelock        => 1,
-            fileopen        => 1,
-            reopen          => 1,
-            autoflush       => 1,
-            permissions     => "0660",
-            utf8            => 1,
-
-        }
-    );
-
-Take a look to L<Log::Handler::Examples> for more informations.
-
 =head2 output()
 
 Call C<output($alias)> to get the output object that you added with
@@ -797,7 +801,8 @@ informations.
 =head2 reload()
 
 With the method C<reload()> it's possible to reload the logging
-machine. Just pass the complete new configuration for all outputs.
+machine. Just pass the complete new configuration for all outputs,
+it works exaclty like C<config()>.
 
 At first you should know that it's highly recommended to set a alias for
 each output. If you don't set a alias then the logger doesn't know which
@@ -836,7 +841,7 @@ Now change the configuration in logger.conf
     </file>
 
     <sendmail>
-        alias   = email
+        alias   = sendmail
         from    = bar@foo.example
         to      = foo@bar.example
         subject = your subject
@@ -846,7 +851,7 @@ What happends now...
 
 The file-output with the alias C<debug> will be removed,
 the file-output with the alias C<common> will be
-reloaded and the output with the alias C<email> will be added.
+reloaded and the output with the alias C<sendmail> will be added.
 
 If you don't want that output-objects will be removed
 because they were added internal, then you can set the
@@ -895,6 +900,28 @@ Or use it with C<message_pattern>:
     });
 
 Note: valid character for the key name are: C<[%\w\-\.]+>
+
+=head2 validate()
+
+The method C<validate()> expects the same arguments like C<config()> and C<reload()>.
+
+Maybe you want to validate your options before you pass them to C<config()>
+or C<reload()>.
+
+Example:
+
+    my $log = Log::Handler->new();
+
+    $log->config( config => \%config );
+
+    # and maybe later
+
+    if ( $log->validate( config => \%new_config ) ) {
+        $log->reload( config => \%new_config );
+    } else {
+        warn "unable to reload configuration";
+        warn $log->errstr;
+    }
 
 =head2 set_level()
 
@@ -994,20 +1021,38 @@ L<Log::Handler::Examples>
 
 =head1 BENCHMARK
 
-Run examples/benchmark/benchmark.pl on a Dual-Core AMD Opteron(tm) Processor 1212 HE (1000 MHz)
+The benchmark (examples/benchmark/benchmark.pl) runs
+on a Intel Core i7-920 with the following result:
 
-    simple pattern output took     :  2 wallclock secs ( 2.29 usr +  0.02 sys =  2.31 CPU) @ 43290.04/s (n=100000)
-    default pattern output took    :  4 wallclock secs ( 3.36 usr +  0.76 sys =  4.12 CPU) @ 24271.84/s (n=100000)
-    complex pattern output took    :  6 wallclock secs ( 4.85 usr +  0.91 sys =  5.76 CPU) @ 17361.11/s (n=100000)
-    message pattern output took    :  5 wallclock secs ( 4.31 usr +  0.82 sys =  5.13 CPU) @ 19493.18/s (n=100000)
-    suppressed output took         :  0 wallclock secs ( 0.17 usr +  0.00 sys =  0.17 CPU) @ 588235.29/s (n=100000)
-    filtered caller output took    :  5 wallclock secs ( 3.97 usr +  0.81 sys =  4.78 CPU) @ 20920.50/s (n=100000)
-    suppressed caller output took  :  1 wallclock secs ( 1.29 usr +  0.00 sys =  1.29 CPU) @ 77519.38/s (n=100000)
-    filtered messages output took  :  5 wallclock secs ( 3.91 usr +  0.84 sys =  4.75 CPU) @ 21052.63/s (n=100000)
+    simple pattern output took     :  1 wallclock secs ( 1.26 usr +  0.01 sys =  1.27 CPU) @ 78740.16/s (n=100000)
+    default pattern output took    :  2 wallclock secs ( 2.08 usr +  0.15 sys =  2.23 CPU) @ 44843.05/s (n=100000)
+    complex pattern output took    :  4 wallclock secs ( 3.22 usr +  0.23 sys =  3.45 CPU) @ 28985.51/s (n=100000)
+    message pattern output took    :  3 wallclock secs ( 2.72 usr +  0.16 sys =  2.88 CPU) @ 34722.22/s (n=100000)
+    suppressed output took         :  0 wallclock secs ( 0.08 usr +  0.00 sys =  0.08 CPU) @ 1250000.00/s (n=100000)
+    filtered caller output took    :  2 wallclock secs ( 2.10 usr +  0.68 sys =  2.78 CPU) @ 35971.22/s (n=100000)
+    suppressed caller output took  :  1 wallclock secs ( 0.54 usr +  0.00 sys =  0.54 CPU) @ 185185.19/s (n=100000)
+    filtered messages output took  :  3 wallclock secs ( 2.62 usr +  0.08 sys =  2.70 CPU) @ 37037.04/s (n=100000)
 
 =head1 EXTENSIONS
 
 Send me a mail if you have questions.
+
+If you want to write a output-module then
+you should consider the following rules:
+
+    1. The output-module must provide at least
+       
+          new()       as constructor
+          log()       to log the message
+          validate()  to validate options in a eval block
+          reload()    to reload options
+
+       As example you can take a look into the other
+       output-modules.
+
+    2. The module should be completly runable without Log::Handler.
+
+    3. Don't touch any global variables in Log::Handler::*
 
 =head1 PREREQUISITES
 
@@ -1072,14 +1117,14 @@ package Log::Handler;
 use strict;
 use warnings;
 use Carp;
-use Params::Validate;
+use Params::Validate qw//;
 use Log::Handler::Output;
 use Log::Handler::Config;
 use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.61_02";
+our $VERSION = "0.61_03";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1233,7 +1278,20 @@ sub add {
         }
     }
 
-    my $output = $self->_new_output(@_);
+    # At first the config will be splitted into
+    # the package name (Log::Handler::Output::*),
+    # the options for the handler and the options
+    # for the output-module.
+    my ($package, $h_opts, $o_opts) = $self->_split_config(@_);
+
+    # In the next step the handler options
+    # must be validated.
+    $h_opts = $self->_validate_options($h_opts);
+
+    # Create the new output-object.
+    my $output = $self->_new_output($package, $h_opts, $o_opts);
+
+    # Add the output $self.
     $self->_add_output($output);
 
     return 1;
@@ -1257,34 +1315,64 @@ sub config {
     return 1;
 }
 
+sub validate {
+    my $self  = shift;
+    my $class = ref($self);
+    my $opts  = ();
+
+    eval {
+        $opts = Log::Handler::Config->config(@_);
+
+        foreach my $type (keys %$opts) {
+            foreach my $config (@{ $opts->{$type} }) {
+                my ($package, $h_opts, $o_opts) = $self->_split_config($type, $config);
+                $self->_validate_options($h_opts);
+                $package->validate($o_opts)
+                    or die $package->errstr;
+            }
+        }
+    };
+
+    if ($@) {
+        return $self->_raise_error($@);
+    }
+
+    return $opts;
+}
+
 sub reload {
     my $self  = shift;
     my $class = ref($self);
+    my $opts  = $self->validate(@_);
 
-    # Store all aliases that were reloaded or added
+    if (!$opts) {
+        return undef;
+    }
+
+    # Store all aliases that were reloaded or added,
+    # because all output-objects that weren't reloaded
+    # should be removed.
     my %reloaded = ();
 
-    # Because the new configuration could be blemished
-    # it's better to use eval - daemons shouldn't die.
-
+    # Reload in a eval block to prevent that the
+    # program dies - daemons shouldn't die :-)
     eval {
-        local $SIG{__DIE__} = sub { $self->_raise_error($@) };
-        my $parsed = Log::Handler::Config->config(@_);
-
-        foreach my $output (keys %$parsed) {
-            foreach my $config (@{ $parsed->{$output} }) {
+        foreach my $output (keys %$opts) {
+            foreach my $config (@{ $opts->{$output} }) {
                 my $alias = $config->{alias};
-                $reloaded{ $config->{alias} } = 1;
+                $reloaded{$alias} = 1;
 
+                # If the alias doesn't exists then a new
+                # output-objects is created, otherwise the
+                # output-object is reloaded.
                 if (!$self->output($alias)) {
-                    # Add the output over the normal way
                     $self->add($output, $config);
                 } else {
                     my ($h_opts, $o_opts) = $self->_split_options($config);
                     $h_opts = $self->_validate_options($h_opts);
-                    $self->output($alias)->reload($o_opts)
-                        or die $self->{alias}->{$alias}->errstr;
                     $self->{alias}->{$alias}->reload($h_opts);
+                    $self->output($alias)->reload($o_opts)
+                        or die $self->output($alias)->errstr;
                 }
             }
         }
@@ -1293,7 +1381,7 @@ sub reload {
     # Something wents wrong.
     # The error message should be in $ERRSTR.
     if ($@) {
-        return undef;
+        return $self->_raise_error($@);
     }
 
     # Rebuild the arrays...
@@ -1457,55 +1545,42 @@ sub errstr {
 # private stuff
 #
 
-sub _new_output {
-    my $self    = shift;
-    my $type    = shift;
-    my $args    = @_ > 1 ? {@_} : shift;
-    my $package = ref($type);
-    my ($output, $handler_opts, $output_opts);
+sub _split_config {
+    my $self = shift;
+    my $type = shift;
+    my $args = shift || { };
+    my $package = ();
 
-    # add("screen")
-    $args ||= { };
+    # Split the handler and output options from $args.
+    my ($handler_opts, $output_opts) = $self->_split_options($args);
 
-    # There are two ways to add an output:
-    #
-    #   my $log  = Log::Handler->new();
-    #   my $file = Log::Handler::Output::File->new(\%output_opts);
-    #   $log->add($file => \%handler_opts);
-    #
-    # and
-    #
-    #   my $log = Log::Handler->new();
-    #   $log->add(file => \%all_options);
-
-    if ( length($package) ) {
-        $output = $type;
-        $handler_opts = $args;
+    # Try to determine which output is wanted...
+    if (exists $AVAILABLE_OUTPUTS{$type}) {
+        $package = $AVAILABLE_OUTPUTS{$type};
+    } elsif ($type =~ /::/) {
+        $package = $type;
     } else {
-        # Split the handler and output options from $args.
-        ($handler_opts, $output_opts) = $self->_split_options($args);
-
-        # Try to determine which output is wanted...
-        if (exists $AVAILABLE_OUTPUTS{$type}) {
-            $package = $AVAILABLE_OUTPUTS{$type};
-        } elsif ($type =~ /::/) {
-            $package = $type;
-        } else {
-            $package = "Log::Handler::Output::" . ucfirst($type);
-        }
-
-        eval "require $package";
-
-        if ($@) {
-            Carp::croak($@);
-        }
-
-        $output = $package->new($output_opts)
-            or Carp::croak $package->errstr;
+        $package = "Log::Handler::Output::" . ucfirst($type);
     }
 
-    $handler_opts = $self->_validate_options($handler_opts);
-    return Log::Handler::Output->new($handler_opts, $output);
+    eval "require $package";
+
+    if ($@) {
+        Carp::croak($@);
+    }
+
+    return ($package, $handler_opts, $output_opts);
+}
+
+sub _new_output {
+    my ($self, $package, $h_opts, $o_opts) = @_;
+
+    my $o_obj = $package->new($o_opts)
+        or Carp::croak $package->errstr;
+
+    my $o_main_obj = Log::Handler::Output->new($h_opts, $o_obj);
+
+    return $o_main_obj;
 }
 
 sub _split_options {

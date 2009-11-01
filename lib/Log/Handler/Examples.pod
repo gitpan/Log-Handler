@@ -97,6 +97,39 @@ You can add output objects on this way as well:
 
     $log->add( $file => \%handler_options );
 
+=head1 RELOAD THE LOGGER
+
+=head2 Quite simple
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->config(config => "logger.conf");
+
+    $log->reload(config => "logger.conf");
+
+=head2 Reload on HUP
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->config(config => "logger.conf");
+
+    $SIG{HUP} = sub {
+        $log->reload(config => "logger.conf");
+        warn "unable to reload configuration";
+        warn $log->errstr;
+    };
+
+=head2 Validate first
+
+It's possible to make a configuration check before you reload:
+
+    $log->validate(config => "logger.conf")
+        or warn $log->errstr;
+
 =head1 LOG VIA DBI
 
     use Log::Handler;

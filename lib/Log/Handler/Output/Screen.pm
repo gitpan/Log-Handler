@@ -50,6 +50,10 @@ Example:
 
     $screen->log("this message goes to the screen");
 
+=head2 validate()
+
+Validate a configuration.
+
 =head2 reload()
 
 Reload with a new configuration.
@@ -91,9 +95,9 @@ package Log::Handler::Output::Screen;
 use strict;
 use warnings;
 use Data::Dumper;
-use Params::Validate;
+use Params::Validate qw();
 
-our $VERSION = "0.0%";
+our $VERSION = "0.06";
 our $ERRSTR  = "";
 
 sub new {
@@ -124,7 +128,7 @@ sub log {
     return 1;
 }
 
-sub reload {
+sub validate {
     my $self = shift;
     my $opts = ();
 
@@ -132,6 +136,17 @@ sub reload {
 
     if ($@) {
         $ERRSTR = $@;
+        return undef;
+    }
+
+    return $opts;
+}
+
+sub reload {
+    my $self = shift;
+    my $opts = $self->validate(@_);
+
+    if (!$opts) {
         return undef;
     }
 
