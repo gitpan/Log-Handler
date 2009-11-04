@@ -26,6 +26,7 @@ SYNOPSIS
                 maxlevel => "debug",
                 minlevel => "debug",
                 message_layout => "%T [%L] %m (%C)",
+            },
             screen => {
                 log_to   => "STDOUT",
                 maxlevel => "info",
@@ -75,7 +76,8 @@ DESCRIPTION
     debugging. It is very easy to use and provides a simple interface for
     multiple output objects with lots of configuration parameters. You can
     easily filter the amount of logged information on a per-output base,
-    define priorities and create patterns to format the messages.
+    define priorities, create patterns to format the messages and reload the
+    complete logging machine.
 
     See the documentation for details.
 
@@ -84,8 +86,8 @@ IMPORTANT NOTES
     newlines will be appended automatically to each message if no newline
     exists.
 
-    A long time I have thought about this serious change and have come to
-    the decision to move the change.
+    A long time I thought about this serious change and have come to the
+    decision to change it.
 
     The default for option "mode" from Log::Handler::Output::File is now
     "append" and not "excl" anymore.
@@ -112,7 +114,7 @@ LOG LEVEL METHODS
     debug()
     info()
     notice()
-    warning()
+    warning(), warn()
     error(), err()
     critical(), crit()
     alert()
@@ -724,24 +726,28 @@ METHODS
     Or
 
         $log->config(config => {
-            file => {
-                default => {
-                    debug_mode    => 2,
-                    die_on_errors => 0
-                },
-                error_log => {
+            file => [
+                {
+                    alias    => "error_log",
                     filename => "error.log",
                     maxlevel => "warning",
                     minlevel => "emerg",
                     priority => 1
                 },
-                common_log => {
+                {
+                    alias    => "common_log",
                     filename => "common.log",
                     maxlevel => "info",
                     minlevel => "emerg",
                     priority => 2
                 },
-            }
+            ],
+            screen => {
+                alias    => "screen",
+                maxlevel => "debug",
+                minlevel => "emerg",
+                log_to   => "STDERR",
+            },
         });
 
     The key "default" is used here to define default parameters for all file
@@ -820,6 +826,28 @@ METHODS
 
     The forward-output is not removed after a reload.
 
+  validate()
+    The method "validate()" expects the same arguments like "config()" and
+    "reload()".
+
+    Maybe you want to validate your options before you pass them to
+    "config()" or "reload()".
+
+    Example:
+
+        my $log = Log::Handler->new();
+
+        $log->config( config => \%config );
+
+        # and maybe later
+
+        if ( $log->validate( config => \%new_config ) ) {
+            $log->reload( config => \%new_config );
+        } else {
+            warn "unable to reload configuration";
+            warn $log->errstr;
+        }
+
   set_pattern()
     With this option you can set your own placeholders. Example:
 
@@ -849,28 +877,6 @@ METHODS
         });
 
     Note: valid character for the key name are: "[%\w\-\.]+"
-
-  validate()
-    The method "validate()" expects the same arguments like "config()" and
-    "reload()".
-
-    Maybe you want to validate your options before you pass them to
-    "config()" or "reload()".
-
-    Example:
-
-        my $log = Log::Handler->new();
-
-        $log->config( config => \%config );
-
-        # and maybe later
-
-        if ( $log->validate( config => \%new_config ) ) {
-            $log->reload( config => \%new_config );
-        } else {
-            warn "unable to reload configuration";
-            warn $log->errstr;
-        }
 
   set_level()
     With this method it's possible to change the log level at runtime.
@@ -912,7 +918,7 @@ METHODS
 GLOBAL LOG HANDLER
     Since version 0.50 it's possible to define a application logger. This
     means to create a "Log::Handler" object and import it into all modules
-    of your program.
+    of your project.
 
         use Log::Handler alias => accessor;
 
@@ -958,9 +964,6 @@ GLOBAL LOG HANDLER
         my $log = Log::Handler->get_logger("myapp");
         $log->info("message");
 
-    For a little example you can take a look into the examples directory of
-    the distribution (examples/logger/).
-
 EXAMPLES
     Log::Handler::Examples
 
@@ -979,23 +982,6 @@ BENCHMARK
 
 EXTENSIONS
     Send me a mail if you have questions.
-
-    If you want to write a output-module then you should consider the
-    following rules:
-
-        1. The output-module must provide at least
-           
-          new()       as constructor
-              log()       to log the message
-              validate()  to validate options in a eval block
-              reload()    to reload options
-
-           As example you can take a look into the other
-           output-modules.
-
-        2. The module should be completly runable without Log::Handler.
-
-        3. Don't touch any global variables in Log::Handler::*
 
 PREREQUISITES
     Prerequisites for all modules:

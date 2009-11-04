@@ -28,6 +28,7 @@ Or
             maxlevel => "debug",
             minlevel => "debug",
             message_layout => "%T [%L] %m (%C)",
+        },
         screen => {
             log_to   => "STDOUT",
             maxlevel => "info",
@@ -78,7 +79,8 @@ The C<Log::Handler> is a object oriented handler for logging, tracing and
 debugging. It is very easy to use and provides a simple interface for
 multiple output objects with lots of configuration parameters. You can
 easily filter the amount of logged information on a per-output base,
-define priorities and create patterns to format the messages.
+define priorities, create patterns to format the messages and reload
+the complete logging machine.
 
 See the documentation for details.
 
@@ -87,8 +89,8 @@ See the documentation for details.
 Note that the default for option C<newline> is now set to TRUE and newlines
 will be appended automatically to each message if no newline exists.
 
-A long time I have thought about this serious change and have come to
-the decision to move the change.
+A long time I thought about this serious change and have come to
+the decision to change it.
 
 The default for option C<mode> from Log::Handler::Output::File is now
 C<append> and not C<excl> anymore.
@@ -123,7 +125,7 @@ every peep.
 
 =item B<notice()>
 
-=item B<warning()>
+=item B<warning()>, B<warn()>
 
 =item B<error()>, B<err()>
 
@@ -772,24 +774,28 @@ With this method it's possible to load your output configuration from a file.
 Or
 
     $log->config(config => {
-        file => {
-            default => {
-                debug_mode    => 2,
-                die_on_errors => 0
-            },
-            error_log => {
+        file => [
+            {
+                alias    => "error_log",
                 filename => "error.log",
                 maxlevel => "warning",
                 minlevel => "emerg",
                 priority => 1
             },
-            common_log => {
+            {
+                alias    => "common_log",
                 filename => "common.log",
                 maxlevel => "info",
                 minlevel => "emerg",
                 priority => 2
             },
-        }
+        ],
+        screen => {
+            alias    => "screen",
+            maxlevel => "debug",
+            minlevel => "emerg",
+            log_to   => "STDERR",
+        },
     });
 
 The key S<"default"> is used here to define default parameters for all file
@@ -870,6 +876,28 @@ Example:
 
 The forward-output is not removed after a reload.
 
+=head2 validate()
+
+The method C<validate()> expects the same arguments like C<config()> and C<reload()>.
+
+Maybe you want to validate your options before you pass them to C<config()>
+or C<reload()>.
+
+Example:
+
+    my $log = Log::Handler->new();
+
+    $log->config( config => \%config );
+
+    # and maybe later
+
+    if ( $log->validate( config => \%new_config ) ) {
+        $log->reload( config => \%new_config );
+    } else {
+        warn "unable to reload configuration";
+        warn $log->errstr;
+    }
+
 =head2 set_pattern()
 
 With this option you can set your own placeholders. Example:
@@ -900,28 +928,6 @@ Or use it with C<message_pattern>:
     });
 
 Note: valid character for the key name are: C<[%\w\-\.]+>
-
-=head2 validate()
-
-The method C<validate()> expects the same arguments like C<config()> and C<reload()>.
-
-Maybe you want to validate your options before you pass them to C<config()>
-or C<reload()>.
-
-Example:
-
-    my $log = Log::Handler->new();
-
-    $log->config( config => \%config );
-
-    # and maybe later
-
-    if ( $log->validate( config => \%new_config ) ) {
-        $log->reload( config => \%new_config );
-    } else {
-        warn "unable to reload configuration";
-        warn $log->errstr;
-    }
 
 =head2 set_level()
 
@@ -966,7 +972,7 @@ Or
 
 Since version C<0.50> it's possible to define a application logger.
 This means to create a C<Log::Handler> object and import it into
-all modules of your program.
+all modules of your project.
 
     use Log::Handler alias => accessor;
 
@@ -1012,9 +1018,6 @@ don't want to create an accessor.
     my $log = Log::Handler->get_logger("myapp");
     $log->info("message");
 
-For a little example you can take a look into the examples directory
-of the distribution (examples/logger/).
-
 =head1 EXAMPLES
 
 L<Log::Handler::Examples>
@@ -1036,23 +1039,6 @@ on a Intel Core i7-920 with the following result:
 =head1 EXTENSIONS
 
 Send me a mail if you have questions.
-
-If you want to write a output-module then
-you should consider the following rules:
-
-    1. The output-module must provide at least
-       
-          new()       as constructor
-          log()       to log the message
-          validate()  to validate options in a eval block
-          reload()    to reload options
-
-       As example you can take a look into the other
-       output-modules.
-
-    2. The module should be completly runable without Log::Handler.
-
-    3. Don't touch any global variables in Log::Handler::*
 
 =head1 PREREQUISITES
 
@@ -1124,7 +1110,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.61_03";
+our $VERSION = "0.61_04";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global

@@ -175,7 +175,7 @@ use warnings;
 use Carp;
 use Params::Validate qw();
 
-our $VERSION = "0.04";
+our $VERSION = "0.05";
 our $ERRSTR  = "";
 our $TEST    =  0; # is needed to disable flush() for tests
 
@@ -361,7 +361,7 @@ sub _validate {
         },
     });
 
-    if (!-x $options{sendmail}) {
+    if (!$TEST && !-x $options{sendmail}) {
         Carp::croak "'$options{sendmail}' is not executable";
     }
 

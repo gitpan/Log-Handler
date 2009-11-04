@@ -1,3 +1,8 @@
+0.61_04 Released at 2009-11-04.
+        - Fixed a little bug in Sendmail.pm - the tests returns
+          an error if no /usr/sbin/sendmail is found.
+        - Some code improvements in Handler.pm.
+
 0.61_03 Released at 2009-11-01.
         - Added a validate() functionality. It's really
           useable to validate() before reload().

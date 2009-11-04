@@ -79,24 +79,6 @@ This is the same like
     $log->add( "Log::Handler::Output::Screen"  => \%options );
     $log->add( "Log::Handler::Output::Socket"  => \%options );
 
-You can add output objects on this way as well:
-
-    use Log::Handler;
-    use Log::Handler::Output::File;
-
-    my %file_options = (
-        filename => "file1.log",
-    );
-
-    my %handler_options = (
-        maxlevel => "info",
-    );
-
-    my $log  = Log::Handler->new();
-    my $file = Log::Handler::Output::File->new( \%file_options );
-
-    $log->add( $file => \%handler_options );
-
 =head1 RELOAD THE LOGGER
 
 =head2 Quite simple
@@ -118,9 +100,10 @@ You can add output objects on this way as well:
     $log->config(config => "logger.conf");
 
     $SIG{HUP} = sub {
-        $log->reload(config => "logger.conf");
-        warn "unable to reload configuration";
-        warn $log->errstr;
+        unless ($log->reload(config => "logger.conf")) {
+            warn "unable to reload configuration";
+            warn $log->errstr;
+        }
     };
 
 =head2 Validate first
@@ -450,6 +433,16 @@ only from a special namespace.
 
 Examples with Config::General.
 
+Script:
+
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->config( config => "logger.conf" );
+
+Config (logger.conf):
+
     <file>
         alias    = common
         filename = example.log
@@ -477,54 +470,6 @@ Examples with Config::General.
         maxlevel = debug
         minlevel = debug
     </screen>
-
-Or
-
-    <file>
-        <default>
-            permissions    = 0640
-            timeformat     = %b %d %H:%M:%S
-            fileopen       = 1
-            reopen         = 1
-            debug_mode     = 2
-            message_layout = %T %H[%P] [%L] %S: %m
-        </default>
-
-        <common>
-            filename = example.log
-            maxlevel = info
-            minlevel = warn
-        </common>
-
-        <error>
-            filename = example-error.log
-            maxlevel = warn
-            minlevel = emergency
-        </error>
-
-        <debug>
-            filename = example-debug.log
-            maxlevel = debug
-            minlevel = debug
-        </debug>
-    </file>
-
-    <screen>
-        <foo>
-            log_to   = STDERR
-            dump     = 1
-            maxlevel = debug
-            minlevel = debug
-        </foo>
-    </screen>
-
-Script:
-
-    use Log::Handler;
-
-    my $log = Log::Handler->new();
-
-    $log->config(config => "file.conf");
 
 =head1 CHECK FOR ACTIVE LEVELS
 
