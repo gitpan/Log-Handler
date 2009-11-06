@@ -1,12 +1,12 @@
 use strict;
 use warnings;
-use Test::More tests => 14;
+use Test::More tests => 19;
 use Log::Handler;
 
 my %msg;
 
 sub counter {
-    if (shift->{message} =~ /(INFO|WARN).+(forward\d)/) {
+    if (shift->{message} =~ /(INFO|WARN).+(unknown\d|forward\d)/) {
         $msg{$2}{$1}++;
     }
 }
@@ -39,6 +39,13 @@ $log->config(
                 priority => 3,
                 forward_to     => \&counter,
                 message_layout => "%L - forward3 %m",
+            },
+            {
+                maxlevel => "info",
+                minlevel => "emerg",
+                priority => 3,
+                forward_to     => \&counter,
+                message_layout => "%L - unknown1 %m",
             },
         ],
     },
@@ -82,6 +89,13 @@ $log->reload(
                 forward_to     => \&counter,
                 message_layout => "%T [%L] forward5 %m",
             },
+            {
+                maxlevel => "warning",
+                minlevel => "emerg",
+                priority => 3,
+                forward_to     => \&counter,
+                message_layout => "%L - unknown2 %m",
+            },
         ],
     }
 ) or die $log->errstr;
@@ -111,3 +125,9 @@ ok($msg{forward3}{INFO} == 1, "checking forward3 INFO ($msg{forward3}{INFO})");
 ok($msg{forward3}{WARN} == 2, "checking forward3 WARN ($msg{forward3}{WARN})");
 ok($msg{forward4}{WARN} == 1, "checking forward3 WARN ($msg{forward4}{WARN})");
 ok($msg{forward5}{WARN} == 1, "checking forward3 WARN ($msg{forward5}{WARN})");
+ok($msg{forward5}{WARN} == 1, "checking forward3 WARN ($msg{forward5}{WARN})");
+
+ok($msg{unknown1}{INFO} == 1, "checking unknown1 INFO ($msg{unknown1}{INFO})");
+ok($msg{unknown1}{WARN} == 1, "checking unknown1 INFO ($msg{unknown1}{WARN})");
+ok($msg{unknown2}{WARN} == 1, "checking unknown2 INFO ($msg{unknown1}{WARN})");
+ok(!exists $msg{unknown2}{INFO}, "checking unknown2 INFO");

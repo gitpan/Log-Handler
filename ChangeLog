@@ -1,3 +1,6 @@
+0.62    Released at 2009-11-06.
+        - Some bug fixes for reload() but it should run now :-)
+
 0.61_04 Released at 2009-11-04.
         - Fixed a little bug in Sendmail.pm - the tests returns
           an error if no /usr/sbin/sendmail is found.

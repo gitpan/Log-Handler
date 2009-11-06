@@ -92,6 +92,10 @@ IMPORTANT NOTES
     The default for option "mode" from Log::Handler::Output::File is now
     "append" and not "excl" anymore.
 
+    The methods "reload()" and "validate()" are new since version 0.62. I
+    tested it with Screen.pm, File.pm and DBI.pm and it runs fine. If you
+    find bugs then open a bug report please :-)
+
 LOG LEVELS
     There are eigth levels available:
 

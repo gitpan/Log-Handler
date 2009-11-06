@@ -95,6 +95,10 @@ the decision to change it.
 The default for option C<mode> from Log::Handler::Output::File is now
 C<append> and not C<excl> anymore.
 
+The methods C<reload()> and C<validate()> are new since version 0.62.
+I tested it with Screen.pm, File.pm and DBI.pm and it runs fine.
+If you find bugs then open a bug report please :-)
+
 =head1 LOG LEVELS
 
 There are eigth levels available:
@@ -1110,7 +1114,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.61_04";
+our $VERSION = "0.62";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1302,19 +1306,19 @@ sub config {
 }
 
 sub validate {
-    my $self  = shift;
-    my $class = ref($self);
-    my $opts  = ();
+    my $self   = shift;
+    my $class  = ref($self);
+    my @v_opts = (); # validated options
 
     eval {
-        $opts = Log::Handler::Config->config(@_);
+        my $config = Log::Handler::Config->config(@_);
 
-        foreach my $type (keys %$opts) {
-            foreach my $config (@{ $opts->{$type} }) {
-                my ($package, $h_opts, $o_opts) = $self->_split_config($type, $config);
-                $self->_validate_options($h_opts);
-                $package->validate($o_opts)
-                    or die $package->errstr;
+        foreach my $type (keys %$config) {
+            foreach my $output_config (@{ $config->{$type} }) {
+                my ($package, $h_opts, $o_opts) = $self->_split_config($type, $output_config);
+                $h_opts = $self->_validate_options($h_opts);
+                $o_opts = $package->validate($o_opts) or die $package->errstr;
+                push @v_opts, { p => $package, h => $h_opts, o => $o_opts, n => $output_config };
             }
         }
     };
@@ -1323,7 +1327,7 @@ sub validate {
         return $self->_raise_error($@);
     }
 
-    return $opts;
+    return \@v_opts;
 }
 
 sub reload {
@@ -1343,23 +1347,30 @@ sub reload {
     # Reload in a eval block to prevent that the
     # program dies - daemons shouldn't die :-)
     eval {
-        foreach my $output (keys %$opts) {
-            foreach my $config (@{ $opts->{$output} }) {
-                my $alias = $config->{alias};
-                $reloaded{$alias} = 1;
+        foreach my $output_config (@$opts) {
+            my $package = $output_config->{p}; # package name like Log::Handler::Output::File
+            my $h_opts  = $output_config->{h}; # handler options to reload
+            my $o_opts  = $output_config->{o}; # output options to reload
+            my $n_opts  = $output_config->{n}; # add a new output
+            my $alias   = $h_opts->{alias};
 
-                # If the alias doesn't exists then a new
-                # output-objects is created, otherwise the
-                # output-object is reloaded.
-                if (!$self->output($alias)) {
-                    $self->add($output, $config);
-                } else {
-                    my ($h_opts, $o_opts) = $self->_split_options($config);
-                    $h_opts = $self->_validate_options($h_opts);
-                    $self->{alias}->{$alias}->reload($h_opts);
-                    $self->output($alias)->reload($o_opts)
-                        or die $self->output($alias)->errstr;
+            $reloaded{$alias} = 1;
+
+            # If the alias doesn't exists then a new
+            # output-objects is created, otherwise the
+            # output-object is reloaded.
+            if (!$self->output($alias)) {
+                # If the alias does not exists we use
+                # the alias that was generated on validate().
+                if (!exists $n_opts->{alias}) {
+                    $n_opts->{alias} = $h_opts->{alias};
                 }
+                # Add the new output to Log::Handler
+                $self->add($package => $n_opts);
+            } else {
+                $self->{alias}->{$alias}->reload($h_opts);
+                $self->output($alias)->reload($o_opts)
+                    or die $self->output($alias)->errstr;
             }
         }
     };
@@ -1389,6 +1400,7 @@ sub reload {
                 warn $@;
             }
         } else {
+            # At this point the output object should be destroyed,
             $self->_add_output($output);
         }
     }
