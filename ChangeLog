@@ -1,3 +1,10 @@
+0.63    Released at 2009-11-24.
+        - Fixed a typo in Email.pm (RT #51745).
+        - Added options cc and bcc to Email.pm - this was a
+          feature request.
+        - It's now possible to pass the log level to log()
+          of Sendmail.pm.
+
 0.62    Released at 2009-11-06.
         - Some bug fixes for reload() but it should run now :-)
 

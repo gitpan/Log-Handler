@@ -120,6 +120,20 @@ Call C<log()> if you want to log a message as email.
 
     $email->log(message => "this message will be mailed");
 
+If you pass the level then its placed into the subject:
+
+    $email->log(message => "foo", level => "INFO");
+    $email->log(message => "bar", level => "ERROR");
+    $email->log(message => "baz", level => "DEBUG");
+
+The lowest level is used:
+
+    Subject: ERROR ...
+
+You can pass the level with C<Log::Handler> by setting
+
+    message_pattern => '%L'
+
 =head2 flush()
 
 Call C<flush()> if you want to flush the buffered messages.
@@ -175,9 +189,21 @@ use warnings;
 use Carp;
 use Params::Validate qw();
 
-our $VERSION = "0.05";
+our $VERSION = "0.06";
 our $ERRSTR  = "";
 our $TEST    =  0; # is needed to disable flush() for tests
+
+my %LEVEL_BY_STRING = (
+    DEBUG     =>  7,
+    INFO      =>  6,
+    NOTICE    =>  5,
+    WARNING   =>  4,
+    ERROR     =>  3,
+    CRITICAL  =>  2,
+    ALERT     =>  1,
+    EMERGENCY =>  0,
+    FATAL     =>  0,
+);
 
 sub new {
     my $class = shift;
@@ -200,6 +226,11 @@ sub log {
         if ($self->{debug}) {
             warn "$class: maxsize disabled, no buffering";
         }
+
+        if ($message->{level}) {
+            $self->{level} = $message->{level};
+        }
+
         $self->{message} = $message->{message};
         return $self->_sendmail;
     }
@@ -209,6 +240,17 @@ sub log {
             warn "$class: maxsize of $self->{maxsize} reached";
         }
         $self->flush;
+    }
+
+    if ($message->{level} && !$self->{level}) {
+        $self->{level} = $message->{level};
+    } elsif ($self->{level} && $message->{level}) {
+        my $slevel = $self->{level};
+        my $mlevel = $message->{level};
+
+        if ($LEVEL_BY_STRING{$slevel} > $LEVEL_BY_STRING{$mlevel}) {
+            $self->{level} = $message->{level};
+        }
     }
 
     $self->{message} .= $message->{message};
@@ -290,10 +332,17 @@ sub _sendmail {
         warn "$class: message $self->{length} bytes";
     }
 
+    if ($self->{level}) {
+        $header =~ s/Subject:(.)/Subject: $self->{level}:$1/;
+        $self->{level} = "";
+    }
+
     open my $fh, "|$sendmail"
         or return $self->raise_error("unable to execute '$self->{sendmail}' - $!");
 
     my $ret = print $fh $header, "\n", $self->{message};
+
+    close $fh;
 
     $self->{message} = "";
     $self->{length}  = 0;
@@ -301,8 +350,6 @@ sub _sendmail {
     if (!$ret) {
         return $self->raise_error("unable to write to stdin - $!");
     }
-
-    close $fh;
 
     return 1;
 }

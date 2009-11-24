@@ -32,7 +32,7 @@ Net::SMTP is from Graham Barr and it does it's job very well.
 
 Call C<new()> to create a new Log::Handler::Output::Email object.
 
-The following options are possible:
+The following opts are possible:
 
 =over 4
 
@@ -63,6 +63,8 @@ The sender address (MAIL FROM).
 
 The receipient address (RCPT TO).
 
+Additional options are B<cc> and B<bcc>.
+
 =item B<subject>
 
 The subject of the mail.
@@ -71,7 +73,7 @@ The default subject is "Log message from $progname".
 
 =item B<buffer>
 
-This options exists only for security. The thing is that it would be very bad
+This opts exists only for security. The thing is that it would be very bad
 if something wents wrong in your program and hundreds of mails would be send.
 For this reason you can set a buffer to take care.
 
@@ -101,25 +103,19 @@ Example:
 
     $email->log(message => "this message will be mailed");
 
-    # or
+If you pass the level then its placed into the subject:
 
-    $email->log(
-        message => "this message will be mailed",
-        subject => "your subject",
-        level   => "INFO",
-    );
+    $email->log(message => "foo", level => "INFO");
+    $email->log(message => "bar", level => "ERROR");
+    $email->log(message => "baz", level => "DEBUG");
 
-If you pass C<"level => 'INFO'"> then the level is placed into the subject:
+The lowest level is used:
 
-    INFO: your subject
+    Subject: ERROR: ...
 
-As example you can use message_pattern from L<Log::Handler> to pass the level:
+You can pass the level with C<Log::Handler> by setting
 
-    message_pattern => "%L"
-
-then the level is placed into the subject.
-
-If you use a buffer higher than 0 then the level from the last message is used.
+    message_pattern => '%L'
 
 =head2 flush()
 
@@ -186,9 +182,21 @@ use Email::Date;
 use Net::SMTP;
 use Params::Validate qw();
 
-our $VERSION = "0.06";
+our $VERSION = "0.07";
 our $ERRSTR  = "";
 our $TEST    =  0; # is needed to disable flush() for tests
+
+my %LEVEL_BY_STRING = (
+    DEBUG     =>  7,
+    INFO      =>  6,
+    NOTICE    =>  5,
+    WARNING   =>  4,
+    ERROR     =>  3,
+    CRITICAL  =>  2,
+    ALERT     =>  1,
+    EMERGENCY =>  0,
+    FATAL     =>  0,
+);
 
 sub new {
     my $class = shift;
@@ -199,16 +207,17 @@ sub new {
 sub log {
     my $self    = shift;
     my $message = @_ > 1 ? {@_} : shift;
+    my $buffer  = $self->{message_buffer};
 
     if ($self->{buffer} == 0) {
         return $self->sendmail($message);
     }
 
-    if (@{$self->{MESSAGE_BUFFER}} < $self->{buffer}) {
-        push @{$self->{MESSAGE_BUFFER}}, $message;
+    if (@$buffer < $self->{buffer}) {
+        push @$buffer, $message;
     }
 
-    if (@{$self->{MESSAGE_BUFFER}} == $self->{buffer}) {
+    if (@$buffer == $self->{buffer}) {
         return $self->flush;
     }
 
@@ -216,19 +225,29 @@ sub log {
 }
 
 sub flush {
-    my $self    = shift;
-    my $message = ();
-    my $string  = "";
+    my $self   = shift;
+    my $string = ();
+    my $buffer = $self->{message_buffer};
 
-    if ($TEST || !@{$self->{MESSAGE_BUFFER}}) {
+    if ($TEST || !@$buffer) {
         return 1;
     }
 
-    # Safe the last message to use the level for the subject
-    $message = pop @{$self->{MESSAGE_BUFFER}};
+    # Safe the last message because the newest subject is used
+    my $message = pop @$buffer;
 
-    while (my $buffer = shift @{$self->{MESSAGE_BUFFER}}) {
-        $string .= $buffer->{message};
+    while (my $buf = shift @$buffer) {
+        if ($buf->{level} && !$message->{level}) {
+            $message->{level} = $buf->{level};
+        } elsif ($buf->{level} && $message->{level}) {
+            my $blevel = $buf->{level};
+            my $mlevel = $message->{level};
+            if ($LEVEL_BY_STRING{$mlevel} > $LEVEL_BY_STRING{$blevel}) {
+                $message->{level} = $buf->{level};
+            }
+        }
+
+        $string .= $buf->{message};
     }
 
     $message->{message} = $string . $message->{message};
@@ -241,6 +260,8 @@ sub sendmail {
     my $subject = $message->{subject} || $self->{subject};
     my $date    = Email::Date::format_date();
     my $smtp    = ();
+    my $expect  = 10;
+    my $success = 0;
 
     if ($message->{level}) {
         $subject = "$message->{level}: $subject";
@@ -260,19 +281,68 @@ sub sendmail {
         return $self->_raise_error("smtp error: unable to connect to ".join(", ", @{$self->{host}}));
     }
 
-    my $success = 0;
-    $success++ if $smtp->mail($self->{from});
-    $success++ if $smtp->to($self->{to});
-    $success++ if $smtp->data();
-    $success++ if $smtp->datasend("From: $self->{from}\n");
-    $success++ if $smtp->datasend("To: $self->{to}\n");
-    $success++ if $smtp->datasend("Subject: $subject\n");
-    $success++ if $smtp->datasend("Date: $date\n");
-    $success++ if $smtp->datasend($message->{message}."\n");
-    $success++ if $smtp->dataend();
-    $success++ if $smtp->quit();
+    if ($smtp->mail($self->{from})) {
+        $success++;
+    }
 
-    if ($success != 10) {
+    if ($smtp->to($self->{to})) {
+        $success++;
+    }
+
+    if ($self->{cc}) {
+        if ($smtp->cc($self->{cc})) {
+            $success++;
+        }
+        $expect++;
+    }
+
+    if ($self->{bcc}) {
+        if ($smtp->bcc($self->{bcc})) {
+            $success++;
+        }
+        $expect++;
+    }
+
+    if ($smtp->data) {
+        $success++;
+    }
+
+    if ($smtp->datasend("From: $self->{from}\n")) {
+        $success++;
+    }
+
+    if ($smtp->datasend("To: $self->{to}\n")) {
+        $success++;
+    }
+
+    if ($self->{cc}) {
+        if ($smtp->datasend("Cc: $self->{cc}\n")) {
+            $success++;
+        }
+        $expect++;
+    }
+
+    if ($smtp->datasend("Subject: $subject\n")) {
+        $success++;
+    }
+
+    if ($smtp->datasend("Date: $date\n")) {
+        $success++;
+    }
+
+    if ($smtp->datasend($message->{message}."\n")) {
+        $success++;
+    }
+
+    if ($smtp->dataend) {
+        $success++;
+    }
+
+    if ($smtp->quit) {
+        $success++;
+    }
+
+    if ($success != $expect) {
         return $self->_raise_error("smtp error($success): unable to send mail to $self->{to}");
     }
 
@@ -328,7 +398,7 @@ sub _validate {
     my $progname = $0;
     $progname =~ s@.*[/\\]@@;
 
-    my %options = Params::Validate::validate(@_, {
+    my %opts = Params::Validate::validate(@_, {
         host => {
             type => Params::Validate::ARRAYREF | Params::Validate::SCALAR,
         },
@@ -352,6 +422,14 @@ sub _validate {
         to => {
             type => Params::Validate::SCALAR,
         },
+        cc => {
+            type => Params::Validate::SCALAR,
+            optional => 1,
+        },
+        bcc => {
+            type => Params::Validate::SCALAR,
+            optional => 1,
+        },
         subject => {
             type => Params::Validate::SCALAR,
             default => "Log message from $progname",
@@ -362,21 +440,22 @@ sub _validate {
         },
     });
 
-    if (!ref($options{host})) {
-        $options{host} = [ $options{host} ];
+    if (!ref($opts{host})) {
+        $opts{host} = [ $opts{host} ];
     }
 
-    if ($options{subject}) {
-        $options{subject} =~ s/\n/ /g;
-        $options{subject} =~ s/(.{78})/$1\n /;
-        if (length($options{subject}) > 998) {
+    if ($opts{subject}) {
+        $opts{subject} =~ s/\n/ /g;
+        $opts{subject} =~ s/(.{78})/$1\n /g;
+
+        if (length($opts{subject}) > 998) {
             warn "Subject to long for email!";
-            $options{subject} = substr($options{subject}, 0, 998);
+            $opts{subject} = substr($opts{subject}, 0, 998);
         }
     }
 
-    $options{MESSAGE_BUFFER} = [ ];
-    return \%options;
+    $opts{message_buffer} = [ ];
+    return \%opts;
 }
 
 sub _raise_error {

@@ -44,7 +44,7 @@ ok(1, "checking log()");
 my $match_lines = 0;
 my $all_lines   = 0;
 
-foreach my $line ( @{$log->{MESSAGE_BUFFER}} ) {
+foreach my $line ( @{$log->{message_buffer}} ) {
     ++$all_lines;
     next unless $line->{message} =~ /^test \d+$/;
     ++$match_lines;
