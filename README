@@ -348,7 +348,7 @@ METHODS
     message_pattern
         This option is just useful if you want to forward messages to output
         modules that needs the parts of a message as a hash reference - as
-        example Log::Handler::Output::Forward, Log::Handler::Output::DBI
+        example Log::Handler::Output::Forward, Log::Handler::Output::DBI or
         Log::Handler::Output::Screen.
 
         The option expects a list of placeholders:

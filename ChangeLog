@@ -1,3 +1,7 @@
+0.64    Released at 2010-01-29.
+        - Fixed a bug in Email.pm on line 256 - $string can be
+          uninitialized.
+
 0.63    Released at 2009-11-24.
         - Fixed a typo in Email.pm (RT #51745).
         - Added options cc and bcc to Email.pm - this was a

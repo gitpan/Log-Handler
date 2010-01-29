@@ -390,7 +390,7 @@ You can create your own placeholders with the method C<set_pattern()>.
 This option is just useful if you want to forward messages to output
 modules that needs the parts of a message as a hash reference - as
 example L<Log::Handler::Output::Forward>, L<Log::Handler::Output::DBI>
-L<Log::Handler::Output::Screen>.
+or L<Log::Handler::Output::Screen>.
 
 The option expects a list of placeholders:
 
@@ -1114,7 +1114,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.63";
+our $VERSION = "0.64";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global

@@ -182,7 +182,7 @@ use Email::Date;
 use Net::SMTP;
 use Params::Validate qw();
 
-our $VERSION = "0.07";
+our $VERSION = "0.08";
 our $ERRSTR  = "";
 our $TEST    =  0; # is needed to disable flush() for tests
 
@@ -250,7 +250,10 @@ sub flush {
         $string .= $buf->{message};
     }
 
-    $message->{message} = $string . $message->{message};
+    if (defined $string) {
+        $message->{message} = $string . $message->{message};
+    }
+
     return $self->sendmail($message);
 }
 
