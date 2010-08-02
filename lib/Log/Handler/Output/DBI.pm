@@ -274,7 +274,7 @@ use DBI;
 use Carp;
 use Params::Validate qw();
 
-our $VERSION = "0.09";
+our $VERSION = "0.10";
 our $ERRSTR  = "";
 
 sub new {
@@ -325,14 +325,19 @@ sub connect {
     my $self = shift;
 
     if ($self->{persistent} && $self->{dbh}) {
-        eval { $self->{dbh}->do("select 1") or die DBI->errstr };
-        return 1 unless $@;
+        if ($self->{use_ping}) {
+            if ($self->{dbh}->ping) {
+                return 1;
+            }
+        } else {
+            eval { $self->{dbh}->do($self->{pingstmt}) or die DBI->errstr };
+            return 1 unless $@;
+        }
     }
 
     if ($self->{debug}) {
         warn "Connect to the database: $self->{cstr}->[0] ...";
     }
-
 
     my $dbh = DBI->connect(@{$self->{cstr}})
         or return $self->_raise_error("DBI connect error: ".DBI->errstr);
@@ -469,6 +474,11 @@ sub _validate {
             type => Params::Validate::HASHREF,
             default => { PrintError => 0, AutoCommit => 1 },
         },
+        use_ping => {
+            type => Params::Validate::SCALAR,
+            regex => qr/^[01]\z/,
+            default => 0,
+        },
         debug => {
             type => Params::Validate::SCALAR,
             regex => qr/^[01]\z/,
@@ -541,6 +551,12 @@ sub _validate {
 
         $options{statement} .= join(",", @binds);
         $options{statement} .= ")";
+    }
+
+    if ($options{driver} =~ /oracle/i) {
+        $options{pingstmt} = "select 1 from dual";
+    } else {
+        $options{pingstmt} = "select 1";
     }
 
     return \%options;

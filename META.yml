@@ -1,6 +1,6 @@
 ---
 name: Log-Handler
-version: 0.64
+version: 0.65
 author:
   - Jonny Schulz
 abstract: Log messages to several outputs.
@@ -26,12 +26,10 @@ recommends:
   IO::Socket: 0
   Net::SMTP: 0
   YAML: 0
-configure_requires:
-  Module::Build: 0.35
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.64
+    version: 0.65
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
     version: 0.07
@@ -43,7 +41,7 @@ provides:
     version: 0.08
   Log::Handler::Output::DBI:
     file: lib/Log/Handler/Output/DBI.pm
-    version: 0.09
+    version: 0.10
   Log::Handler::Output::Email:
     file: lib/Log/Handler/Output/Email.pm
     version: 0.08
@@ -74,7 +72,7 @@ provides:
   Log::Handler::Plugin::YAML:
     file: lib/Log/Handler/Plugin/YAML.pm
     version: 0.03
-generated_by: Module::Build version 0.35
+generated_by: Module::Build version 0.280801
 meta-spec:
-  url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2
