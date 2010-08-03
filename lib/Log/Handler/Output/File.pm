@@ -112,7 +112,7 @@ C<excl> would fail by open the log file if the log file already exists.
 C<trunc> would truncate the complete log file if it exists. Please take care
 to use this option.
 
-Take a look to the documentation of C<sysopen()> to get more informations.
+Take a look to the documentation of C<sysopen()> to get more information.
 
 =item B<autoflush>
 
@@ -130,7 +130,7 @@ C<0640> is the default permission for this option. That means that the owner
 got read and write permissions and users in the same group got only read
 permissions. All other users got no access.
 
-Take a look to the documentation of C<sysopen()> to get more informations.
+Take a look to the documentation of C<sysopen()> to get more information.
 
 =item B<utf8>
 
@@ -211,7 +211,7 @@ use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
 use File::Spec;
 use Params::Validate qw();
 
-our $VERSION = "0.06";
+our $VERSION = "0.07";
 our $ERRSTR  = "";
 
 sub new {

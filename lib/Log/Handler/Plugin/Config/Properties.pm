@@ -14,7 +14,7 @@ Log::Handler::Plugin::Config::Properties - Config loader for Config::Properties.
 
 Expect the config file name and returns the config as a reference.
 
-The configuration will be splitted by dot.
+The configuration uses full stops "." as a delimiter.
 
 =head1 CONFIG STYLE
 
@@ -63,7 +63,7 @@ use strict;
 use warnings;
 use Config::Properties;
 
-our $VERSION = '0.03';
+our $VERSION = '0.04';
 our $SPLITTOTREE = qr/\./;
 
 sub get_config {

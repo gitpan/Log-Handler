@@ -1,3 +1,8 @@
+0.65_01 Released at 2010-08-03.
+        - Modified create_logger and get_logger and added
+          the functionalety to create and fetch category loggers.
+        - Fixed some spelling error in POD (RT #60005).
+
 0.65    Released at 2010-08-02.
         - Modified Log::Handler::Output::DBI. Oracle is unable
           to handle "select 1". The statement is changed to
@@ -282,7 +287,7 @@
         - The methods close(), set_prefix(), get_prefix are not available any more.
         - The placeholder <--LEVEL--> for the prefix is changed to %L. In addition there
           are different other placeholders available and it's possible to define a postfix.
-        - trace() will trace caller informations to all log files that are defined.
+        - trace() will trace caller information to all log files that are defined.
         - Did a lot of other code changes.
 
 0.38    Released at 2007-09-29.
@@ -322,7 +327,7 @@
 
 0.32	Released at 2007-04-26.
 	    I jumped from 0.15 to 0.32 because there exists brownfields on backpan.
-	    Replaced my own routine to get caller() informations with Devel::Backtrace.
+	    Replaced my own routine to get caller() information with Devel::Backtrace.
 	    Added the option debugger_skip.
 
 0.15	Released at 2007-04-25.

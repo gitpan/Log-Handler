@@ -1,0 +1,47 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use Config::General;
+use Config::Properties;
+use YAML;
+
+my %config = Config::General::ParseConfig(\*DATA);
+my $props  = Config::Properties->new();
+
+$props->setFromTree(\%config, ".");
+print $props->saveToString(\%config);
+
+print YAML::Dump(\%config);
+
+__DATA__
+<file>
+    alias = file1
+    fileopen = 1
+    reopen = 1
+    permissions = 0640
+    maxlevel = info
+    minlevel = warn
+    mode = append
+    timeformat = %b %d %H:%M:%S
+    debug_mode = 2
+    filename = example.log
+    message_layout = '%T %H[%P] [%L] %S: %m'
+</file>
+
+<category>
+    <MyApp>
+        <file>
+            alias = file1
+            maxlevel = info
+            minlevel = warn
+            filename = category.log
+            message_layout = '%T %H[%P] [%L] %S: %m'
+        </file>
+        <screen>
+            alias screen1
+            maxlevel = info
+            minlevel = emerg
+        </screen>
+    </MyApp>
+</category>

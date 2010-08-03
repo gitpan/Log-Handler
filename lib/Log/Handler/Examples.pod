@@ -11,50 +11,18 @@ Quite simple
     my $log = Log::Handler->new();
     $log->add( screen => \%options );
 
-Create a application logger and accessor LOG
-
-    use Log::Handler myapp => "LOG";
-
-    LOG->add( screen => \%options );
-
-Create a application logger without accessor
-
-    use Log::Handler "myapp";
-
-    my $log = Log::Handler->get_logger("myapp");
-    $log->add( screen => \%options );
-
-Create application logger with C<create_logger()>
-
-    use Log::Handler;
-
-    my $log = Log::Handler->create_logger("myapp");
-    $log->add( screen => \%options );
-
-Another self-explanatory examples
-
-    use Log::Handler l1 => "LOG1", l2 => "LOG2", l3 => "LOG3";
-
-    @logger = Log::Handler->create_logger(qw/l1 l2 l3/);
-
-    @logger = Log::Handler->get_logger(qw/l1 l2 l3/);
-
-Once created you can import a application logger into all
-modules of your project:
+Create a category logger for you project:
 
     package MyApp;
-    use Log::Handler myapp => "LOG";
-    LOG->add( screen => \%options );
+    use Log::Handler;
+
+    my $log = Log::Handler->create_logger("MyApp");
+    $log->add( screen => \%options );
 
     package MyApp::Foo;
-    # Import it with an accessor
-    use Log::Handler myapp => "LOG";
-    LOG->info("message");
-
-    package MyApp::Bar;
     use Log::Handler;
-    # Import it with get_logger()
-    my $log = Log::Handler->get_logger("myapp");
+
+    my $log = Log::Handler->get_logger;
     $log->info("message");
 
 =head1 ADD OUTPUTS

@@ -88,7 +88,7 @@ The default buffer size is set to 20.
 
 =item B<debug>
 
-With this option it's possible to enable debugging. The informations can be
+With this option it's possible to enable debugging. The information can be
 intercepted with $SIG{__WARN__}.
 
 =back
@@ -182,7 +182,7 @@ use Email::Date;
 use Net::SMTP;
 use Params::Validate qw();
 
-our $VERSION = "0.08";
+our $VERSION = "0.09";
 our $ERRSTR  = "";
 our $TEST    =  0; # is needed to disable flush() for tests
 

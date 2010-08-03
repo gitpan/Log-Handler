@@ -1,14 +1,14 @@
 package MyApp;
 use strict;
 use warnings;
-use Log::Handler myapp => 'LOG';
+use Log::Handler MyApp => 'LOG';
 
 sub foo {
     LOG->info('message from foo');
 }
 
 sub bar {
-    my $log = Log::Handler->get_logger('myapp');
+    my $log = Log::Handler->get_logger('MyApp');
     $log->info('message from bar');
 }
 

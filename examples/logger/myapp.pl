@@ -26,15 +26,17 @@ modify it under the same terms as Perl itself.
 
 use strict;
 use warnings;
-use Log::Handler myapp => 'LOG';
+use Log::Handler MyApp => "LOG";
 use lib '.';
 use MyApp;
 
-LOG->add(screen => {
-    newline  => 1,
-    maxlevel => 'info',
-    message_layout => '%L - %m',
-});
+LOG->add(
+    screen => {
+        newline  => 1,
+        maxlevel => 'info',
+        message_layout => '%L - %m',
+    }
+);
 
 LOG->info('message from main');
 
