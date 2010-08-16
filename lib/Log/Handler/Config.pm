@@ -9,16 +9,13 @@ Log::Handler::Config - The main config loader.
     my $log = Log::Handler->new();
 
     # Config::General
-    $log->config('file.conf');
+    $log->config(config => 'file.conf');
 
     # Config::Properties
-    $log->config('file.props');
+    $log->config(config => 'file.props');
 
     # YAML
-    $log->config('file.yaml');
-
-    # Or the pre-loaded configuration
-    $log->config(\%config);
+    $log->config(config => 'file.yaml');
 
 Or
 
@@ -63,12 +60,8 @@ With this option you can pass a file name or the configuration as a
 hash reference.
 
     $log->config(config => 'file.conf');
+    # or
     $log->config(config => \%config);
-
-A short way is also possible:
-
-    $log->config('file.conf');
-    $log->config(\%config);
 
 =item B<plugin>
 
@@ -131,35 +124,6 @@ section with
     # or just
 
     $log->config( config => $config{logger} );
-
-It's also possible to pass a category logger to C<config()>:
-
-    <logger>
-        <file>
-            filename = file.log
-            minlevel = emerg
-            maxlevel = warning
-        </file>
-
-        <screen>
-            minlevel = emerg
-            maxlevel = debug
-        </screen>
-
-        <category>
-            <MyApp>
-                <file>
-                    filename = category.log
-                    minlevel = emerg
-                    maxlevel = debug
-                </file>
-                <screen>
-                    minlevel = emerg
-                    maxlevel = debug
-                </screen>
-            </MyApp>
-        </category>
-    </logger>
 
 =back
 
@@ -299,39 +263,6 @@ Or
         </file1>
     </file>
 
-Or
-
-    <file>
-        alias = file1
-        fileopen = 1
-        reopen = 1
-        permissions = 0640
-        maxlevel = info
-        minlevel = warn
-        mode = append
-        timeformat = %b %d %H:%M:%S
-        debug_mode = 2
-        filename = example.log
-        message_layout = '%T %H[%P] [%L] %S: %m'
-    </file>
-
-    <category>
-        <MyApp>
-            <file>
-                alias = file1
-                maxlevel = info
-                minlevel = warn
-                filename = category.log
-                message_layout = '%T %H[%P] [%L] %S: %m'
-            </file>
-            <screen>
-                alias = screen1
-                maxlevel = info
-                minlevel = emerg
-            </screen>
-        </MyApp>
-    </category>
-
 =head3 YAML
 
     ---
@@ -364,34 +295,6 @@ Or
         reopen: 1
         timeformat: '%b %d %H:%M:%S'
 
-Or
-
-    ---
-    file:
-      alias: file1
-      debug_mode: 2
-      filename: example.log
-      fileopen: 1
-      maxlevel: info
-      message_layout: "'%T %H[%P] [%L] %S: %m'"
-      minlevel: warn
-      mode: append
-      permissions: 0640
-      reopen: 1
-      timeformat: '%b %d %H:%M:%S'
-    category:
-      MyApp:
-        file:
-          alias: file1
-          filename: category.log
-          maxlevel: info
-          message_layout: "'%T %H[%P] [%L] %S: %m'"
-          minlevel: warn
-        screen:
-          alias: screen1
-          maxlevel: info
-          minlevel: emerg
-
 =head3 Config::Properties
 
     file.alias = file1
@@ -419,29 +322,6 @@ Or
     file.file1.debug_mode = 2
     file.file1.filename = example.log
     file.file1.message_layout = '%T %H[%P] [%L] %S: %m'
-
-Or
-
-    file.reopen=1
-    file.fileopen=1
-    file.maxlevel=info
-    file.permissions=0640
-    file.mode=append
-    file.message_layout='%T %H[%P] [%L] %S: %m'
-    file.timeformat=%b %d %H:%M:%S
-    file.debug_mode=2
-    file.filename=example.log
-    file.minlevel=warn
-    file.alias=file1
-
-    category.MyApp.screen.minlevel=emerg
-    category.MyApp.screen.maxlevel=info
-    category.MyApp.screen.alias=screen1
-    category.MyApp.file.filename=category.log
-    category.MyApp.file.minlevel=warn
-    category.MyApp.file.maxlevel=info
-    category.MyApp.file.message_layout='%T %H[%P] [%L] %S: %m'
-    category.MyApp.file.alias=file1
 
 =head1 PREREQUISITES
 
@@ -482,16 +362,9 @@ use File::Spec;
 use Params::Validate;
 
 sub config {
-    my $class = shift;
-    my $params = ();
-
-    if (@_ == 1) {
-        $params = $class->_validate(config => shift);
-    } else {
-        $params = $class->_validate(@_);
-    }
-
-    my $config = $class->_get_config($params);
+    my $self   = shift;
+    my $params = $self->_validate(@_);
+    my $config = $self->_get_config($params);
 
     if (ref($config) ne 'HASH') {
         croak "Bad config structure!";
@@ -503,18 +376,13 @@ sub config {
     my %log_config;
 
     foreach my $type (keys %$config) {
-        if ($type =~ /^[Cc]ategory\z/) {
-            $log_config{category} = $config->{$type};
-            next;
-        }
-
         my $output = $config->{$type};
         my $ref = ref($output);
 
         if ($ref eq 'HASH') {
-            push @{$log_config{$type}}, $class->_get_hash_config($output);
+            push @{$log_config{$type}}, $self->_get_hash_config($output);
         } elsif ($ref eq 'ARRAY') {
-            push @{$log_config{$type}}, $class->_get_array_config($output);
+            push @{$log_config{$type}}, $self->_get_array_config($output);
         } else {
             croak "Bad config structure for '$type'";
         }
@@ -528,7 +396,7 @@ sub config {
 #
 
 sub _get_config {
-    my ($class, $params) = @_;
+    my ($self, $params) = @_;
     my $config = ();
     my $plugin = $params->{plugin};
 
@@ -550,7 +418,7 @@ sub _get_config {
 }
 
 sub _get_hash_config {
-    my ($class, $config) = @_;
+    my ($self, $config) = @_;
     my @config  = ();
     my %default = ();
 
@@ -575,7 +443,7 @@ sub _get_hash_config {
 }
 
 sub _get_array_config {
-    my ($class, $config) = @_;
+    my ($self, $config) = @_;
     my @config = ();
 
     foreach my $params (@$config) {
@@ -586,7 +454,7 @@ sub _get_array_config {
 }
 
 sub _validate {
-    my $class = shift;
+    my $self = shift;
 
     my %options = Params::Validate::validate(@_, {
         config => {

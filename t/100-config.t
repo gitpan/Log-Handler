@@ -5,12 +5,14 @@ use Log::Handler;
 
 my %config = (
     file => {
-        file1 => {
+        default => {
             timeformat     => '%b %d %H:%M:%S',
             mode           => 'excl',
             message_layout => '%T %H[%P] [%L] %S: %m',
             debug_mode     => 2,
             fileopen       => 0,
+        },
+        file1 => {
             filename => 'foo',
             maxlevel => 'info',
             newline  => 0,

@@ -43,7 +43,7 @@ use warnings;
 use Carp;
 use UNIVERSAL;
 
-our $VERSION = "0.08";
+our $VERSION = "0.09";
 our $ERRSTR  = "";
 
 sub new {
@@ -57,12 +57,28 @@ sub log {
     my $self  = shift;
     my $level = shift;
 
+    if ($self->{category}) {
+        my $caller = (caller(1+$Log::Handler::CALLER_LEVEL))[0];
+
+        if ($caller !~ /^$self->{category}:*/) {
+            return 1;
+        }
+    }
+
     if ($self->{filter_caller}) {
         my $caller = (caller(1+$Log::Handler::CALLER_LEVEL))[0];
-        return 1 if $caller !~ $self->{filter_caller};
-    } elsif ($self->{except_caller}) {
+
+        if ($caller !~ $self->{filter_caller}) {
+            return 1;
+        }
+    }
+
+    if ($self->{except_caller}) {
         my $caller = (caller(1+$Log::Handler::CALLER_LEVEL))[0];
-        return 1 if $caller =~ $self->{except_caller};
+
+        if ($caller =~ $self->{except_caller}) {
+            return 1;
+        }
     }
 
     my $output  = $self->{output};

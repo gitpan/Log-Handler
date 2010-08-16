@@ -179,7 +179,23 @@ sub _validate {
             regex => qr/^[01]\z/,
             default => 0,
         },
+        utf8 => {
+            type => Params::Validate::SCALAR,
+            regex => qr/^[01]\z/,
+            default => 0,
+        },
     });
+
+    if ($options{log_to} eq "STDOUT") {
+        $options{fh} = \*STDOUT;
+    } elsif ($options{log_to} eq "STDERR") {
+        $options{fh} = \*STDERR;
+    }
+
+    if ($options{fh} && $options{utf8}) {
+        my $fh = $options{fh};
+        binmode $fh, ':utf8';
+    }
 
     return \%options;
 }

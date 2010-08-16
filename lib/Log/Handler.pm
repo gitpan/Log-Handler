@@ -47,26 +47,36 @@ Or
 
     my $log = Log::Handler->new();
 
-    $log->config( config => "logger.conf" );
+    $log->config( "logger.conf" );
 
     # and maybe later
 
-    $log->reload( config => "logger.conf" );
+    $log->reload( "logger.conf" );
 
 Or
 
-    # Init category logger MyApp
+    # init myapp logger
     package MyApp;
     use Log::Handler;
-    my $log = Log::Handler->create_logger("MyApp");
+
+    my $log = Log::Handler->create_logger("myapp");
     $log->add(screen => { maxlevel => "info" });
     $log->info("info message");
 
-    # Import category logger MyApp
-    package MyApp::User;
+    # import myapp logger into MyApp::Foo
+    package MyApp::Foo;
     use Log::Handler;
-    my $log = Log::Handler->get_logger;
-    $log->info("info message from MyApp::User");
+
+    my $log = Log::Handler->get_logger("myapp");
+    $log->info("info message from MyApp::Foo");
+
+    # import myapp logger with accessor LOG
+    package MyApp::Bar;
+    use Log::Handler myapp => "LOG";
+
+    sub func {
+        LOG->info("info message from MyApp::Bar");
+    }
 
 =head1 DESCRIPTION
 
@@ -80,17 +90,6 @@ the complete logging machine.
 See the documentation for details.
 
 =head1 IMPORTANT NOTES
-
-=head2 Changes from 0.65 to 0.66
-
-The following syntax works but is unsupported in further versions
-and still exists for backward compatibilities:
-
-    use Log::Handler myapp => "LOG";
-
-Please use C<create_logger> and C<get_logger> instead.
-
-=head2 Changes from 0.58 to 0.60
 
 Note that the default for option C<newline> is now set to TRUE and newlines
 will be appended automatically to each message if no newline exists.
@@ -529,7 +528,7 @@ If you set C<die_on_errors> to 0 then you have to controll it yourself.
 This option is set to 1 by default.
 
 Take a look to the decription of the method C<reload> for more
-information to this option.
+information about this option.
 
 =item B<filter_message>
 
@@ -586,7 +585,7 @@ would cause an error!
 =item B<filter_caller>
 
 You can use this option to set a package name. Only messages from this
-packages will be logged.
+package will be logged.
 
 Example:
 
@@ -596,7 +595,7 @@ Example:
         maxlevel => "info",
         filter_caller  => qr/^Foo::Bar\z/,
         # or
-        # filter_caller => "^Foo::Bar\z",
+        # filter_caller => '^Foo::Bar\z',
     });
 
     package Foo::Bar;
@@ -617,14 +616,28 @@ If you want to log messages from all callers but C<Foo::Bar>:
 
     except_caller => qr/^Foo::Bar\z/
 
+=item B<category>
+
+This option works like C<filter_caller> but you don't need to pass a regex.
+
+    my $log = Log::Handler->new();
+
+    $log->add(
+        screen => {
+            category => "Foo::Bar",
+            maxlevel => "info",
+        }
+    );
+
+    package Foo::Bar;
+    $log->info("log this");
+
+    package Foo::Baz;
+    $log->info("but not that");
+
 =item B<alias>
 
-The alias is basically necessary if you want to reload the logging
-machine with C<reload>, otherwise the logger doesn't know which
-output-objects to reload.
-
-It's also possible to set an alias if you want to access the raw
-output object later. Example:
+You can set an alias if you want to get the output object later. Example:
 
     my $log = Log::Handler->new();
 
@@ -782,8 +795,7 @@ C<add()> fails because on missing or wrong settings!
 
 =head2 config()
 
-With this method it's possible to load your configuration from a file with all
-what you need... outputs, categories and so on :-)
+With this method it's possible to load your output configuration from a file.
 
     $log->config(config => "file.conf");
 
@@ -816,26 +828,19 @@ Or
             minlevel => "emerg",
             log_to   => "STDERR",
         },
-        category => {
-            MyApp => {
-                file => {
-                    alias    => "myapp",
-                    filename => "myapp.log",
-                    maxlevel => "info",
-                    minlevel => "emerg",
-                    message_layout => "%T [%L] (%p) %m",
-                },
-            },
-        },
     });
+
+Or just
+
+    $log->config(\%config);
 
 Take a look into the documentation of L<Log::Handler::Config> for more
 information.
 
 =head2 reload()
 
-With the method C<reload()> it's possible to reload the logging machine.
-Just pass the complete new configuration for all outputs and categories,
+With the method C<reload()> it's possible to reload the logging
+machine. Just pass the complete new configuration for all outputs,
 it works exaclty like C<config()>.
 
 At first you should know that it's highly recommended to set a alias for
@@ -863,7 +868,7 @@ logger.conf
 
 Load the configuration
 
-    $log->config(config => "logger.conf");
+    $log->config("logger.conf");
 
 Now change the configuration in logger.conf
 
@@ -893,7 +898,7 @@ option C<remove_on_reload> to 0.
 
 Example:
 
-    $log->config(config => "logger.conf");
+    $log->config("logger.conf");
 
     $log->add(
         forward => {
@@ -915,12 +920,12 @@ Example:
 
     my $log = Log::Handler->new();
 
-    $log->config( config => \%config );
+    $log->config( \%config );
 
     # and maybe later
 
-    if ( $log->validate( config => \%new_config ) ) {
-        $log->reload( config => \%new_config );
+    if ( $log->validate( \%new_config ) ) {
+        $log->reload( \%new_config );
     } else {
         warn "unable to reload configuration";
         warn $log->errstr;
@@ -970,84 +975,143 @@ To change the log level it's necessary to use a alias - see option C<alias>.
         }
     );
 
-=head1 CATEGORY LOGGER
-
-Since version 0.66 it's possible to create category loggers.
-This means you can create a logger object that references
-to a category. The advantage of this feature is that you can
-configure special sections in the configuration file and log
-messages to different places without using the options
-C<filter_caller> and C<except_caller>.
-
-Take a look to L<Log::Handler::Category> for some configuration examples.
-
-You can find a full code example in the distribution within
-the directory C<Log-Handler-$VERSION/examples/category/>.
-
 =head2 create_logger()
 
-C<create_logger()> is the same like C<new()> but it creates a category
+C<create_logger()> is the same like C<new()> but it creates a global
 logger.
 
-    my $log = Log::Handler->create_logger("MyApp");
+    my $log = Log::Handler->create_logger("myapp");
 
-If you want to create more than one category logger you can call
+If you want to create more than one object you can call
 
-    my @logger = Log::Handler->create_logger("MyApp1", "MyApp2", ...);
+    my @logger = Log::Handler->create_logger("myapp1", "myapp2", ...);
 
 =head2 get_logger()
 
-C<get_logger()> is really simple. This function tries to return the
-right category logger for the namespace where it is called.
+With C<get_logger()> it's possible to get a logger that was created
+with C<create_logger()>.
 
-As example you create a category logger named C<MyApp>:
+    Log::Handler->create_logger("myapp");
 
-    package MyApp;
+Just call
 
+    my $log = Log::Handler->get_logger("myapp");
+
+to get the logger.
+
+=head1 CATEGORY LOGGER
+
+Some people asks me to implement a feature of category logger.
+At this point I want to explain how this feature works with Log::Handler.
+
+The philosophy of C<Log::Handler> is to create only one main logger
+object for your complete project and to include the logger it into all
+namespaces where you want to use it. The logic to split messages to 
+different output-objects is done internal. For this reason you should
+create only one logger with C<create_logger()>:
+
+    package main;
+    use Log::Handler;
+    Log::Handler->create_logger("My project");
+
+Once created you can use the logger within your complete project:
+
+    package Foo;
+    use Log::Handler;
+    my $log = Log::Handler->get_logger("My project");
+
+    package Foo::Bar;
+    use Log::Handler;
+    my $log = Log::Handler->get_logger("My project");
+
+You NEVER need to call
+
+    my $log = Log::Handler->get_logger("Foo");
+    # or
+    my $log = Log::Handler->get_logger("Foo::Bar");
+
+because there exists only your project logger called "My project" - or whatever.
+
+Now, if you want to split messages to different screen or log files
+you can use the option C<filter_caller> or C<category>. Both options
+does the same with the small difference that C<category> sounds better
+and you don't need to pass a regex.
+
+Let me show you how you can use this option:
+
+    package Foo;
+
+    sub func {
+        my $log = Log::Handler->get_logger("My project");
+        $log->info("message from Foo");
+    }
+
+    package Foo::Bar;
+
+    sub func {
+        my $log = Log::Handler->get_logger("My project");
+        $log->info("message from Foo::Bar");
+    }
+
+    package Foo::Bar::Baz;
+
+    sub func {
+        my $log = Log::Handler->get_logger("My project");
+        $log->info("message from Foo::Bar::Baz");
+    }
+
+    package main;
     use Log::Handler;
 
-    Log::Handler->create_logger("MyApp");
+    my $log = Log::Handler->create_logger("My project");
+    $log->config("logger.conf");
 
-Now you can use this logger for all namespaces that begins with
-C<MyApp>:
+    Foo->func;
+    Foo::Bar->func;
+    Foo::Bar::Baz->func;
 
-    package MyApp::Admin::User;
+The configuration file (logger.conf):
 
-    use Log::Handler;
+    <screen>
+        alias    = screen1
+        category = Foo
+        maxlevel = info
+        minlevel = emerg
+    </screen>
 
-    # __PACKAGE__ is the default
-    my $log = Log::Handler->get_logger;
+    <screen>
+        alias    = screen2
+        category = Foo::Bar
+        maxlevel = info
+        minlevel = emerg
+    </screen>
 
-The function searched for a category logger in the following
-order:
+    <screen>
+        alias    = screen3
+        category = Foo::Bar::Baz
+        maxlevel = info
+        minlevel = emerg
+    </screen>
 
-    MyApp::Admin::User
-    MyApp::Admin
-    MyApp
-    main
+The output looks like
 
-It's also possible to set more than one category by the call
-of C<cat_logger()>.
+    Aug 16 23:51:54 [INFO] message from Foo
+    Aug 16 23:51:54 [INFO] message from Foo::Bar
+    Aug 16 23:51:54 [INFO] message from Foo::Bar
+    Aug 16 23:51:54 [INFO] message from Foo::Bar::Baz
+    Aug 16 23:51:54 [INFO] message from Foo::Bar::Baz
+    Aug 16 23:51:54 [INFO] message from Foo::Bar::Baz
 
-    package MyApp::Admin::User;
+As you can see there is something like inheritance - in fact it's just
+a regex internal that checks the caller. :-)
 
-    use Log::Handler;
+On this way it's possible for you to configure exactly from which
+caller do you want to see messages and where do you want to log
+those messages. It the option C<category> doesn't meet your claim
+you can try option C<filter_caller> and C<except_caller>.
 
-    my $log = Log::Handler->get_logger("Drink::Beer", "Eat::Chips", __PACKAGE__);
-
-The order to find the right logger is now:
-
-    Drink::Beer
-    Drink
-    Eat::Chips
-    Eat
-    MyApp::Admin::User
-    MyApp::Admin
-    MyApp
-    main
-
-If no category logger was found then an unconfigured logger called
-C<__empty__> will be returned.
+See into the directory examples/logger within the source package
+of Log::Handler for a code example.
 
 =head1 EXAMPLES
 
@@ -1134,15 +1198,14 @@ package Log::Handler;
 use strict;
 use warnings;
 use Carp;
-use Log::Handler::Config;
-use Log::Handler::Output;
-use Log::Handler::Pattern;
 use Params::Validate qw//;
+use Log::Handler::Output;
+use Log::Handler::Config;
+use Log::Handler::Pattern;
 use UNIVERSAL;
-
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.65_01";
+our $VERSION = "0.65_02";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1155,7 +1218,7 @@ our $ERRSTR  = "";
 our $CALLER_LEVEL = 0;
 our $TRACE        = 0;
 
-# safe logger by category
+# safe logger by app
 my %LOGGER;
 
 # Some constants...
@@ -1220,29 +1283,40 @@ our %AVAILABLE_OUTPUTS = (
 
 # use Log::Handler foo => "LOGFOO", bar => "LOGBAR";
 # use Log::Handler qw/foo LOGFOO bar LOGBAR/;
+# UNSUPPORTET
 sub import {
     return unless @_ > 1;
     my $class  = shift;
     my %create = @_ > 1 ? @_ : (@_, undef);
     my $caller = (caller)[0];
 
-    foreach my $app (keys %create) {
-        my $export = $create{$app};
+    foreach my $appl (keys %create) {
+        my $export = $create{$appl};
         my $logger = ();
 
-        if (exists $LOGGER{$app}) {
-            $logger = $LOGGER{$app};
-        } else {
-            $logger = Log::Handler->create_logger($app);
-            $LOGGER{$app} = $logger;
+        if (!exists $LOGGER{$appl}) {
+            $LOGGER{$appl} = __PACKAGE__->new();
         }
 
         if ($export) {
             no strict "refs";
             my $method = $caller."::".$export;
-            *{$method} = sub { $logger };
+            *{$method} = sub { $LOGGER{$appl} };
         }
     }
+}
+
+sub get_logger {
+    @_ > 1 || croak 'Usage: Log::Handler->get_logger($app)';
+    my $class = shift;
+
+    foreach my $logger (@_) {
+        if (!exists $LOGGER{$logger}) {
+            croak "logger '$logger' does not exists";
+        }
+    }
+
+    return @LOGGER{@_};
 }
 
 sub create_logger {
@@ -1250,34 +1324,10 @@ sub create_logger {
     my $class = shift;
 
     foreach my $logger (@_) {
-        $LOGGER{$logger} = Log::Handler->new();
+        $LOGGER{$logger} = __PACKAGE__->new();
     }
 
     return @LOGGER{@_};
-}
-
-sub get_logger {
-    @_ > 0 || croak 'Usage: Log::Handler->get_logger($app)';
-    my ($class, @logger) = @_;
-
-    if (!scalar @logger) {
-        push @logger, (caller)[0];
-    }
-
-    push @logger, qw(main __empty__);
-
-    foreach my $logger (@logger) {
-        while (1) {
-            if (exists $LOGGER{$logger}) {
-                return $LOGGER{$logger};
-            }
-            if ($logger !~ s/::[^:]+\z//) {
-                last;
-            }
-        }
-    }
-
-    return $class->create_logger('__empty__');
 }
 
 sub new {
@@ -1311,12 +1361,11 @@ sub add {
     }
 
     if (@_ > 2) {
-        while (scalar @_) {
+        while (@_) {
             my $type = shift;
             my $conf = shift;
             $self->add($type, $conf);
         }
-        return 1;
     }
 
     # At first the config will be splitted into
@@ -1340,7 +1389,7 @@ sub add {
 
 sub config {
     @_ > 1 or Carp::croak 'Usage: $log->config( %param )';
-    my $self = shift;
+    my $self   = shift;
     my $config = ();
 
     if (@_ == 1) {
@@ -1354,22 +1403,12 @@ sub config {
     #   $config->{dbi}  = [ output config ];
 
     foreach my $type (keys %$config) {
-        if ($type eq "category") {
-            foreach my $category (keys %{$config->{$type}}) {
-                my $log = $self->create_logger($category);
-                $log->config(config => $config->{$type}->{$category});
-            }
-        } else {
-            if (!ref($self)) {
-                $self = Log::Handler->new;
-            }
-            foreach my $c (@{$config->{$type}}) {
-                $self->add($type, $c);
-            }
+        for my $c (@{$config->{$type}}) {
+            $self->add($type, $c);
         }
     }
 
-    return $self;
+    return 1;
 }
 
 sub validate {
@@ -1378,21 +1417,20 @@ sub validate {
     my @v_opts = (); # validated options
 
     eval {
-        my $config = Log::Handler::Config->config(@_);
+        my $config = ();
+
+        if (@_ == 1) {
+            $config = Log::Handler::Config->config(config => shift);
+        } else {
+            $config = Log::Handler::Config->config(@_);
+        }
 
         foreach my $type (keys %$config) {
-            if ($type eq "category") {
-                foreach my $category (keys %{$config->{$type}}) {
-                    my $v_opts = $self->validate(config => $config->{$type}->{$category});
-                    push @v_opts, { c => $category, o => $v_opts };
-                }
-            } else {
-                foreach my $output_config (@{ $config->{$type} }) {
-                    my ($package, $h_opts, $o_opts) = $self->_split_config($type, $output_config);
-                    $h_opts = $self->_validate_options($h_opts);
-                    $o_opts = $package->validate($o_opts) or die $package->errstr;
-                    push @v_opts, { p => $package, h => $h_opts, o => $o_opts, n => $output_config };
-                }
+            foreach my $output_config (@{ $config->{$type} }) {
+                my ($package, $h_opts, $o_opts) = $self->_split_config($type, $output_config);
+                $h_opts = $self->_validate_options($h_opts);
+                $o_opts = $package->validate($o_opts) or die $package->errstr;
+                push @v_opts, { p => $package, h => $h_opts, o => $o_opts, n => $output_config };
             }
         }
     };
@@ -1405,14 +1443,13 @@ sub validate {
 }
 
 sub reload {
-    my $self = shift;
-    my $opts = $self->validate(@_) or return undef;
+    my $self  = shift;
+    my $class = ref($self);
+    my $opts  = $self->validate(@_);
 
-    return $self->_reload($opts);
-}
-
-sub _reload {
-    my ($self, $opts) = @_;
+    if (!$opts) {
+        return undef;
+    }
 
     # Store all aliases that were reloaded or added,
     # because all output-objects that weren't reloaded
@@ -1423,13 +1460,6 @@ sub _reload {
     # program dies - daemons shouldn't die :-)
     eval {
         foreach my $output_config (@$opts) {
-            if (exists $output_config->{c}) {
-                my $category = $output_config->{c};
-                my $logger = Log::Handler->get_logger($category);
-                $logger->_reload($output_config->{o});
-                next;
-            }
-
             my $package = $output_config->{p}; # package name like Log::Handler::Output::File
             my $h_opts  = $output_config->{h}; # handler options to reload
             my $o_opts  = $output_config->{o}; # output options to reload
@@ -1690,6 +1720,7 @@ sub _split_options {
         priority
         timeformat
         remove_on_reload
+        category
     );
 
     foreach my $key (keys %$opts) {
@@ -1843,6 +1874,10 @@ sub _validate_options {
         remove_on_reload => {
             type => Params::Validate::SCALAR,
             default => 1,
+        },
+        category => {
+            type => Params::Validate::SCALAR,
+            optional => 1,
         },
     });
 

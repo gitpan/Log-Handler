@@ -11,10 +11,7 @@ Log::Handler->create_logger(qw/lhtest2 lhtest3/);
 
 ok(1, 'create logger');
 
-my @logger;
-push @logger, Log::Handler->get_logger('lhtest1');
-push @logger, Log::Handler->get_logger('lhtest2');
-push @logger, Log::Handler->get_logger('lhtest3');
+my @logger = Log::Handler->get_logger(qw/lhtest1 lhtest2 lhtest3/);
 
 ok(@logger == 3, 'get logger ('.@logger.')');
 
