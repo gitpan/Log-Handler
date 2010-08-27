@@ -1,3 +1,7 @@
+0.65_03 Released at 2010-08-27.
+        - Added option filter (unused since 2008-07-25).
+        - Added method filter().
+
 0.65_02 Released at 2010-08-16.
         - Rollbacked to 0.65 :-)
         - Fixed some spelling error in POD (RT #60005).

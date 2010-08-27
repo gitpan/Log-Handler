@@ -80,16 +80,6 @@ want to know who called C<die()>.
 
     $SIG{__DIE__} = sub { $log->trace(emergency => @_) };
 
-By default the backtrace is logged as level C<debug>.
-
-    # would log with the level debug
-    $log->trace('who called who');
-
-If you want to log with another level then you can pass the level
-as first argument:
-
-    $log->trace(info => $message);
-
 =item B<dump()>
 
 If you want to dump something then you can use C<dump()>.
@@ -97,22 +87,12 @@ The default level is C<debug>.
 
     my %hash = (foo => 1, bar => 2);
 
-    $log->dump(\%hash);
-
-If you want to log with another level then you can pass the level
-as first argument:
-
     $log->dump($level => \%hash);
 
 =item B<die()>
 
 This method logs the message to the output and then call C<Carp::croak()>
 with the level C<emergency> by default.
-
-    $log->die('an emergency error here');
-
-If you want to log with another level, then you can pass the level
-as first argument:
 
     $log->die(fatal => 'an emergency error here');
 
@@ -123,15 +103,16 @@ first argument:
 
     $log->log(info => 'an info message');
 
-Is the same like
+=item B<tagged()>
 
-    $log->info('an info message');
+With this method it's possible to add some tags to a message:
 
-and
-
-    $log->log('an info message');
-
-If you log without a level then the default level is C<info>.
+    $log->tagged(
+        level    => "debug",
+        message  => "log this message",
+        karma    => 42,
+        tags     => "security,foo",
+    );
 
 =back
 
@@ -170,7 +151,7 @@ use warnings;
 use Carp;
 use Data::Dumper;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 my %LEVELS_BY_ROUTINE = (
     debug     => 'DEBUG',
@@ -233,6 +214,23 @@ foreach my $routine (keys %LEVELS_BY_ROUTINE) {
         };
 
     } # end "no strict 'refs'" block
+}
+
+sub tagged {
+    my $self  = shift;
+    my $tags  = ref($_[0]) eq "HASH" ? shift : {@_};
+    my $level = $tags->{level};
+
+    if (!defined $level) {
+        $level = $tags->{level} = "info";
+    }
+
+    if (!exists $LEVELS_BY_ROUTINE{$level}) {
+        $level = $tags->{level} = "info";
+    }
+
+    local $Log::Handler::CALLER_LEVEL = 1;
+    return $self->$level($tags);
 }
 
 sub log {

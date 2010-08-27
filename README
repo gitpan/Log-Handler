@@ -487,6 +487,11 @@ METHODS
         Take a look to the decription of the method "reload" for more
         information about this option.
 
+    filter
+        This option is processed with method "filter()".
+
+        See "filter()" for more information.
+
     filter_message
         With this option it's possible to set a filter. If the filter is set
         then only messages will be logged that match the filter. You can
@@ -692,6 +697,72 @@ METHODS
     debug_skip
         This option let skip the "caller()" information the count of
         "debug_skip".
+
+  filter()
+    The method "filter()" is used to set a object or a simple code reference
+    to filter messages by your own criterias.
+
+    If you set a code reference then 2 arguments are passed to the code. At
+    first argument the value of option "filter" is passed and then the
+    message as a hash reference:
+
+        $log->filter(
+            sub {
+                my ($filter, $message) = @_;
+                # processing ...
+                return "true if you want to log the message";
+            }
+        );
+
+    It's also possible that you create your own module and pass the object
+    reference to "filter()". Note that your own module must provide 2
+    methods called filter and validate. The method "validate" is called if
+    you add a new output object and the method "filter" is called if you
+    want to log a message. Let me show you how it works by a complete code
+    example:
+
+        package MyFilter;
+        use strict;
+        use warnings;
+
+        sub filter {
+            my ($self, $tags, $message) = @_;
+            # tags    = the configured tags: "security=foo; karma=500"
+            # message = the message as a hash reference
+            return "true if you want to log the message";
+        }
+
+        sub validate {
+            my ($self, $tags) = @_;
+            # $tags is a scalar reference
+        }
+
+        package main;
+        use strict;
+        use warnings;
+        use Log::Handler;
+
+        my $log = Log::Handler->new();
+
+        $log->filter(bless { }, "MyFilter");
+
+        $log->add(
+            file => {
+                filename => "myapp.log",
+                maxlevel => "info",
+                minlevel => "emerg",
+                # option filter is validated by MyFilter::validate()
+                filter   => "security=foo; karma=500",
+            }
+        );
+
+        # the messages is passed to MyFilter::filter()
+        $log->tagged(
+            level    => "info",
+            message  => "security message",
+            security => "foo",
+            karma    => 1000,
+        );
 
   output()
     Call "output($alias)" to get the output object that you added with the

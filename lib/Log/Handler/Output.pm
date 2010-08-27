@@ -43,7 +43,7 @@ use warnings;
 use Carp;
 use UNIVERSAL;
 
-our $VERSION = "0.09";
+our $VERSION = "0.10";
 our $ERRSTR  = "";
 
 sub new {
@@ -82,35 +82,43 @@ sub log {
     }
 
     my $output  = $self->{output};
-    my $message = { };
-    my $wanted  = { message => join(" ", grep defined, @_) };
+    my $message = ();
+
+    if (ref($_[0]) eq "HASH") {
+        $message = shift;
+
+        if (ref($message->{message}) eq "ARRAY") {
+            $message->{message} = join(" ", grep defined, @{$message->{message}});
+        } elsif (!defined $message->{message}) {
+            $message->{message} = defined;
+        }
+    } else {
+        $message = { message => join(" ", grep defined, @_) };
+    }
+
+    if ($self->{filter_output}) {
+        if (ref($self->{filter_output}) eq "CODE") {
+            &{$self->{filter_output}}($self->{filter}, $message)
+                or return 1;
+        } else {
+            $self->{filter_output}->filter($self->{filter}, $message)
+                or return 1;
+        }
+    }
 
     # The patterns must be generated for each output. The reason
     # is that each output can have their own time/date format
     # and the code which is executed can return another value.
     foreach my $r (@{$self->{wanted_pattern}}) {
         if (ref($r->{code})) {
-            $wanted->{$r->{name}} = &{$r->{code}}($self, $level);
+            $message->{$r->{name}} = &{$r->{code}}($self, $level);
         } else {
-            $wanted->{$r->{name}} = $r->{code};
+            $message->{$r->{name}} = $r->{code};
         }
-    }
-
-    if ($self->{message_pattern}) {
-        &{$self->{message_pattern_code}}($wanted, $message);
     }
 
     if ($self->{message_layout}) {
-        &{$self->{message_layout_code}}($wanted, $message);
-    } else {
-        $message->{message} = $wanted->{message};
-    }
-
-    if ($self->{message_pattern}) {
-        if ($message->{message}) {
-            $wanted->{message} = $message->{message};
-        }
-        &{$self->{message_pattern_code}}($wanted, $message);
+        &{$self->{message_layout_code}}($message);
     }
 
     if ($self->{debug_trace} || $Log::Handler::TRACE) {

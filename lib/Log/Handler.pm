@@ -530,6 +530,12 @@ This option is set to 1 by default.
 Take a look to the decription of the method C<reload> for more
 information about this option.
 
+=item B<filter>
+
+This option is processed with method C<filter()>.
+
+See C<filter()> for more information.
+
 =item B<filter_message>
 
 With this option it's possible to set a filter. If the filter is set then
@@ -738,6 +744,73 @@ Output:
 This option let skip the C<caller()> information the count of C<debug_skip>.
 
 =back
+
+=head2 filter()
+
+The method C<filter()> is used to set a object or a simple code reference
+to filter messages by your own criterias.
+
+If you set a code reference then 2 arguments are passed to the code.
+At first argument the value of option "filter" is passed and then
+the message as a hash reference:
+
+    $log->filter(
+        sub {
+            my ($filter, $message) = @_;
+            # processing ...
+            return "true if you want to log the message";
+        }
+    );
+
+It's also possible that you create your own module and pass the
+object reference to C<filter()>. Note that your own module must
+provide 2 methods called filter and validate. The method C<validate>
+is called if you add a new output object and the method C<filter>
+is called if you want to log a message. Let me show you how it
+works by a complete code example:
+
+    package MyFilter;
+    use strict;
+    use warnings;
+
+    sub filter {
+        my ($self, $tags, $message) = @_;
+        # tags    = the configured tags: "security=foo; karma=500"
+        # message = the message as a hash reference
+        return "true if you want to log the message";
+    }
+
+    sub validate {
+        my ($self, $tags) = @_;
+        # $tags is a scalar reference
+    }
+
+    package main;
+    use strict;
+    use warnings;
+    use Log::Handler;
+
+    my $log = Log::Handler->new();
+
+    $log->filter(bless { }, "MyFilter");
+
+    $log->add(
+        file => {
+            filename => "myapp.log",
+            maxlevel => "info",
+            minlevel => "emerg",
+            # option filter is validated by MyFilter::validate()
+            filter   => "security=foo; karma=500",
+        }
+    );
+
+    # the messages is passed to MyFilter::filter()
+    $log->tagged(
+        level    => "info",
+        message  => "security message",
+        security => "foo",
+        karma    => 1000,
+    );
 
 =head2 output()
 
@@ -1205,7 +1278,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.65_02";
+our $VERSION = "0.65_03";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1377,6 +1450,7 @@ sub add {
     # In the next step the handler options
     # must be validated.
     $h_opts = $self->_validate_options($h_opts);
+    $h_opts->{filter_output} = $self->{filter_output};
 
     # Create the new output-object.
     my $output = $self->_new_output($package, $h_opts, $o_opts);
@@ -1409,6 +1483,12 @@ sub config {
     }
 
     return 1;
+}
+
+sub filter {
+    my ($self, $filter) = @_;
+
+    $self->{filter_output} = $filter;
 }
 
 sub validate {
@@ -1786,9 +1866,9 @@ sub _validate_options {
     my %wanted  = ();
 
     # Option "filter" is deprecated.
-    if (exists $args[0]{filter}) {
-        $args[0]{filter_message} = delete $args[0]{filter};
-    }
+    #if (exists $args[0]{filter}) {
+    #    $args[0]{filter_message} = delete $args[0]{filter};
+    #}
 
     my %options = Params::Validate::validate(@args, {
         timeformat => {
@@ -1879,6 +1959,7 @@ sub _validate_options {
             type => Params::Validate::SCALAR,
             optional => 1,
         },
+        filter => 0,
     });
 
     if (!$options{alias}) {
@@ -1892,6 +1973,10 @@ sub _validate_options {
             $options{alias} = $rand;
             last;
         }
+    }
+
+    if ($self->{filter_output} && ref($self->{filter_output}) ne "CODE") {
+        $self->{filter_output}->validate(\$options{filter});
     }
 
     if ($options{filter_message}) {
@@ -1923,6 +2008,7 @@ sub _validate_options {
         if (!ref($options{message_pattern})) {
             $options{message_pattern} = [ split /\s+/, $options{message_pattern} ];
         }
+
         foreach my $p (@{$options{message_pattern}}) {
             if (!exists $pattern->{$p}) {
                 Carp::croak "undefined pattern '$p'";
@@ -1955,11 +2041,11 @@ sub _validate_options {
         #   sub {
         #       my ($w, $m) = @_; # %wanted pattern, %message
         #       $m->{"message"} =
-        #           $w->{"time"}
+        #           $m->{"time"}
         #           . " ["
-        #           . $w->{"level"}
+        #           . $m->{"level"}
         #           . "] "
-        #           . $w->{"message"}
+        #           . $m->{"message"}
         #       );
         #   }
 
@@ -1968,7 +2054,7 @@ sub _validate_options {
             if ( exists $pattern->{$p} ) {
                 $wanted{$p} = undef;
                 my $name = $pattern->{$p}->{name};
-                push @chunks, "\$w->{'$name'}";
+                push @chunks, "\$m->{'$name'}";
             } else {
                 # quote backslash and apostrophe
                 $p =~ s/\\/\\\\/g;
@@ -1978,7 +2064,7 @@ sub _validate_options {
         }
 
         if (@chunks) {
-            $func  = 'sub { my ($w, $m) = @_; $m->{message} = ';
+            $func  = 'sub { my $m = shift; $m->{message} = ';
             $func .= join(".", @chunks);
             $func .= " }";
         }
