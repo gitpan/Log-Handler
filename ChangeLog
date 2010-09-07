@@ -1,3 +1,7 @@
+0.65_04 Released at 2010-09-07.
+        - Fixed a bug with filter_output in Log::Handler
+          and Log::Handler::Output.
+
 0.65_03 Released at 2010-08-27.
         - Added option filter (unused since 2008-07-25).
         - Added method filter().

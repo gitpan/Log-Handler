@@ -17,7 +17,7 @@ This script shows you examples how you can filter messages.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2010 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.

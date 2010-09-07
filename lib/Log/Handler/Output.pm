@@ -29,7 +29,7 @@ Jonny Schulz <jschulz.cpan(at)bloonix.de>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2010 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -43,7 +43,7 @@ use warnings;
 use Carp;
 use UNIVERSAL;
 
-our $VERSION = "0.10";
+our $VERSION = "0.11";
 our $ERRSTR  = "";
 
 sub new {
@@ -96,16 +96,6 @@ sub log {
         $message = { message => join(" ", grep defined, @_) };
     }
 
-    if ($self->{filter_output}) {
-        if (ref($self->{filter_output}) eq "CODE") {
-            &{$self->{filter_output}}($self->{filter}, $message)
-                or return 1;
-        } else {
-            $self->{filter_output}->filter($self->{filter}, $message)
-                or return 1;
-        }
-    }
-
     # The patterns must be generated for each output. The reason
     # is that each output can have their own time/date format
     # and the code which is executed can return another value.
@@ -123,6 +113,16 @@ sub log {
 
     if ($self->{debug_trace} || $Log::Handler::TRACE) {
         $self->_add_trace($message);
+    }
+
+    if ($self->{filter_output}) {
+        if (ref($self->{filter_output}) eq "CODE") {
+            &{$self->{filter_output}}($self->{filter}, $message)
+                or return 1;
+        } else {
+            $self->{filter_output}->filter($self->{filter}, $message)
+                or return 1;
+        }
     }
 
     if ($self->{filter_message}) {

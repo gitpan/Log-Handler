@@ -538,9 +538,11 @@ See C<filter()> for more information.
 
 =item B<filter_message>
 
-With this option it's possible to set a filter. If the filter is set then
-only messages will be logged that match the filter. You can pass a regexp,
-a code reference or a simple string. Example:
+With this option it's possible to set a message filter. If the filter
+is set then only messages will be logged that match the filter.
+You can pass a regexp, a code reference or a simple string.
+
+Example:
 
     $log->add(file => {
         filename => "file.log",
@@ -750,6 +752,9 @@ This option let skip the C<caller()> information the count of C<debug_skip>.
 The method C<filter()> is used to set a object or a simple code reference
 to filter messages by your own criterias.
 
+Note: You should call C<filter()> after you create the logger with C<new()>
+because each output object will inherits the filter.
+
 If you set a code reference then 2 arguments are passed to the code.
 At first argument the value of option "filter" is passed and then
 the message as a hash reference:
@@ -765,9 +770,11 @@ the message as a hash reference:
 It's also possible that you create your own module and pass the
 object reference to C<filter()>. Note that your own module must
 provide 2 methods called filter and validate. The method C<validate>
-is called if you add a new output object and the method C<filter>
-is called if you want to log a message. Let me show you how it
-works by a complete code example:
+is called if you add a new output object and must return the
+validated data. The method C<filter> is called if you want to
+log a message.
+
+Let me show you how it works by a complete code example:
 
     package MyFilter;
     use strict;
@@ -775,14 +782,23 @@ works by a complete code example:
 
     sub filter {
         my ($self, $tags, $message) = @_;
-        # tags    = the configured tags: "security=foo; karma=500"
-        # message = the message as a hash reference
+        # tags - the validated tags: { security => "foo", karma => 500 }
+        # message - the message as a hash reference
         return "true if you want to log the message";
     }
 
     sub validate {
         my ($self, $tags) = @_;
-        # $tags is a scalar reference
+        # $tags is that what you set with option filter
+
+        my %filter;
+        foreach my $pair (split /\s*;\s*/, $tags) {
+            my ($key, $value) = split /\s*=\s*/, $pair;
+            $filter{$key} = $value;
+        }
+
+        # Return the validated filter!!!
+        return \%filter;
     }
 
     package main;
@@ -1259,7 +1275,7 @@ If you send me a mail then add Log::Handler into the subject.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2010 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -1278,7 +1294,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.65_03";
+our $VERSION = "0.65_04";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1975,8 +1991,12 @@ sub _validate_options {
         }
     }
 
-    if ($self->{filter_output} && ref($self->{filter_output}) ne "CODE") {
-        $self->{filter_output}->validate(\$options{filter});
+    if ($self->{filter_output}) {
+        my $ref = ref($self->{filter_output});
+
+        if ($ref !~ /^(?:CODE|ARRAY|HASH)\z/) {
+            $options{filter} = $self->{filter_output}->validate($options{filter});
+        }
     }
 
     if ($options{filter_message}) {
