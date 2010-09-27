@@ -1,21 +1,18 @@
 use strict;
 use warnings;
-use Test::More tests => 10;
+use Test::More tests => 8;
 use Log::Handler lhtest1 => 'LOG';
 
 my $COUNT = 0;
 
 ok(1, 'use');
 
-Log::Handler->create_logger(qw/lhtest2 lhtest3/);
+foreach my $logger (qw/lhtest2 lhtest3/) {
+    Log::Handler->create_logger($logger);
+    ok(1, 'create logger');
 
-ok(1, 'create logger');
+    my $log = Log::Handler->get_logger($logger);
 
-my @logger = Log::Handler->get_logger(qw/lhtest1 lhtest2 lhtest3/);
-
-ok(@logger == 3, 'get logger ('.@logger.')');
-
-foreach my $log (@logger) {
     $log->add(forward => {
         forward_to => sub { $COUNT++ },
         maxlevel   => 'info',
@@ -27,5 +24,5 @@ foreach my $log (@logger) {
     ok(1, 'log');
 }
 
-ok($COUNT == 3, "check counter ($COUNT)");
+ok($COUNT == 2, "check counter ($COUNT)");
 

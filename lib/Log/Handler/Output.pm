@@ -29,7 +29,7 @@ Jonny Schulz <jschulz.cpan(at)bloonix.de>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007-2010 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -43,7 +43,7 @@ use warnings;
 use Carp;
 use UNIVERSAL;
 
-our $VERSION = "0.11";
+our $VERSION = "0.08";
 our $ERRSTR  = "";
 
 sub new {
@@ -57,72 +57,48 @@ sub log {
     my $self  = shift;
     my $level = shift;
 
-    if ($self->{category}) {
-        my $caller = (caller(1+$Log::Handler::CALLER_LEVEL))[0];
-
-        if ($caller !~ /^$self->{category}:*/) {
-            return 1;
-        }
-    }
-
     if ($self->{filter_caller}) {
         my $caller = (caller(1+$Log::Handler::CALLER_LEVEL))[0];
-
-        if ($caller !~ $self->{filter_caller}) {
-            return 1;
-        }
-    }
-
-    if ($self->{except_caller}) {
+        return 1 if $caller !~ $self->{filter_caller};
+    } elsif ($self->{except_caller}) {
         my $caller = (caller(1+$Log::Handler::CALLER_LEVEL))[0];
-
-        if ($caller =~ $self->{except_caller}) {
-            return 1;
-        }
+        return 1 if $caller =~ $self->{except_caller};
     }
 
     my $output  = $self->{output};
-    my $message = ();
-
-    if (ref($_[0]) eq "HASH") {
-        $message = shift;
-
-        if (ref($message->{message}) eq "ARRAY") {
-            $message->{message} = join(" ", grep defined, @{$message->{message}});
-        } elsif (!defined $message->{message}) {
-            $message->{message} = defined;
-        }
-    } else {
-        $message = { message => join(" ", grep defined, @_) };
-    }
+    my $message = { };
+    my $wanted  = { message => join(" ", grep defined, @_) };
 
     # The patterns must be generated for each output. The reason
     # is that each output can have their own time/date format
     # and the code which is executed can return another value.
     foreach my $r (@{$self->{wanted_pattern}}) {
         if (ref($r->{code})) {
-            $message->{$r->{name}} = &{$r->{code}}($self, $level);
+            $wanted->{$r->{name}} = &{$r->{code}}($self, $level);
         } else {
-            $message->{$r->{name}} = $r->{code};
+            $wanted->{$r->{name}} = $r->{code};
         }
     }
 
+    if ($self->{message_pattern}) {
+        &{$self->{message_pattern_code}}($wanted, $message);
+    }
+
     if ($self->{message_layout}) {
-        &{$self->{message_layout_code}}($message);
+        &{$self->{message_layout_code}}($wanted, $message);
+    } else {
+        $message->{message} = $wanted->{message};
+    }
+
+    if ($self->{message_pattern}) {
+        if ($message->{message}) {
+            $wanted->{message} = $message->{message};
+        }
+        &{$self->{message_pattern_code}}($wanted, $message);
     }
 
     if ($self->{debug_trace} || $Log::Handler::TRACE) {
         $self->_add_trace($message);
-    }
-
-    if ($self->{filter_output}) {
-        if (ref($self->{filter_output}) eq "CODE") {
-            &{$self->{filter_output}}($self->{filter}, $message)
-                or return 1;
-        } else {
-            $self->{filter_output}->filter($self->{filter}, $message)
-                or return 1;
-        }
     }
 
     if ($self->{filter_message}) {

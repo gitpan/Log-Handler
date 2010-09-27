@@ -11,8 +11,8 @@ examples/filter/filter_message.pl
 examples/layout/layout.pl
 examples/layout/pattern.pl
 examples/layout/runtime.pl
-examples/logger/logger.conf
-examples/logger/main.pl
+examples/logger/myapp.pl
+examples/logger/MyApp.pm
 examples/prepare/prepare.pl
 examples/reload/logger1.conf
 examples/reload/logger2.conf
@@ -52,7 +52,6 @@ t/013-handler-priority.t
 t/014-handler-reload.t
 t/015-handler-filter-caller.t
 t/015-handler-filter-message.t
-t/015-handler-filter.t
 t/016-handler-alias.t
 t/017-handler-special-levels.t
 t/018-handler-logger.t

@@ -195,7 +195,7 @@ Jonny Schulz <jschulz.cpan(at)bloonix.de>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007-2010 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -211,7 +211,7 @@ use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
 use File::Spec;
 use Params::Validate qw();
 
-our $VERSION = "0.07";
+our $VERSION = "0.06";
 our $ERRSTR  = "";
 
 sub new {

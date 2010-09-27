@@ -11,49 +11,25 @@ Quite simple
     my $log = Log::Handler->new();
     $log->add( screen => \%options );
 
-Create application logger with C<create_logger()>.
+Create a application wide logger
 
+    my $log = Log::Handler->create_logger("myapp");
+    $log->add( screen => \%options );
+
+Once created you can use the application logger in all
+modules of your project:
+
+    package MyApp;
     use Log::Handler;
 
     my $log = Log::Handler->create_logger("myapp");
     $log->add( screen => \%options );
 
-Get a application logger you've created with C<create_logger()>.
-
+    package MyApp::Admin;
     use Log::Handler;
 
     my $log = Log::Handler->get_logger("myapp");
-    $log->add( screen => \%options );
-
-Create a application logger with accessor LOG.
-
-    use Log::Handler myapp => "LOG";
-
-    LOG->add( screen => \%options );
-
-Once created you can import a application logger into all
-modules of your project:
-
-    package MyApp;
-    use Log::Handler myapp => "LOG";
-    LOG->add( screen => \%options );
-
-    package MyApp::Foo;
-    # Import it with an accessor
-    use Log::Handler myapp => "LOG";
-
-    sub func {
-        LOG->info("message");
-    }
-
-    package MyApp::Bar;
-    use Log::Handler;
-    # Import it with get_logger()
-
-    sub func {
-        my $log = Log::Handler->get_logger("myapp");
-        $log->info("message");
-    }
+    $log->info("message");
 
 =head1 ADD OUTPUTS
 

@@ -186,19 +186,6 @@ You can pass your own arguments - and overwrite it - with
 
     dbi_params => { PrintError => 1, AutoCommit => 0 }
 
-=item B<use_ping>
-
-By default a short statement is executed to check if the connection
-is alive because ping() doesn't work with all DBD properly.
-
-    select 1
-
-or for oracle
-
-    select 1 from dual
-
-If you want to use the ping() function instead set C<use_ping> to 1.
-
 =item B<debug>
 
 With this option it's possible to enable debugging. The information can be
@@ -272,7 +259,7 @@ Jonny Schulz <jschulz.cpan(at)bloonix.de>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007-2010 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -287,7 +274,7 @@ use DBI;
 use Carp;
 use Params::Validate qw();
 
-our $VERSION = "0.11";
+our $VERSION = "0.10";
 our $ERRSTR  = "";
 
 sub new {

@@ -6,7 +6,7 @@ Jonny Schulz <jschulz.cpan(at)bloonix.de>
 
 =head1 DESCRIPTION
 
-This script shows you examples how you can filter messages.
+This script shows you example how you can use C<get_logger()>.
 
 =head1 POWERED BY
 
@@ -26,18 +26,17 @@ modify it under the same terms as Perl itself.
 
 use strict;
 use warnings;
-use Log::Handler;
+use Log::Handler myapp => 'LOG';
+use lib '.';
+use MyApp;
 
-my $log = Log::Handler->new();
+LOG->add(screen => {
+    newline  => 1,
+    maxlevel => 'info',
+    message_layout => '%L - %m',
+});
 
-$log->add(
-    screen => {
-        maxlevel => 'info',
-        newline  => 1,
-        filter_message => 'log this',
-    }
-);
+LOG->info('message from main');
 
-$log->info('log this');
-$log->info('not that');
-
+MyApp->foo();
+MyApp->bar();

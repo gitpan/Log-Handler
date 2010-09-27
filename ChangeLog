@@ -1,3 +1,10 @@
+0.66    Released at 2010-09-27.
+        - Roled back again to 0.65 for different reasons.
+        - Fixed some spelling error in POD (RT #60005).
+        - It's not possible any more to create or get
+          more than one logger with get_logger() and
+          create_logger().
+
 0.65_04 Released at 2010-09-07.
         - Fixed a bug with filter_output in Log::Handler
           and Log::Handler::Output.

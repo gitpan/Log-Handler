@@ -166,7 +166,7 @@ Jonny Schulz <jschulz.cpan(at)bloonix.de>.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007-2010 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -182,7 +182,7 @@ use Email::Date;
 use Net::SMTP;
 use Params::Validate qw();
 
-our $VERSION = "0.09";
+our $VERSION = "0.08";
 our $ERRSTR  = "";
 our $TEST    =  0; # is needed to disable flush() for tests
 

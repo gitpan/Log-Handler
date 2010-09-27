@@ -47,36 +47,26 @@ Or
 
     my $log = Log::Handler->new();
 
-    $log->config( "logger.conf" );
+    $log->config( config => "logger.conf" );
 
     # and maybe later
 
-    $log->reload( "logger.conf" );
+    $log->reload( config => "logger.conf" );
 
 Or
 
-    # init myapp logger
+    # create a application wide logger
     package MyApp;
     use Log::Handler;
-
     my $log = Log::Handler->create_logger("myapp");
     $log->add(screen => { maxlevel => "info" });
     $log->info("info message");
 
-    # import myapp logger into MyApp::Foo
-    package MyApp::Foo;
+    # get logger with get_logger()
+    package MyApp::Admin;
     use Log::Handler;
-
     my $log = Log::Handler->get_logger("myapp");
-    $log->info("info message from MyApp::Foo");
-
-    # import myapp logger with accessor LOG
-    package MyApp::Bar;
-    use Log::Handler myapp => "LOG";
-
-    sub func {
-        LOG->info("info message from MyApp::Bar");
-    }
+    $log->info("info message from MyApp::Admin");
 
 =head1 DESCRIPTION
 
@@ -530,19 +520,11 @@ This option is set to 1 by default.
 Take a look to the decription of the method C<reload> for more
 information about this option.
 
-=item B<filter>
-
-This option is processed with method C<filter()>.
-
-See C<filter()> for more information.
-
 =item B<filter_message>
 
-With this option it's possible to set a message filter. If the filter
-is set then only messages will be logged that match the filter.
-You can pass a regexp, a code reference or a simple string.
-
-Example:
+With this option it's possible to set a filter. If the filter is set then
+only messages will be logged that match the filter. You can pass a regexp,
+a code reference or a simple string. Example:
 
     $log->add(file => {
         filename => "file.log",
@@ -593,7 +575,7 @@ would cause an error!
 =item B<filter_caller>
 
 You can use this option to set a package name. Only messages from this
-package will be logged.
+packages will be logged.
 
 Example:
 
@@ -603,7 +585,7 @@ Example:
         maxlevel => "info",
         filter_caller  => qr/^Foo::Bar\z/,
         # or
-        # filter_caller => '^Foo::Bar\z',
+        # filter_caller => "^Foo::Bar\z",
     });
 
     package Foo::Bar;
@@ -623,25 +605,6 @@ This option is just the opposite of C<filter_caller>.
 If you want to log messages from all callers but C<Foo::Bar>:
 
     except_caller => qr/^Foo::Bar\z/
-
-=item B<category>
-
-This option works like C<filter_caller> but you don't need to pass a regex.
-
-    my $log = Log::Handler->new();
-
-    $log->add(
-        screen => {
-            category => "Foo::Bar",
-            maxlevel => "info",
-        }
-    );
-
-    package Foo::Bar;
-    $log->info("log this");
-
-    package Foo::Baz;
-    $log->info("but not that");
 
 =item B<alias>
 
@@ -747,87 +710,6 @@ This option let skip the C<caller()> information the count of C<debug_skip>.
 
 =back
 
-=head2 filter()
-
-The method C<filter()> is used to set a object or a simple code reference
-to filter messages by your own criterias.
-
-Note: You should call C<filter()> after you create the logger with C<new()>
-because each output object will inherits the filter.
-
-If you set a code reference then 2 arguments are passed to the code.
-At first argument the value of option "filter" is passed and then
-the message as a hash reference:
-
-    $log->filter(
-        sub {
-            my ($filter, $message) = @_;
-            # processing ...
-            return "true if you want to log the message";
-        }
-    );
-
-It's also possible that you create your own module and pass the
-object reference to C<filter()>. Note that your own module must
-provide 2 methods called filter and validate. The method C<validate>
-is called if you add a new output object and must return the
-validated data. The method C<filter> is called if you want to
-log a message.
-
-Let me show you how it works by a complete code example:
-
-    package MyFilter;
-    use strict;
-    use warnings;
-
-    sub filter {
-        my ($self, $tags, $message) = @_;
-        # tags - the validated tags: { security => "foo", karma => 500 }
-        # message - the message as a hash reference
-        return "true if you want to log the message";
-    }
-
-    sub validate {
-        my ($self, $tags) = @_;
-        # $tags is that what you set with option filter
-
-        my %filter;
-        foreach my $pair (split /\s*;\s*/, $tags) {
-            my ($key, $value) = split /\s*=\s*/, $pair;
-            $filter{$key} = $value;
-        }
-
-        # Return the validated filter!!!
-        return \%filter;
-    }
-
-    package main;
-    use strict;
-    use warnings;
-    use Log::Handler;
-
-    my $log = Log::Handler->new();
-
-    $log->filter(bless { }, "MyFilter");
-
-    $log->add(
-        file => {
-            filename => "myapp.log",
-            maxlevel => "info",
-            minlevel => "emerg",
-            # option filter is validated by MyFilter::validate()
-            filter   => "security=foo; karma=500",
-        }
-    );
-
-    # the messages is passed to MyFilter::filter()
-    $log->tagged(
-        level    => "info",
-        message  => "security message",
-        security => "foo",
-        karma    => 1000,
-    );
-
 =head2 output()
 
 Call C<output($alias)> to get the output object that you added with
@@ -888,10 +770,6 @@ With this method it's possible to load your output configuration from a file.
 
     $log->config(config => "file.conf");
 
-Or just
-
-    $log->config("file.conf");
-
 Or
 
     $log->config(config => {
@@ -919,9 +797,8 @@ Or
         },
     });
 
-Or just
-
-    $log->config(\%config);
+The key S<"default"> is used here to define default parameters for all file
+outputs. All other keys (C<error_log>, C<common_log>) are used as aliases.
 
 Take a look into the documentation of L<Log::Handler::Config> for more
 information.
@@ -957,7 +834,7 @@ logger.conf
 
 Load the configuration
 
-    $log->config("logger.conf");
+    $log->config(config => "logger.conf");
 
 Now change the configuration in logger.conf
 
@@ -987,7 +864,7 @@ option C<remove_on_reload> to 0.
 
 Example:
 
-    $log->config("logger.conf");
+    $log->config(config => "logger.conf");
 
     $log->add(
         forward => {
@@ -1009,12 +886,12 @@ Example:
 
     my $log = Log::Handler->new();
 
-    $log->config( \%config );
+    $log->config( config => \%config );
 
     # and maybe later
 
-    if ( $log->validate( \%new_config ) ) {
-        $log->reload( \%new_config );
+    if ( $log->validate( config => \%new_config ) ) {
+        $log->reload( config => \%new_config );
     } else {
         warn "unable to reload configuration";
         warn $log->errstr;
@@ -1071,136 +948,16 @@ logger.
 
     my $log = Log::Handler->create_logger("myapp");
 
-If you want to create more than one object you can call
-
-    my @logger = Log::Handler->create_logger("myapp1", "myapp2", ...);
-
 =head2 get_logger()
 
 With C<get_logger()> it's possible to get a logger that was created
-with C<create_logger()>.
+with C<create_logger()> or with
 
-    Log::Handler->create_logger("myapp");
+    use Log::Handler "myapp";
 
 Just call
 
     my $log = Log::Handler->get_logger("myapp");
-
-to get the logger.
-
-=head1 CATEGORY LOGGER
-
-Some people asks me to implement a feature of category logger.
-At this point I want to explain how this feature works with Log::Handler.
-
-The philosophy of C<Log::Handler> is to create only one main logger
-object for your complete project and to include the logger it into all
-namespaces where you want to use it. The logic to split messages to 
-different output-objects is done internal. For this reason you should
-create only one logger with C<create_logger()>:
-
-    package main;
-    use Log::Handler;
-    Log::Handler->create_logger("My project");
-
-Once created you can use the logger within your complete project:
-
-    package Foo;
-    use Log::Handler;
-    my $log = Log::Handler->get_logger("My project");
-
-    package Foo::Bar;
-    use Log::Handler;
-    my $log = Log::Handler->get_logger("My project");
-
-You NEVER need to call
-
-    my $log = Log::Handler->get_logger("Foo");
-    # or
-    my $log = Log::Handler->get_logger("Foo::Bar");
-
-because there exists only your project logger called "My project" - or whatever.
-
-Now, if you want to split messages to different screen or log files
-you can use the option C<filter_caller> or C<category>. Both options
-does the same with the small difference that C<category> sounds better
-and you don't need to pass a regex.
-
-Let me show you how you can use this option:
-
-    package Foo;
-
-    sub func {
-        my $log = Log::Handler->get_logger("My project");
-        $log->info("message from Foo");
-    }
-
-    package Foo::Bar;
-
-    sub func {
-        my $log = Log::Handler->get_logger("My project");
-        $log->info("message from Foo::Bar");
-    }
-
-    package Foo::Bar::Baz;
-
-    sub func {
-        my $log = Log::Handler->get_logger("My project");
-        $log->info("message from Foo::Bar::Baz");
-    }
-
-    package main;
-    use Log::Handler;
-
-    my $log = Log::Handler->create_logger("My project");
-    $log->config("logger.conf");
-
-    Foo->func;
-    Foo::Bar->func;
-    Foo::Bar::Baz->func;
-
-The configuration file (logger.conf):
-
-    <screen>
-        alias    = screen1
-        category = Foo
-        maxlevel = info
-        minlevel = emerg
-    </screen>
-
-    <screen>
-        alias    = screen2
-        category = Foo::Bar
-        maxlevel = info
-        minlevel = emerg
-    </screen>
-
-    <screen>
-        alias    = screen3
-        category = Foo::Bar::Baz
-        maxlevel = info
-        minlevel = emerg
-    </screen>
-
-The output looks like
-
-    Aug 16 23:51:54 [INFO] message from Foo
-    Aug 16 23:51:54 [INFO] message from Foo::Bar
-    Aug 16 23:51:54 [INFO] message from Foo::Bar
-    Aug 16 23:51:54 [INFO] message from Foo::Bar::Baz
-    Aug 16 23:51:54 [INFO] message from Foo::Bar::Baz
-    Aug 16 23:51:54 [INFO] message from Foo::Bar::Baz
-
-As you can see there is something like inheritance - in fact it's just
-a regex internal that checks the caller. :-)
-
-On this way it's possible for you to configure exactly from which
-caller do you want to see messages and where do you want to log
-those messages. It the option C<category> doesn't meet your claim
-you can try option C<filter_caller> and C<except_caller>.
-
-See into the directory examples/logger within the source package
-of Log::Handler for a code example.
 
 =head1 EXAMPLES
 
@@ -1275,7 +1032,7 @@ If you send me a mail then add Log::Handler into the subject.
 
 =head1 COPYRIGHT
 
-Copyright (C) 2007-2010 by Jonny Schulz. All rights reserved.
+Copyright (C) 2007-2009 by Jonny Schulz. All rights reserved.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
@@ -1294,7 +1051,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.65_04";
+our $VERSION = "0.66";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1372,7 +1129,6 @@ our %AVAILABLE_OUTPUTS = (
 
 # use Log::Handler foo => "LOGFOO", bar => "LOGBAR";
 # use Log::Handler qw/foo LOGFOO bar LOGBAR/;
-# UNSUPPORTET
 sub import {
     return unless @_ > 1;
     my $class  = shift;
@@ -1396,27 +1152,25 @@ sub import {
 }
 
 sub get_logger {
-    @_ > 1 || croak 'Usage: Log::Handler->get_logger($app)';
-    my $class = shift;
+    @_ == 2 || croak 'Usage: Log::Handler->get_logger($app)';
+    my ($class, $logger) = @_;
 
-    foreach my $logger (@_) {
-        if (!exists $LOGGER{$logger}) {
-            croak "logger '$logger' does not exists";
-        }
+    if (!exists $LOGGER{$logger}) {
+        croak "logger '$logger' does not exists";
     }
 
-    return @LOGGER{@_};
+    return $LOGGER{$logger};
 }
 
 sub create_logger {
-    @_ > 1 || croak 'Usage: Log::Handler->create_logger($app)';
-    my $class = shift;
+    @_ == 2 || croak 'Usage: Log::Handler->create_logger($app)';
+    my ($class, $logger) = @_;
 
-    foreach my $logger (@_) {
+    if (!exists $LOGGER{$logger}) {
         $LOGGER{$logger} = __PACKAGE__->new();
     }
 
-    return @LOGGER{@_};
+    return $LOGGER{$logger};
 }
 
 sub new {
@@ -1466,7 +1220,6 @@ sub add {
     # In the next step the handler options
     # must be validated.
     $h_opts = $self->_validate_options($h_opts);
-    $h_opts->{filter_output} = $self->{filter_output};
 
     # Create the new output-object.
     my $output = $self->_new_output($package, $h_opts, $o_opts);
@@ -1480,13 +1233,7 @@ sub add {
 sub config {
     @_ > 1 or Carp::croak 'Usage: $log->config( %param )';
     my $self   = shift;
-    my $config = ();
-
-    if (@_ == 1) {
-        $config = Log::Handler::Config->config(config => shift);
-    } else {
-        $config = Log::Handler::Config->config(@_);
-    }
+    my $config = Log::Handler::Config->config(@_);
 
     # Structure:
     #   $config->{file} = [ output config ];
@@ -1501,25 +1248,13 @@ sub config {
     return 1;
 }
 
-sub filter {
-    my ($self, $filter) = @_;
-
-    $self->{filter_output} = $filter;
-}
-
 sub validate {
     my $self   = shift;
     my $class  = ref($self);
     my @v_opts = (); # validated options
 
     eval {
-        my $config = ();
-
-        if (@_ == 1) {
-            $config = Log::Handler::Config->config(config => shift);
-        } else {
-            $config = Log::Handler::Config->config(@_);
-        }
+        my $config = Log::Handler::Config->config(@_);
 
         foreach my $type (keys %$config) {
             foreach my $output_config (@{ $config->{$type} }) {
@@ -1816,7 +1551,6 @@ sub _split_options {
         priority
         timeformat
         remove_on_reload
-        category
     );
 
     foreach my $key (keys %$opts) {
@@ -1882,9 +1616,9 @@ sub _validate_options {
     my %wanted  = ();
 
     # Option "filter" is deprecated.
-    #if (exists $args[0]{filter}) {
-    #    $args[0]{filter_message} = delete $args[0]{filter};
-    #}
+    if (exists $args[0]{filter}) {
+        $args[0]{filter_message} = delete $args[0]{filter};
+    }
 
     my %options = Params::Validate::validate(@args, {
         timeformat => {
@@ -1971,11 +1705,6 @@ sub _validate_options {
             type => Params::Validate::SCALAR,
             default => 1,
         },
-        category => {
-            type => Params::Validate::SCALAR,
-            optional => 1,
-        },
-        filter => 0,
     });
 
     if (!$options{alias}) {
@@ -1988,14 +1717,6 @@ sub _validate_options {
 
             $options{alias} = $rand;
             last;
-        }
-    }
-
-    if ($self->{filter_output}) {
-        my $ref = ref($self->{filter_output});
-
-        if ($ref !~ /^(?:CODE|ARRAY|HASH)\z/) {
-            $options{filter} = $self->{filter_output}->validate($options{filter});
         }
     }
 
@@ -2028,7 +1749,6 @@ sub _validate_options {
         if (!ref($options{message_pattern})) {
             $options{message_pattern} = [ split /\s+/, $options{message_pattern} ];
         }
-
         foreach my $p (@{$options{message_pattern}}) {
             if (!exists $pattern->{$p}) {
                 Carp::croak "undefined pattern '$p'";
@@ -2061,11 +1781,11 @@ sub _validate_options {
         #   sub {
         #       my ($w, $m) = @_; # %wanted pattern, %message
         #       $m->{"message"} =
-        #           $m->{"time"}
+        #           $w->{"time"}
         #           . " ["
-        #           . $m->{"level"}
+        #           . $w->{"level"}
         #           . "] "
-        #           . $m->{"message"}
+        #           . $w->{"message"}
         #       );
         #   }
 
@@ -2074,7 +1794,7 @@ sub _validate_options {
             if ( exists $pattern->{$p} ) {
                 $wanted{$p} = undef;
                 my $name = $pattern->{$p}->{name};
-                push @chunks, "\$m->{'$name'}";
+                push @chunks, "\$w->{'$name'}";
             } else {
                 # quote backslash and apostrophe
                 $p =~ s/\\/\\\\/g;
@@ -2084,7 +1804,7 @@ sub _validate_options {
         }
 
         if (@chunks) {
-            $func  = 'sub { my $m = shift; $m->{message} = ';
+            $func  = 'sub { my ($w, $m) = @_; $m->{message} = ';
             $func .= join(".", @chunks);
             $func .= " }";
         }
