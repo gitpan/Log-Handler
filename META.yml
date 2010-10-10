@@ -1,6 +1,6 @@
 ---
 name: Log-Handler
-version: 0.66
+version: 0.67
 author:
   - Jonny Schulz
 abstract: Log messages to several outputs.
@@ -29,7 +29,7 @@ recommends:
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.66
+    version: 0.67
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
     version: 0.07

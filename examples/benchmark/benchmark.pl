@@ -29,26 +29,18 @@ use warnings;
 use Log::Handler;
 use Benchmark;
 
-my $BUFFER;
-sub buffer {
-    $BUFFER .= shift->{message};
-}
+sub buffer { }
+my $log1 = Log::Handler->new(); # simple pattern
+my $log2 = Log::Handler->new(); # default pattern & suppressed
+my $log3 = Log::Handler->new(); # complex pattern
+my $log4 = Log::Handler->new(); # message pattern
+my $log5 = Log::Handler->new(); # filtered caller
+my $log6 = Log::Handler->new(); # filtered message
+my $log7 = Log::Handler->new(); # categories
 
-my $log = Log::Handler->new();
-
-$log->add(
+$log1->add(
     forward => {
-        alias      => 'complex',
-        maxlevel   => 'info',
-        minlevel   => 'info',
-        forward_to => \&buffer,
-        message_layout => '%T [%L] %H(%P) %m (%C)%N',
-    }
-);
-
-$log->add(
-    forward => {
-        alias      => 'simple',
+        alias      => 'simple pattern',
         maxlevel   => 'notice',
         minlevel   => 'notice',
         newline    => 1,
@@ -57,9 +49,9 @@ $log->add(
     }
 );
 
-$log->add(
+$log2->add(
     forward => {
-        alias      => 'default & suppressed',
+        alias      => 'default pattern & suppressed',
         maxlevel   => 'warning',
         minlevel   => 'warning',
         newline    => 1,
@@ -67,7 +59,17 @@ $log->add(
     }
 );
 
-$log->add(
+$log3->add(
+    forward => {
+        alias      => 'complex pattern',
+        maxlevel   => 'info',
+        minlevel   => 'info',
+        forward_to => \&buffer,
+        message_layout => '%T [%L] %H(%P) %m (%C)%N',
+    }
+);
+
+$log4->add(
     forward => {
         alias      => 'message pattern',
         maxlevel   => 'error',
@@ -79,20 +81,42 @@ $log->add(
     }
 );
 
-$log->add(
+$log5->add(
     forward => {
-        alias      => 'filter caller',
+        alias      => 'filtered caller',
         maxlevel   => 'emerg',
         minlevel   => 'emerg',
         newline    => 1,
         forward_to => \&buffer,
-        filter_caller => qr/^Foo::Bar\z/,
+        filter_caller => qr/^Foo\z/,
     }
 );
 
-$log->add(
+$log5->add(
     forward => {
-        alias      => 'filter message',
+        alias      => 'filtered caller',
+        maxlevel   => 'emerg',
+        minlevel   => 'emerg',
+        newline    => 1,
+        forward_to => \&buffer,
+        filter_caller => qr/^Bar\z/,
+    }
+);
+
+$log5->add(
+    forward => {
+        alias      => 'filtered caller',
+        maxlevel   => 'emerg',
+        minlevel   => 'emerg',
+        newline    => 1,
+        forward_to => \&buffer,
+        filter_caller => qr/^Baz\z/,
+    }
+);
+
+$log6->add(
+    forward => {
+        alias      => 'filtered message',
         maxlevel   => 'alert',
         minlevel   => 'alert',
         newline    => 1,
@@ -101,31 +125,67 @@ $log->add(
     }
 );
 
+$log7->add(
+    forward => {
+        alias      => 'category',
+        maxlevel   => 'emerg',
+        minlevel   => 'emerg',
+        newline    => 1,
+        forward_to => \&buffer,
+        category   => "Foo",
+    }
+);
+
+$log7->add(
+    forward => {
+        alias      => 'category',
+        maxlevel   => 'emerg',
+        minlevel   => 'emerg',
+        newline    => 1,
+        forward_to => \&buffer,
+        category   => "Bar",
+    }
+);
+
+$log7->add(
+    forward => {
+        alias      => 'category',
+        maxlevel   => 'emerg',
+        minlevel   => 'emerg',
+        newline    => 1,
+        forward_to => \&buffer,
+        category   => "Baz",
+    }
+);
+
 my $count   = 100_000;
 my $message = 'foo bar baz';
 
-run("simple pattern output took",    $count, sub { $log->notice($message)  } );
-run("default pattern output took",   $count, sub { $log->warning($message) } );
-run("complex pattern output took",   $count, sub { $log->info($message)    } );
-run("message pattern output took",   $count, sub { $log->error($message)   } );
-run("suppressed output took",        $count, sub { $log->debug($message)   } );
-run("filtered caller output took",   $count, \&Foo::Bar::emerg               );
-run("suppressed caller output took", $count, \&Foo::Baz::emerg               );
-run("filtered messages output took", $count, sub { $log->alert($message)   } );
+run("simple pattern output took",    $count, sub { $log1->notice($message)  } );
+run("default pattern output took",   $count, sub { $log2->warning($message) } );
+run("complex pattern output took",   $count, sub { $log3->info($message)    } );
+run("message pattern output took",   $count, sub { $log4->error($message)   } );
+run("suppressed output took",        $count, sub { $log2->debug($message)   } );
+run("filtered caller output took",   $count, \&Foo::emerg                     );
+run("suppressed caller output took", $count, \&Foo::Bar::emerg                );
+run("filtered messages output took", $count, sub { $log6->alert($message)   } );
+run("category output took",          $count, \&Foo::Bar::Baz::emerg           );
 
 sub run {
     my ($desc, $count, $bench) = @_;
     my $time = timeit($count, $bench);
     print sprintf('%-30s', $desc), ' : ', timestr($time), "\n";
-    undef $BUFFER;
 }
 
 # Filter messages by caller
-package Foo::Bar;
-sub emerg { $log->emerg($message) }
+package Foo;
+sub emerg { $log5->emerg($message) }
 
 # Suppressed messages by caller
-package Foo::Baz;
-sub emerg { $log->emerg($message) }
+package Foo::Bar;
+sub emerg { $log5->emerg($message) }
+
+package Foo::Bar::Baz;
+sub emerg { $log7->emerg($message) }
 
 1;

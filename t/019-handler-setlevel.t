@@ -9,28 +9,74 @@ sub test {
     $MESSAGE++;
 }
 
-ok(1, 'use');
+ok(1, "use");
 
 my $log = Log::Handler->new();
 
 $log->add(
     forward => {
-        alias      => 'forward1',
+        alias      => "forward0",
         forward_to => \&test,
-        minlevel   => 'emerg',
-        maxlevel   => 'error',
+        minlevel   => "emerg",
+        maxlevel   => "error",
     }
 );
 
-$log->error();
+$log->add(
+    forward => {
+        alias      => "forward1",
+        forward_to => \&test,
+        minlevel   => "emerg",
+        maxlevel   => "error",
+    }
+);
+
+$log->add(
+    forward => {
+        alias      => "forward2",
+        forward_to => \&test,
+        minlevel   => "emerg",
+        maxlevel   => "error",
+    }
+);
+
+# should log nothing
+$log->notice();
 
 $log->set_level(
     forward1 => {
-        minlevel   => 'emerg',
-        maxlevel   => 'alert',
+        minlevel   => "emerg",
+        maxlevel   => "debug",
     }
 );
 
-$log->error();
+# should only forward1 should log
+$log->debug();
 
-ok($MESSAGE == 1, "check set_level($MESSAGE)");
+# disable logging for forward1 and
+# enable it for forward0 and forward2
+$log->set_level(
+    forward0 => {
+        minlevel   => "emerg",
+        maxlevel   => "debug",
+    }
+);
+
+$log->set_level(
+    forward1 => {
+        minlevel   => "emerg",
+        maxlevel   => "error",
+    }
+);
+
+$log->set_level(
+    forward2 => {
+        minlevel   => "emerg",
+        maxlevel   => "debug",
+    }
+);
+
+# should only log to forward0 and forward2
+$log->debug();
+
+ok($MESSAGE == 3, "check set_level($MESSAGE)");

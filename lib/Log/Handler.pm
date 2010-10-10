@@ -1051,7 +1051,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.66";
+our $VERSION = "0.67";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1421,6 +1421,7 @@ sub set_level {
         foreach my $level (keys %{$output->{levels}}) {
             if ($levels->{$level}) {
                 my @old_order = @{$levels->{$level}};
+                push @old_order, $output;
                 $levels->{$level} = [
                     map  { $_->[0] }
                     sort { $a->[1] <=> $b->[1] }

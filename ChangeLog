@@ -1,3 +1,8 @@
+0.67    Released at 2010-10-10.
+        - Fixed a bug in set_level. The new level was set correctly
+          but no message was logged because the output wasn't added
+          to the $self->{levels} array.
+
 0.66    Released at 2010-09-27.
         - Roled back again to 0.65 for different reasons.
         - Fixed some spelling error in POD (RT #60005).
