@@ -1051,7 +1051,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.67";
+our $VERSION = "0.68";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1197,25 +1197,29 @@ sub new {
 }
 
 sub add {
-    my $self = shift;
+    my ($self, @args) = @_;
 
-    if ($_[0] && $_[0] eq "config") {
-        return $self->config(@_);
+    if ($args[0] && $args[0] eq "config") {
+        return $self->config(@args);
     }
 
-    if (@_ > 2) {
-        while (@_) {
-            my $type = shift;
-            my $conf = shift;
+    if (@args > 2) {
+        if (@args % 2 != 0) {
+            Carp::croak 'Odd number of arguments to Log::Handler::add';
+        }
+        while (@args) {
+            my $type = shift @args;
+            my $conf = shift @args;
             $self->add($type, $conf);
         }
+        return 1;
     }
 
     # At first the config will be splitted into
     # the package name (Log::Handler::Output::*),
     # the options for the handler and the options
     # for the output-module.
-    my ($package, $h_opts, $o_opts) = $self->_split_config(@_);
+    my ($package, $h_opts, $o_opts) = $self->_split_config(@args);
 
     # In the next step the handler options
     # must be validated.

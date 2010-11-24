@@ -1,3 +1,7 @@
+0.68    Released at 2010-11-24.
+        - Fixed a bug in add(). It wasn't possible to pass more
+          than one output configuration to add().
+
 0.67    Released at 2010-10-10.
         - Fixed a bug in set_level. The new level was set correctly
           but no message was logged because the output wasn't added
