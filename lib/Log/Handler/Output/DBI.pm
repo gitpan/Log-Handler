@@ -216,6 +216,20 @@ Log a message to the database.
         time    => "2008-10-10 10:12:23",
     );
 
+Or you can connect to the database yourself. You should
+notice that if the database connection lost then the
+logger can't re-connect to the database and would return
+an error. You C<dbi_handle> at your own risk.
+
+    my $dbh = DBI->connect(...);
+
+    my $db = Log::Handler::Output::DBI->new(
+        dbi_handle => $dbh,
+        table      => "messages",
+        columns    => [ qw/level ctime message/ ],
+        values     => [ qw/%level %time %message/ ],
+    );
+
 =head2 connect()
 
 Connect to the database.
@@ -274,7 +288,7 @@ use DBI;
 use Carp;
 use Params::Validate qw();
 
-our $VERSION = "0.10";
+our $VERSION = "0.11";
 our $ERRSTR  = "";
 
 sub new {
@@ -314,7 +328,7 @@ sub log {
         return $self->_raise_error("DBI execute error: ".DBI->errstr);
     }
 
-    if (!$self->{persistent}) {
+    if (!$self->{persistent} && !$self->{dbi_handle}) {
         $self->disconnect or return undef;
     }
 
@@ -339,8 +353,19 @@ sub connect {
         warn "Connect to the database: $self->{cstr}->[0] ...";
     }
 
-    my $dbh = DBI->connect(@{$self->{cstr}})
-        or return $self->_raise_error("DBI connect error: ".DBI->errstr);
+    my $dbh;
+
+    if ($self->{dbi_handle}) {
+        # If db ping failed and dbi_handle and dbi is set
+        # then it seems that the database is down.
+        if ($self->{dbi}) {
+            return $self->_raise_error("dbi_handle - lost connection");
+        }
+        $dbh = $self->{dbi_handle};
+    } else {
+        $dbh = DBI->connect(@{$self->{cstr}})
+            or return $self->_raise_error("DBI connect error: ".DBI->errstr);
+    }
 
     my $sth = $dbh->prepare($self->{statement})
         or return $self->_raise_error("DBI prepare error: ".$dbh->errstr);
@@ -553,7 +578,7 @@ sub _validate {
         $options{statement} .= ")";
     }
 
-    if ($options{driver} =~ /oracle/i) {
+    if ($options{driver} && $options{driver} =~ /oracle/i) {
         $options{pingstmt} = "select 1 from dual";
     } else {
         $options{pingstmt} = "select 1";

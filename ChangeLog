@@ -1,3 +1,7 @@
+0.68_01 Released at 2010-12-07.
+        - Added option dbi_handle to DBI.pm.
+        - Bug fix RT #63687.
+
 0.68    Released at 2010-11-24.
         - Fixed a bug in add(). It wasn't possible to pass more
           than one output configuration to add().

@@ -311,7 +311,7 @@ METHODS
             %r   Runtime in seconds since program start
             %t   Time measurement - replaced with the time since the last call of $log->$level
             %m   Message
-            %%   Procent
+            %%   Percent
 
         The default message layout is set to "%T [%L] %m".
 

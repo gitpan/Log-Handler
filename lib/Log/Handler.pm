@@ -352,7 +352,7 @@ placeholders in C<printf()> style. The available placeholders are:
     %r   Runtime in seconds since program start
     %t   Time measurement - replaced with the time since the last call of $log->$level
     %m   Message
-    %%   Procent
+    %%   Percent
 
 The default message layout is set to S<"%T [%L] %m">.
 
@@ -1051,7 +1051,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.68";
+our $VERSION = "0.68_01";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
