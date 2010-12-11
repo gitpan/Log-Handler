@@ -1,3 +1,6 @@
+0.69    Released at 2010-12-11.
+        - Just a full release.
+
 0.68_01 Released at 2010-12-07.
         - Added option dbi_handle to DBI.pm.
         - Bug fix RT #63687.

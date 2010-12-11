@@ -219,7 +219,7 @@ Log a message to the database.
 Or you can connect to the database yourself. You should
 notice that if the database connection lost then the
 logger can't re-connect to the database and would return
-an error. You C<dbi_handle> at your own risk.
+an error. Use C<dbi_handle> at your own risk.
 
     my $dbh = DBI->connect(...);
 
