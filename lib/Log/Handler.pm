@@ -959,6 +959,14 @@ Just call
 
     my $log = Log::Handler->get_logger("myapp");
 
+If the logger does not exists then a new logger will be created
+and returned.
+
+=head2 exists_logger()
+
+With C<exists_logger()> it's possible to check if a logger exists
+and it returns TRUE or FALSE.
+
 =head1 EXAMPLES
 
 L<Log::Handler::Examples>
@@ -1051,7 +1059,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.69";
+our $VERSION = "0.70";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1156,7 +1164,7 @@ sub get_logger {
     my ($class, $logger) = @_;
 
     if (!exists $LOGGER{$logger}) {
-        croak "logger '$logger' does not exists";
+        return $class->create_logger($logger);
     }
 
     return $LOGGER{$logger};
@@ -1171,6 +1179,17 @@ sub create_logger {
     }
 
     return $LOGGER{$logger};
+}
+
+sub exists_logger {
+    @_ == 2 || croak 'Usage: Log::Handler->exists_logger($app)';
+    my ($class, $logger) = @_;
+
+    if (exists $LOGGER{$logger}) {
+        return 1;
+    }
+
+    return undef;
 }
 
 sub new {

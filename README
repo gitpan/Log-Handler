@@ -67,7 +67,7 @@ SYNOPSIS
         $log->info("info message from MyApp::Admin");
 
 DESCRIPTION
-    The "Log::Handler" is a object oriented handler for logging, tracing and
+    The `Log::Handler' is a object oriented handler for logging, tracing and
     debugging. It is very easy to use and provides a simple interface for
     multiple output objects with lots of configuration parameters. You can
     easily filter the amount of logged information on a per-output base,
@@ -77,17 +77,17 @@ DESCRIPTION
     See the documentation for details.
 
 IMPORTANT NOTES
-    Note that the default for option "newline" is now set to TRUE and
+    Note that the default for option `newline' is now set to TRUE and
     newlines will be appended automatically to each message if no newline
     exists.
 
     A long time I thought about this serious change and have come to the
     decision to change it.
 
-    The default for option "mode" from Log::Handler::Output::File is now
-    "append" and not "excl" anymore.
+    The default for option `mode' from Log::Handler::Output::File is now
+    `append' and not `excl' anymore.
 
-    The methods "reload()" and "validate()" are new since version 0.62. I
+    The methods `reload()' and `validate()' are new since version 0.62. I
     tested it with Screen.pm, File.pm and DBI.pm and it runs fine. If you
     find bugs then open a bug report please :-)
 
@@ -103,9 +103,9 @@ LOG LEVELS
         1   alert
         0   emergency, emerg
 
-    "debug" is the highest and "emergency" is the lowest level.
+    `debug' is the highest and `emergency' is the lowest level.
 
-    Level "debug" is the highest level because it basically says to log
+    Level `debug' is the highest level because it basically says to log
     every peep.
 
 LOG LEVEL METHODS
@@ -143,7 +143,7 @@ LOG LEVEL METHODS
 
     These twelve methods could be very useful if you want to kwow if the
     current level would log the message. All methods returns TRUE if the
-    current set of "minlevel" and "maxlevel" would log the message and FALSE
+    current set of `minlevel' and `maxlevel' would log the message and FALSE
     if not.
 
 SPECIAL LOG METHODS
@@ -158,12 +158,12 @@ SPECIAL LOG METHODS
 
 METHODS
   new()
-    Call "new()" to create a new log handler object.
+    Call `new()' to create a new log handler object.
 
         my $log = Log::Handler->new();
 
   add()
-    Call "add()" to add a new output object.
+    Call `add()' to add a new output object.
 
     The method expects 2 parts of options; the options for the handler and
     the options for the output module you want to use. The output modules
@@ -226,20 +226,20 @@ METHODS
             minlevel => 0
 
         It's possible to set the log level as string or as number. The
-        default setting for "maxlevel" is "warning" and the default setting
-        for "minlevel" is "emergency".
+        default setting for `maxlevel' is `warning' and the default setting
+        for `minlevel' is `emergency'.
 
-        Example: If "maxlevel" is set to "warning" and "minlevel" to
-        "emergency" then the levels "warning", "error", "critical", "alert"
-        and "emergency" would be logged.
+        Example: If `maxlevel' is set to `warning' and `minlevel' to
+        `emergency' then the levels `warning', `error', `critical', `alert'
+        and `emergency' would be logged.
 
-        You can set both to 8 or "nothing" if you want to disable the
+        You can set both to 8 or `nothing' if you want to disable the
         logging machine.
 
     timeformat
-        The option "timeformat" is used to set the format for the
-        placeholder %T. The string is converted with "POSIX::strftime". The
-        default format is set to "%b %d %H:%M:%S" and looks like
+        The option `timeformat' is used to set the format for the
+        placeholder `%T'. The string is converted with `POSIX::strftime'.
+        The default format is set to "%b %d %H:%M:%S" and looks like
 
             Feb 01 12:56:31
 
@@ -249,8 +249,8 @@ METHODS
             2007/02/01 12:56:31
 
     dateformat
-        This options works like "timeformat". You can set a format that is
-        used for the placeholder %D. It's just useful if you want to split
+        This options works like `timeformat'. You can set a format that is
+        used for the placeholder `%D'. It's just useful if you want to split
         the date and time:
 
             $log->add(file => {
@@ -269,7 +269,7 @@ METHODS
         This option is not used by default.
 
     newline
-        "newline" is a very helpful option. It let the logger appends a
+        `newline' is a very helpful option. It let the logger appends a
         newline to the message if a newline doesn't exist.
 
             0 - do nothing
@@ -291,7 +291,7 @@ METHODS
 
     message_layout
         With this option it's possible to create your own message layout
-        with different placeholders in "printf()" style. The available
+        with different placeholders in `printf()' style. The available
         placeholders are:
 
             %L   Log level
@@ -323,7 +323,7 @@ METHODS
 
             Feb 01 12:56:31 [ALERT] foo bar
 
-        If you set "message_layout" to
+        If you set `message_layout' to
 
             message_layout => "%T foo %L bar %m (%C)"
 
@@ -338,7 +338,7 @@ METHODS
         Traces will be appended after the complete message.
 
         You can create your own placeholders with the method
-        "set_pattern()".
+        `set_pattern()'.
 
     message_pattern
         This option is just useful if you want to forward messages to output
@@ -400,7 +400,7 @@ METHODS
             }
 
     prepare_message
-        "prepare_message" is useful if you want to do something with the
+        `prepare_message' is useful if you want to do something with the
         message before it will be logged... maybe you want to create your
         own layout because message_layout doesn't meet your claim.
 
@@ -456,13 +456,13 @@ METHODS
         Messages would be logged now at first to the screen.
 
     die_on_errors
-        Set "die_on_errors" to 0 if you don't want that the handler dies on
+        Set `die_on_errors' to 0 if you don't want that the handler dies on
         failed write operations.
 
             0 - to disable it
             1 - to enable it
 
-        If you set "die_on_errors" to 0 then you have to controll it
+        If you set `die_on_errors' to 0 then you have to controll it
         yourself.
 
             $log->info("info message") or die $log->errstr();
@@ -474,7 +474,7 @@ METHODS
     remove_on_reload
         This option is set to 1 by default.
 
-        Take a look to the decription of the method "reload" for more
+        Take a look to the decription of the method `reload' for more
         information about this option.
 
     filter_message
@@ -510,7 +510,7 @@ METHODS
             }
 
         It's also possible to define a simple condition with matches. Just
-        pass a hash reference with the options "matchN" and "condition".
+        pass a hash reference with the options `matchN' and `condition'.
         Example:
 
             $log->add(file => {
@@ -553,12 +553,12 @@ METHODS
 
             1;
 
-        This would only log the message from the package "Foo::Bar".
+        This would only log the message from the package `Foo::Bar'.
 
     except_caller
-        This option is just the opposite of "filter_caller".
+        This option is just the opposite of `filter_caller'.
 
-        If you want to log messages from all callers but "Foo::Bar":
+        If you want to log messages from all callers but `Foo::Bar':
 
             except_caller => qr/^Foo::Bar\z/
 
@@ -582,9 +582,9 @@ METHODS
             $log->output("screen-out")->log(message => "foo");
 
     debug_trace
-        You can activate a debugger that writes "caller()" information about
+        You can activate a debugger that writes `caller()' information about
         each active log level. The debugger is logging all defined values
-        except "hints" and "bitmask". Set "debug_trace" to 1 to activate the
+        except `hints' and `bitmask'. Set `debug_trace' to 1 to activate the
         debugger. The debugger is set to 0 by default.
 
     debug_mode
@@ -661,21 +661,21 @@ METHODS
                  wantarray   0
 
     debug_skip
-        This option let skip the "caller()" information the count of
-        "debug_skip".
+        This option let skip the `caller()' information the count of
+        `debug_skip'.
 
   output()
-    Call "output($alias)" to get the output object that you added with the
-    option "alias".
+    Call `output($alias)' to get the output object that you added with the
+    option `alias'.
 
     It's possible to access a output directly:
 
         $log->output($alias)->log(message => "booo");
 
-    For more information take a look to the option "alias".
+    For more information take a look to the option `alias'.
 
   flush()
-    Call "flush()" if you want to send flush to all outputs that can flush.
+    Call `flush()' if you want to send flush to all outputs that can flush.
 
     Flush means to flush buffers and/or close and re-open outputs.
 
@@ -690,8 +690,8 @@ METHODS
         $log->flush or die $log->errstr;
 
   errstr()
-    Call "errstr()" if you want to get the last error message. This is
-    useful if you set "die_on_errors" to 0 and the handler wouldn't die on
+    Call `errstr()' if you want to get the last error message. This is
+    useful if you set `die_on_errors' to `0' and the handler wouldn't die on
     failed write operations.
 
         use Log::Handler;
@@ -714,7 +714,7 @@ METHODS
         }
 
     The exception is that the handler dies in any case if the call of
-    "new()" or "add()" fails because on missing or wrong settings!
+    `new()' or `add()' fails because on missing or wrong settings!
 
   config()
     With this method it's possible to load your output configuration from a
@@ -750,15 +750,15 @@ METHODS
         });
 
     The key "default" is used here to define default parameters for all file
-    outputs. All other keys ("error_log", "common_log") are used as aliases.
+    outputs. All other keys (`error_log', `common_log') are used as aliases.
 
     Take a look into the documentation of Log::Handler::Config for more
     information.
 
   reload()
-    With the method "reload()" it's possible to reload the logging machine.
+    With the method `reload()' it's possible to reload the logging machine.
     Just pass the complete new configuration for all outputs, it works
-    exaclty like "config()".
+    exaclty like `config()'.
 
     At first you should know that it's highly recommended to set a alias for
     each output. If you don't set a alias then the logger doesn't know which
@@ -805,12 +805,12 @@ METHODS
 
     What happends now...
 
-    The file-output with the alias "debug" will be removed, the file-output
-    with the alias "common" will be reloaded and the output with the alias
-    "sendmail" will be added.
+    The file-output with the alias `debug' will be removed, the file-output
+    with the alias `common' will be reloaded and the output with the alias
+    `sendmail' will be added.
 
     If you don't want that output-objects will be removed because they were
-    added internal, then you can set the option "remove_on_reload" to 0.
+    added internal, then you can set the option `remove_on_reload' to 0.
 
     Example:
 
@@ -826,11 +826,11 @@ METHODS
     The forward-output is not removed after a reload.
 
   validate()
-    The method "validate()" expects the same arguments like "config()" and
-    "reload()".
+    The method `validate()' expects the same arguments like `config()' and
+    `reload()'.
 
     Maybe you want to validate your options before you pass them to
-    "config()" or "reload()".
+    `config()' or `reload()'.
 
     Example:
 
@@ -863,7 +863,7 @@ METHODS
             message_layout  => "%X %m%N",
         });
 
-    Or use it with "message_pattern":
+    Or use it with `message_pattern':
 
         sub func {
             my $m = shift;
@@ -875,13 +875,13 @@ METHODS
             message_pattern => "%X %m",
         });
 
-    Note: valid character for the key name are: "[%\w\-\.]+"
+    Note: valid character for the key name are: `[%\w\-\.]+'
 
   set_level()
     With this method it's possible to change the log level at runtime.
 
     To change the log level it's necessary to use a alias - see option
-    "alias".
+    `alias'.
 
         $log->set_level(
             $alias => { # option alias
@@ -891,20 +891,27 @@ METHODS
         );
 
   create_logger()
-    "create_logger()" is the same like "new()" but it creates a global
+    `create_logger()' is the same like `new()' but it creates a global
     logger.
 
         my $log = Log::Handler->create_logger("myapp");
 
   get_logger()
-    With "get_logger()" it's possible to get a logger that was created with
-    "create_logger()" or with
+    With `get_logger()' it's possible to get a logger that was created with
+    `create_logger()' or with
 
         use Log::Handler "myapp";
 
     Just call
 
         my $log = Log::Handler->get_logger("myapp");
+
+    If the logger does not exists then a new logger will be created and
+    returned.
+
+  exists_logger()
+    With `exists_logger()' it's possible to check if a logger exists and it
+    returns TRUE or FALSE.
 
 EXAMPLES
     Log::Handler::Examples

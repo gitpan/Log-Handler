@@ -1,3 +1,8 @@
+0.70    Released at 2011-01-07.
+        - Added exists_logger().
+        - get_logger() doesn't croak any more if a logger
+          doesn't exists.
+
 0.69    Released at 2010-12-11.
         - Just a full release.
 
