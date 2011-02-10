@@ -1059,7 +1059,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.70";
+our $VERSION = "0.71";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1574,6 +1574,7 @@ sub _split_options {
         newline
         priority
         timeformat
+        dateformat
         remove_on_reload
     );
 

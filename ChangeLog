@@ -1,3 +1,6 @@
+0.71    Released at 2011-02-10.
+        - Fixed RT#65515 and added dateformat to _split_options().
+
 0.70    Released at 2011-01-07.
         - Added exists_logger().
         - get_logger() doesn't croak any more if a logger
