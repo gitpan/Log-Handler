@@ -43,7 +43,7 @@ use warnings;
 use Carp;
 use UNIVERSAL;
 
-our $VERSION = "0.08";
+our $VERSION = "0.09";
 our $ERRSTR  = "";
 
 sub new {
@@ -73,11 +73,7 @@ sub log {
     # is that each output can have their own time/date format
     # and the code which is executed can return another value.
     foreach my $r (@{$self->{wanted_pattern}}) {
-        if (ref($r->{code})) {
-            $wanted->{$r->{name}} = &{$r->{code}}($self, $level);
-        } else {
-            $wanted->{$r->{name}} = $r->{code};
-        }
+        $wanted->{$r->{name}} = &{$r->{code}}($self, $level);
     }
 
     if ($self->{message_pattern}) {
@@ -115,6 +111,16 @@ sub log {
     if ($self->{newline} && $message->{message} !~ /(?:\015|\012)\z/) {
         $message->{message} .= "\n";
     }
+
+    # The substr solution to determine if a newline exists
+    # at the end of the message is ~60% faster than the regex.
+    # Maybe it will be released in the future.
+    #if ($self->{newline}) {
+    #    my $last = substr $message->{message}, -1, 1;
+    #    if ($last eq "\015" || $last eq "\012" || $last eq "\015\012" || $last eq "\012\015") {
+    #        $message->{message} .= "\n";
+    #    }
+    #}
 
     $output->log($message)
         or return $self->_raise_error($output->errstr);

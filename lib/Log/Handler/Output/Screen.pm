@@ -116,12 +116,19 @@ sub log {
     }
 
     if ($self->{log_to} eq "STDOUT") {
+        if ($self->{utf8}) {
+            binmode STDOUT, ":utf8";
+        }
         print STDOUT $message->{message}
             or return $self->_raise_error($!);
     } elsif ($self->{log_to} eq "STDERR") {
+        if ($self->{utf8}) {
+            binmode STDERR, ":utf8";
+        }
         print STDERR $message->{message}
             or return $self->_raise_error($!);
     } elsif ($self->{log_to} eq "WARN") {
+        # hmmm, should I really set utf8 for warnings?
         warn $message->{message};
     }
 
@@ -173,6 +180,11 @@ sub _validate {
             type => Params::Validate::SCALAR,
             regex => qr/^(?:STDOUT|STDERR|WARN)\z/,
             default => "STDOUT",
+        },
+        utf8 => {
+            type => Params::Validate::SCALAR,
+            regex => qr/^[01]\z/,
+            default => 0,
         },
         dump => {
             type => Params::Validate::SCALAR,

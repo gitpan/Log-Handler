@@ -1,3 +1,9 @@
+0.72    Released at 2012-03-07.
+        - Some code improvements to tune Log::Handler.
+          Each value that is passed to set_pattern and is not code
+          will be embedded into sub{}.
+        - Add option utf8 to Screen.pm (RT #75593).
+
 0.71    Released at 2011-02-10.
         - Fixed RT#65515 and added dateformat to _split_options().
 

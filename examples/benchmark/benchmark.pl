@@ -36,7 +36,6 @@ my $log3 = Log::Handler->new(); # complex pattern
 my $log4 = Log::Handler->new(); # message pattern
 my $log5 = Log::Handler->new(); # filtered caller
 my $log6 = Log::Handler->new(); # filtered message
-my $log7 = Log::Handler->new(); # categories
 
 $log1->add(
     forward => {
@@ -125,39 +124,6 @@ $log6->add(
     }
 );
 
-$log7->add(
-    forward => {
-        alias      => 'category',
-        maxlevel   => 'emerg',
-        minlevel   => 'emerg',
-        newline    => 1,
-        forward_to => \&buffer,
-        category   => "Foo",
-    }
-);
-
-$log7->add(
-    forward => {
-        alias      => 'category',
-        maxlevel   => 'emerg',
-        minlevel   => 'emerg',
-        newline    => 1,
-        forward_to => \&buffer,
-        category   => "Bar",
-    }
-);
-
-$log7->add(
-    forward => {
-        alias      => 'category',
-        maxlevel   => 'emerg',
-        minlevel   => 'emerg',
-        newline    => 1,
-        forward_to => \&buffer,
-        category   => "Baz",
-    }
-);
-
 my $count   = 100_000;
 my $message = 'foo bar baz';
 
@@ -169,7 +135,6 @@ run("suppressed output took",        $count, sub { $log2->debug($message)   } );
 run("filtered caller output took",   $count, \&Foo::emerg                     );
 run("suppressed caller output took", $count, \&Foo::Bar::emerg                );
 run("filtered messages output took", $count, sub { $log6->alert($message)   } );
-run("category output took",          $count, \&Foo::Bar::Baz::emerg           );
 
 sub run {
     my ($desc, $count, $bench) = @_;
@@ -184,8 +149,5 @@ sub emerg { $log5->emerg($message) }
 # Suppressed messages by caller
 package Foo::Bar;
 sub emerg { $log5->emerg($message) }
-
-package Foo::Bar::Baz;
-sub emerg { $log7->emerg($message) }
 
 1;

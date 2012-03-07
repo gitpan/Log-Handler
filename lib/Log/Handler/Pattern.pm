@@ -41,7 +41,7 @@ use Time::HiRes;
 use Log::Handler::Output;
 use constant START_TIME => scalar Time::HiRes::gettimeofday;
 
-our $VERSION = '0.03';
+our $VERSION = "0.04";
 my $progname = $0;
 $progname =~ s@.*[/\\]@@;
 
@@ -58,9 +58,9 @@ sub get_pattern {
         '%H'  => {  name => 'hostname',
                     code => \&Sys::Hostname::hostname },
         '%N'  => {  name => 'newline',
-                    code => "\n" },
+                    code => sub { "\n" } },
         '%S'  => {  name => 'progname',
-                    code => $progname },
+                    code => sub { $progname } },
         '%U'  => {  name => 'user',
                     code => \&_get_user },
         '%G'  => {  name => 'group',
