@@ -1,3 +1,8 @@
+0.74    Released at 2012-03-07.
+        - Removed "main" from _get_c_sub if caller returns undef.
+          Sorry, that was just for debugging :/
+        - 3 releases at one day... GRML
+
 0.73    Released at 2012-03-07.
         - Improved _get_c_sub in Pattern.pm (RT #75596).
 
