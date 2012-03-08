@@ -41,7 +41,7 @@ use Time::HiRes;
 use Log::Handler::Output;
 use constant START_TIME => scalar Time::HiRes::gettimeofday;
 
-our $VERSION = "0.04";
+our $VERSION = "0.05";
 my $progname = $0;
 $progname =~ s@.*[/\\]@@;
 
@@ -98,7 +98,7 @@ sub _get_caller  { my @c = caller(2+$Log::Handler::CALLER_LEVEL); "$c[1], line $
 sub _get_c_pkg   { (caller(2+$Log::Handler::CALLER_LEVEL))[0] }
 sub _get_c_file  { (caller(2+$Log::Handler::CALLER_LEVEL))[1] }
 sub _get_c_line  { (caller(2+$Log::Handler::CALLER_LEVEL))[2] }
-sub _get_c_sub   { (caller(2+$Log::Handler::CALLER_LEVEL))[3] }
+sub _get_c_sub   { (caller(3+$Log::Handler::CALLER_LEVEL))[3]//"main" }
 sub _get_runtime { return sprintf('%.6f', Time::HiRes::gettimeofday - START_TIME) }
 sub _get_user    { getpwuid($<) || $<     }
 sub _get_group   { getgrgid($(+0) || $(+0 }

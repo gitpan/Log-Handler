@@ -1,3 +1,6 @@
+0.73    Released at 2012-03-07.
+        - Improved _get_c_sub in Pattern.pm (RT #75596).
+
 0.72    Released at 2012-03-07.
         - Some code improvements to tune Log::Handler.
           Each value that is passed to set_pattern and is not code
