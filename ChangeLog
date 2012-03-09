@@ -1,3 +1,8 @@
+0.75    Released at 2012-03-09.
+        - Quick fix and replaced the "defined or" operator // with || in
+          Pattern.pm, line 101 for backward compability with Perl < 5.10.
+          Thanks to all CPAN smoker for the fix test reports!
+
 0.74    Released at 2012-03-07.
         - Removed "main" from _get_c_sub if caller returns undef.
           Sorry, that was just for debugging :/
