@@ -288,7 +288,7 @@ use DBI;
 use Carp;
 use Params::Validate qw();
 
-our $VERSION = "0.11";
+our $VERSION = "0.12";
 our $ERRSTR  = "";
 
 sub new {
@@ -442,6 +442,10 @@ sub _validate {
     my $class = shift;
 
     my %options = Params::Validate::validate(@_, {
+        dbi_handle => {
+            type => Params::Validate::OBJECT,
+            optional => 1,
+        },
         data_source => {
             type => Params::Validate::SCALAR,
             optional => 1,
@@ -535,7 +539,7 @@ sub _validate {
                 $cstr[0] .= ";port=$options{port}";
             }
         }
-    } else {
+    } elsif (!defined $options{dbi_handle}) {
         Carp::croak "Missing mandatory options data_source or database/dbname";
     }
 

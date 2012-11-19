@@ -1,3 +1,6 @@
+0.76    Released at 2012-11-19.
+        - Fixed dbi_handle in DBI.pm (RT #81155).
+
 0.75    Released at 2012-03-09.
         - Quick fix and replaced the "defined or" operator // with || in
           Pattern.pm, line 101 for backward compability with Perl < 5.10.
