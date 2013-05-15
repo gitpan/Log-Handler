@@ -1,3 +1,6 @@
+0.77    Released at 2013-05-15.
+        - Just fixed Pod::Coverage testing in 002-pod-coverage.t.
+
 0.76    Released at 2012-11-19.
         - Fixed dbi_handle in DBI.pm (RT #81155).
 
