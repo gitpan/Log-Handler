@@ -13,10 +13,10 @@ name: Log-Handler
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.77
+    version: 0.78
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
-    version: 0.07
+    version: 0.08
   Log::Handler::Levels:
     file: lib/Log/Handler/Levels.pm
     version: 0.06
@@ -77,4 +77,4 @@ requires:
   UNIVERSAL: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.77
+version: 0.78

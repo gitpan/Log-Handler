@@ -1059,7 +1059,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.77";
+our $VERSION = "0.78";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1273,7 +1273,6 @@ sub config {
 
 sub validate {
     my $self   = shift;
-    my $class  = ref($self);
     my @v_opts = (); # validated options
 
     eval {
@@ -1297,9 +1296,8 @@ sub validate {
 }
 
 sub reload {
-    my $self  = shift;
-    my $class = ref($self);
-    my $opts  = $self->validate(@_);
+    my $self = shift;
+    my $opts = $self->validate(@_);
 
     if (!$opts) {
         return undef;

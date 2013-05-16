@@ -355,7 +355,7 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.07';
+our $VERSION = '0.08';
 
 use Carp;
 use File::Spec;
@@ -423,10 +423,11 @@ sub _get_hash_config {
     my %default = ();
 
     if (exists $config->{default}) {
-        %default = %{ delete $config->{default} };
+        %default = %{ $config->{default} };
     }
 
     foreach my $alias (keys %$config) {
+        next if $alias eq "default";
         my $param = $config->{$alias};
 
         if (ref($param) ne 'HASH') {
