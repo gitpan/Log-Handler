@@ -2,9 +2,11 @@
 abstract: 'Log messages to several outputs.'
 author:
   - 'Jonny Schulz'
+build_requires: {}
 configure_requires:
-  Module::Build: 0.36
-generated_by: 'Module::Build version 0.3607'
+  Module::Build: 0.40
+dynamic_config: 1
+generated_by: 'Module::Build version 0.4001, CPAN::Meta::Converter version 2.110440'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -13,7 +15,7 @@ name: Log-Handler
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.78
+    version: 0.79
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
     version: 0.08
@@ -77,4 +79,4 @@ requires:
   UNIVERSAL: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.78
+version: 0.79

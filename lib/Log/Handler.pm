@@ -572,6 +572,51 @@ NOTE that re-eval in regexes is not valid! Something like
 
 would cause an error!
 
+=item B<category>
+
+The parameter C<category> works like C<filter_caller> but is much easier to configure.
+You can set a comma separated list of modules. As example if you would set the category to
+
+    category => "MyApp::User"
+
+then all messages of MyApp::User and the submodules would be logged.
+
+Example:
+
+    my $log = Log::Handler->new();
+
+    $log->add(
+        screen => {
+            maxlevel => "info",
+            category => "MyApp::User, MyApp::Session"
+        }
+    );
+
+    package MyApp;
+    $log->info(__PACKAGE__);
+
+    package MyApp::Products;
+    $log->info(__PACKAGE__);
+
+    package MyApp::User;
+    $log->info(__PACKAGE__);
+
+    package MyApp::Users;
+    $log->info(__PACKAGE__);
+
+    package MyApp::User::Settings;
+    $log->info(__PACKAGE__);
+
+    package MyApp::Session;
+    $log->info(__PACKAGE__);
+
+    package MyApp::Session::Settings;
+    $log->info(__PACKAGE__);
+
+The messages of C<MyApp> and C<MyApp::Products> would not be logged.
+
+The usage of categories is much faster than to filter by caller.
+
 =item B<filter_caller>
 
 You can use this option to set a package name. Only messages from this
@@ -1059,7 +1104,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.78";
+our $VERSION = "0.79";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1579,6 +1624,7 @@ sub _split_options {
         timeformat
         dateformat
         remove_on_reload
+        category
     );
 
     foreach my $key (keys %$opts) {
@@ -1725,6 +1771,10 @@ sub _validate_options {
             type => Params::Validate::SCALAR | Params::Validate::SCALARREF,
             optional => 1,
         },
+        category => {
+            type => Params::Validate::SCALAR,
+            optional => 1,
+        },
         except_caller => {
             type => Params::Validate::SCALAR | Params::Validate::SCALARREF,
             optional => 1,
@@ -1734,6 +1784,13 @@ sub _validate_options {
             default => 1,
         },
     });
+
+    if ($options{category}) {
+        my $category = $options{category};
+        $category =~ s/\s//g;
+        $category = "^(?:" . join("|", map { $_ } split(/,/, $category) ) . ")(?:::|\\z)";
+        $options{category} = qr/$category/;
+    }
 
     if (!$options{alias}) {
         for (;;) {

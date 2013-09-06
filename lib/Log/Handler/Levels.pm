@@ -202,13 +202,28 @@ foreach my $routine (keys %LEVELS_BY_ROUTINE) {
             use strict 'refs';
             my $self   = shift;
             my $levels = $self->{levels};
-            my $errors = ();
+            my ($errors, $caller);
 
             if ( !$levels->{$level} ) {
                 return 1;
             }
 
             foreach my $output ( @{$levels->{$level}} ) {
+                if ($output->{category} || $output->{filter_caller} || $output->{except_caller}) {
+                    if (!$caller) {
+                        $caller = (caller($Log::Handler::CALLER_LEVEL))[0];
+                    }
+
+                    if ($output->{category}) {
+                        my $category = $output->{category};
+                        return 1 if $caller !~ $output->{category};
+                    } elsif ($output->{filter_caller}) {
+                        return 1 if $caller !~ $output->{filter_caller};
+                    } elsif ($output->{except_caller}) {
+                        return 1 if $caller =~ $output->{except_caller};
+                    }
+                }
+
                 if ( !$output->log($level, @_) ) {
                     if ( defined $errors ) {
                         $errors .= '; ' . $output->errstr;
