@@ -170,7 +170,7 @@ use warnings;
 use Carp;
 use Data::Dumper;
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 my %LEVELS_BY_ROUTINE = (
     debug     => 'DEBUG',
@@ -286,11 +286,12 @@ sub die {
 sub dump {
     my $self  = shift;
     my $level = @_ > 1 ? lc(shift) : 'debug';
+    my $is_level = "is_$level";
     if (!exists $LEVELS_BY_ROUTINE{$level}) {
         $level = 'debug';
     }
     local $Log::Handler::CALLER_LEVEL = 1;
-    return $self->$level(Dumper(@_));
+    return $self->$is_level ? $self->$level(Dumper(@_)) : 1;
 }
 
 1;

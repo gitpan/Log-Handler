@@ -46,7 +46,7 @@
    "provides" : {
       "Log::Handler" : {
          "file" : "lib/Log/Handler.pm",
-         "version" : "0.79"
+         "version" : "0.80"
       },
       "Log::Handler::Config" : {
          "file" : "lib/Log/Handler/Config.pm",
@@ -54,7 +54,7 @@
       },
       "Log::Handler::Levels" : {
          "file" : "lib/Log/Handler/Levels.pm",
-         "version" : "0.06"
+         "version" : "0.07"
       },
       "Log::Handler::Output" : {
          "file" : "lib/Log/Handler/Output.pm",
@@ -111,5 +111,5 @@
          "http://dev.perl.org/licenses/"
       ]
    },
-   "version" : "0.79"
+   "version" : "0.80"
 }

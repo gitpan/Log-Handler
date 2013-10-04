@@ -1,3 +1,7 @@
+0.80    Released at 2013-10-04.
+        - Fixed RT #89250 - dump() calls Dumper() now only if the log
+          level is active.
+
 0.79    Released at 2013-09-06.
         - Added option "category".
 
