@@ -1,3 +1,6 @@
+0.81    Released at 2013-11-01.
+        - Added param utf-8 to Screen.pm and File.pm.
+
 0.80    Released at 2013-10-04.
         - Fixed RT #89250 - dump() calls Dumper() now only if the log
           level is active.

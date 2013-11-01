@@ -132,10 +132,16 @@ permissions. All other users got no access.
 
 Take a look to the documentation of C<sysopen()> to get more information.
 
-=item B<utf8>
+=item B<utf8>, B<utf-8>
 
-If this option is set to 1 then UTF-8 will be set with C<binmode()> on the
-output filehandle.
+    utf8   =  binmode, $fh, ":utf8";
+    utf-8  =  binmode, $fh, "encoding(utf-8)"; 
+
+Yes, there is a difference.
+
+L<http://perldoc.perl.org/perldiag.html#Malformed-UTF-8-character-(%25s)>
+
+L<http://perldoc.perl.org/Encode.html#UTF-8-vs.-utf8-vs.-UTF8>
 
 =back
 
@@ -211,7 +217,7 @@ use Fcntl qw( :flock O_WRONLY O_APPEND O_TRUNC O_EXCL O_CREAT );
 use File::Spec;
 use Params::Validate qw();
 
-our $VERSION = "0.06";
+our $VERSION = "0.07";
 our $ERRSTR  = "";
 
 sub new {
@@ -342,6 +348,8 @@ sub _open {
 
     if ($self->{utf8}) {
         binmode $fh, ":utf8";
+    } elsif ($self->{"utf-8"}) {
+        binmode $fh, "encoding(utf-8)";
     }
 
     if ($self->{reopen}) {
@@ -402,6 +410,11 @@ sub _validate {
             default => "0640",
         },
         utf8 => {
+            type => Params::Validate::SCALAR,
+            regex => $bool_rx,
+            default => 0,
+        },
+        "utf-8" => {
             type => Params::Validate::SCALAR,
             regex => $bool_rx,
             default => 0,

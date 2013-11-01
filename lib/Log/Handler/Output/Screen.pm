@@ -40,6 +40,19 @@ The default is STDOUT.
 Set this option to 1 if you want that the message will be dumped with
 C<Data::Dumper> to the screen.
 
+=item B<utf8>, B<utf-8>
+
+Set utf8 or utf-8 on STDOUT or STDERR. It depends on the parameter B<log_to>.
+
+    utf8   =  binmode, $fh, ":utf8";
+    utf-8  =  binmode, $fh, "encoding(utf-8)"; 
+
+Yes, there is a difference.
+
+L<http://perldoc.perl.org/perldiag.html#Malformed-UTF-8-character-(%25s)>
+
+L<http://perldoc.perl.org/Encode.html#UTF-8-vs.-utf8-vs.-UTF8>
+
 =back
 
 =head2 log()
@@ -97,7 +110,7 @@ use warnings;
 use Data::Dumper;
 use Params::Validate qw();
 
-our $VERSION = "0.06";
+our $VERSION = "0.07";
 our $ERRSTR  = "";
 
 sub new {
@@ -118,12 +131,16 @@ sub log {
     if ($self->{log_to} eq "STDOUT") {
         if ($self->{utf8}) {
             binmode STDOUT, ":utf8";
+        } elsif ($self->{"utf-8"}) {
+            binmode STDOUT, "encoding(utf-8)";
         }
         print STDOUT $message->{message}
             or return $self->_raise_error($!);
     } elsif ($self->{log_to} eq "STDERR") {
         if ($self->{utf8}) {
             binmode STDERR, ":utf8";
+        } elsif ($self->{"utf-8"}) {
+            binmode STDERR, "encoding(utf-8)";
         }
         print STDERR $message->{message}
             or return $self->_raise_error($!);
@@ -182,6 +199,11 @@ sub _validate {
             default => "STDOUT",
         },
         utf8 => {
+            type => Params::Validate::SCALAR,
+            regex => qr/^[01]\z/,
+            default => 0,
+        },
+        "utf-8" => {
             type => Params::Validate::SCALAR,
             regex => qr/^[01]\z/,
             default => 0,
