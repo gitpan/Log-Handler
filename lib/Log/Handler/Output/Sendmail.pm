@@ -189,7 +189,7 @@ use warnings;
 use Carp;
 use Params::Validate qw();
 
-our $VERSION = "0.06";
+our $VERSION = "0.07";
 our $ERRSTR  = "";
 our $TEST    =  0; # is needed to disable flush() for tests
 
@@ -338,7 +338,7 @@ sub _sendmail {
     }
 
     open my $fh, "|$sendmail"
-        or return $self->raise_error("unable to execute '$self->{sendmail}' - $!");
+        or return $self->_raise_error("unable to execute '$self->{sendmail}' - $!");
 
     my $ret = print $fh $header, "\n", $self->{message};
 
@@ -348,7 +348,7 @@ sub _sendmail {
     $self->{length}  = 0;
 
     if (!$ret) {
-        return $self->raise_error("unable to write to stdin - $!");
+        return $self->_raise_error("unable to write to stdin - $!");
     }
 
     return 1;

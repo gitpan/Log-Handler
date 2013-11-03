@@ -1,3 +1,6 @@
+0.82    Released at 2013-11-03.
+        - Fixed the calls of _raise_error (RT #89989).
+
 0.81    Released at 2013-11-01.
         - Added param utf-8 to Screen.pm and File.pm.
 

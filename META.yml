@@ -15,7 +15,7 @@ name: Log-Handler
 provides:
   Log::Handler:
     file: lib/Log/Handler.pm
-    version: 0.81
+    version: 0.82
   Log::Handler::Config:
     file: lib/Log/Handler/Config.pm
     version: 0.08
@@ -42,7 +42,7 @@ provides:
     version: 0.07
   Log::Handler::Output::Sendmail:
     file: lib/Log/Handler/Output/Sendmail.pm
-    version: 0.06
+    version: 0.07
   Log::Handler::Output::Socket:
     file: lib/Log/Handler/Output/Socket.pm
     version: 0.08
@@ -79,4 +79,4 @@ requires:
   UNIVERSAL: 0
 resources:
   license: http://dev.perl.org/licenses/
-version: 0.81
+version: 0.82
