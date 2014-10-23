@@ -355,7 +355,7 @@ package Log::Handler::Config;
 
 use strict;
 use warnings;
-our $VERSION = '0.08';
+our $VERSION = '0.09';
 
 use Carp;
 use File::Spec;
@@ -382,7 +382,7 @@ sub config {
         if ($ref eq 'HASH') {
             push @{$log_config{$type}}, $self->_get_hash_config($output);
         } elsif ($ref eq 'ARRAY') {
-            push @{$log_config{$type}}, $self->_get_array_config($output);
+            push @{$log_config{$type}}, @$output;
         } else {
             croak "Bad config structure for '$type'";
         }
@@ -438,17 +438,6 @@ sub _get_hash_config {
         $param->{alias} = $alias;
         my %config = (%default, %$param);
         push @config, \%config;
-    }
-
-    return @config;
-}
-
-sub _get_array_config {
-    my ($self, $config) = @_;
-    my @config = ();
-
-    foreach my $params (@$config) {
-        push @config, $params;
     }
 
     return @config;

@@ -986,6 +986,51 @@ To change the log level it's necessary to use a alias - see option C<alias>.
         }
     );
 
+=head2 set_default_param()
+
+With this methods it's possible to overwrite the default settings for new outputs.
+
+Normally you would do something like
+
+    $log->add(
+        file => {
+            filename => "debug.log",
+            maxlevel => "info",
+            timeformat => "%b %d %Y %H:%M:%S",
+            message_layout => "[%T] %L %P %t %m (%C)"
+        }
+    );
+
+    $log->add(
+        file => {
+            filename => "error.log",
+            maxlevel => "error",
+            timeformat => "%b %d %Y %H:%M:%S",
+            message_layout => "[%T] %L %P %t %m (%C)"
+        }
+    );
+
+Now you can simplify it with
+
+    $log->set_default_param(
+        timeformat => "%b %d %Y %H:%M:%S",
+        message_layout => "[%T] %L %P %t %m (%C)"
+    );
+
+    $logg->add(
+        file => {
+            filename => "debug.log",
+            maxlevel => "info"
+        }
+    );
+
+    $log->add(
+        file => {
+            filename => "error.log",
+            maxlevel => "error"
+        }
+    );
+
 =head2 create_logger()
 
 C<create_logger()> is the same like C<new()> but it creates a global
@@ -1104,7 +1149,7 @@ use Log::Handler::Pattern;
 use UNIVERSAL;
 use base qw(Log::Handler::Levels);
 
-our $VERSION = "0.82";
+our $VERSION = "0.83";
 our $ERRSTR  = "";
 
 # $TRACE and $CALLER_LEVEL are both used as global
@@ -1247,6 +1292,7 @@ sub new {
         outputs  => [ ],        # all Output::* objects - for flush()
         pattern  =>             # default pattern
             &Log::Handler::Pattern::get_pattern,
+        param_defaults => { }
     }, $class;
 
     if (@_) {
@@ -1415,6 +1461,16 @@ sub reload {
     return 1;
 }
 
+sub set_default_param {
+    my $self = shift;
+
+    while (@_) {
+        my $param = shift;
+        my $value = shift;
+        $self->{param_defaults}->{$param} = $value;
+    }
+}
+
 sub set_pattern {
     (@_ == 3 || @_ == 4)
         or Carp::croak 'Usage: $log->set_pattern( $pattern, $name, $code )';
@@ -1556,6 +1612,110 @@ sub errstr {
 # private stuff
 #
 
+sub _build_params {
+    my $self = shift;
+
+    my %params = (
+        timeformat => {
+            type => Params::Validate::SCALAR,
+            default => "%b %d %H:%M:%S",
+        },
+        dateformat => {
+            type => Params::Validate::SCALAR,
+            default => "%b %d %Y",
+        },
+        message_layout => {
+            type => Params::Validate::SCALAR,
+            default => "%T [%L] %m",
+        },
+        message_pattern => {
+            type => Params::Validate::SCALAR
+                  | Params::Validate::ARRAYREF,
+            optional => 1,
+        },
+        prepare_message => {
+            type => Params::Validate::CODEREF,
+            optional => 1,
+        },
+        newline => {
+            type => Params::Validate::SCALAR,
+            regex => BOOL_RX,
+            default => 1,
+        },
+        minlevel => {
+            type => Params::Validate::SCALAR,
+            regex => LEVEL_RX,
+            default => 0,
+        },
+        maxlevel => {
+            type => Params::Validate::SCALAR,
+            regex => LEVEL_RX,
+            default => 4,
+        },
+        die_on_errors => {
+            type => Params::Validate::SCALAR,
+            regex => BOOL_RX,
+            default => 1,
+        },
+        priority => {
+            type => Params::Validate::SCALAR,
+            regex => NUMB_RX,
+            default => undef,
+        },
+        debug_trace => {
+            type => Params::Validate::SCALAR,
+            regex => BOOL_RX,
+            default => 0,
+        },
+        debug_mode => {
+            type => Params::Validate::SCALAR,
+            regex => NUMB_RX,
+            default => 1,
+        },
+        debug_skip => {
+            type => Params::Validate::SCALAR,
+            regex => NUMB_RX,
+            default => 0,
+        },
+        alias => {
+            type => Params::Validate::SCALAR,
+            optional => 1,
+        },
+        filter_message => {
+            type => Params::Validate::SCALAR    # "foo"
+                  | Params::Validate::SCALARREF # qr/foo/
+                  | Params::Validate::CODEREF   # sub { shift->{message} =~ /foo/ }
+                  | Params::Validate::HASHREF,  # matchN, condition
+            optional => 1,
+        },
+        filter_caller => {
+            type => Params::Validate::SCALAR | Params::Validate::SCALARREF,
+            optional => 1,
+        },
+        category => {
+            type => Params::Validate::SCALAR,
+            optional => 1,
+        },
+        except_caller => {
+            type => Params::Validate::SCALAR | Params::Validate::SCALARREF,
+            optional => 1,
+        },
+        remove_on_reload => {
+            type => Params::Validate::SCALAR,
+            default => 1,
+        }
+    );
+
+    foreach my $param (keys %{$self->{param_defaults}}) {
+        if (!exists $params{$param}) {
+            Carp::croak "parameter '$param' does not exists";
+        }
+        $params{$param}{default} = $self->{param_defaults}->{$param};
+    }
+
+    return \%params;
+}
+
 sub _split_config {
     my $self = shift;
     my $type = shift;
@@ -1694,96 +1854,7 @@ sub _validate_options {
         $args[0]{filter_message} = delete $args[0]{filter};
     }
 
-    my %options = Params::Validate::validate(@args, {
-        timeformat => {
-            type => Params::Validate::SCALAR,
-            default => "%b %d %H:%M:%S",
-        },
-        dateformat => {
-            type => Params::Validate::SCALAR,
-            default => "%b %d %Y",
-        },
-        message_layout => {
-            type => Params::Validate::SCALAR,
-            default => "%T [%L] %m",
-        },
-        message_pattern => {
-            type => Params::Validate::SCALAR
-                  | Params::Validate::ARRAYREF,
-            optional => 1,
-        },
-        prepare_message => {
-            type => Params::Validate::CODEREF,
-            optional => 1,
-        },
-        newline => {
-            type => Params::Validate::SCALAR,
-            regex => BOOL_RX,
-            default => 1,
-        },
-        minlevel => {
-            type => Params::Validate::SCALAR,
-            regex => LEVEL_RX,
-            default => 0,
-        },
-        maxlevel => {
-            type => Params::Validate::SCALAR,
-            regex => LEVEL_RX,
-            default => 4,
-        },
-        die_on_errors => {
-            type => Params::Validate::SCALAR,
-            regex => BOOL_RX,
-            default => 1,
-        },
-        priority => {
-            type => Params::Validate::SCALAR,
-            regex => NUMB_RX,
-            default => undef,
-        },
-        debug_trace => {
-            type => Params::Validate::SCALAR,
-            regex => BOOL_RX,
-            default => 0,
-        },
-        debug_mode => {
-            type => Params::Validate::SCALAR,
-            regex => NUMB_RX,
-            default => 1,
-        },
-        debug_skip => {
-            type => Params::Validate::SCALAR,
-            regex => NUMB_RX,
-            default => 0,
-        },
-        alias => {
-            type => Params::Validate::SCALAR,
-            optional => 1,
-        },
-        filter_message => {
-            type => Params::Validate::SCALAR    # "foo"
-                  | Params::Validate::SCALARREF # qr/foo/
-                  | Params::Validate::CODEREF   # sub { shift->{message} =~ /foo/ }
-                  | Params::Validate::HASHREF,  # matchN, condition
-            optional => 1,
-        },
-        filter_caller => {
-            type => Params::Validate::SCALAR | Params::Validate::SCALARREF,
-            optional => 1,
-        },
-        category => {
-            type => Params::Validate::SCALAR,
-            optional => 1,
-        },
-        except_caller => {
-            type => Params::Validate::SCALAR | Params::Validate::SCALARREF,
-            optional => 1,
-        },
-        remove_on_reload => {
-            type => Params::Validate::SCALAR,
-            default => 1,
-        },
-    });
+    my %options = Params::Validate::validate(@args, $self->_build_params);
 
     if ($options{category}) {
         my $category = $options{category};
