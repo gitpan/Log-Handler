@@ -530,6 +530,51 @@ METHODS
 
         would cause an error!
 
+    category
+        The parameter `category' works like `filter_caller' but is much
+        easier to configure. You can set a comma separated list of modules.
+        As example if you would set the category to
+
+            category => "MyApp::User"
+
+        then all messages of MyApp::User and the submodules would be logged.
+
+        Example:
+
+            my $log = Log::Handler->new();
+
+            $log->add(
+                screen => {
+                    maxlevel => "info",
+                    category => "MyApp::User, MyApp::Session"
+                }
+            );
+
+            package MyApp;
+            $log->info(__PACKAGE__);
+
+            package MyApp::Products;
+            $log->info(__PACKAGE__);
+
+            package MyApp::User;
+            $log->info(__PACKAGE__);
+
+            package MyApp::Users;
+            $log->info(__PACKAGE__);
+
+            package MyApp::User::Settings;
+            $log->info(__PACKAGE__);
+
+            package MyApp::Session;
+            $log->info(__PACKAGE__);
+
+            package MyApp::Session::Settings;
+            $log->info(__PACKAGE__);
+
+        The messages of `MyApp' and `MyApp::Products' would not be logged.
+
+        The usage of categories is much faster than to filter by caller.
+
     filter_caller
         You can use this option to set a package name. Only messages from
         this packages will be logged.
@@ -887,6 +932,51 @@ METHODS
             $alias => { # option alias
                 minlevel => $new_minlevel,
                 maxlevel => $new_maxlevel,
+            }
+        );
+
+  set_default_param()
+    With this methods it's possible to overwrite the default settings for
+    new outputs.
+
+    Normally you would do something like
+
+        $log->add(
+            file => {
+                filename => "debug.log",
+                maxlevel => "info",
+                timeformat => "%b %d %Y %H:%M:%S",
+                message_layout => "[%T] %L %P %t %m (%C)"
+            }
+        );
+
+        $log->add(
+            file => {
+                filename => "error.log",
+                maxlevel => "error",
+                timeformat => "%b %d %Y %H:%M:%S",
+                message_layout => "[%T] %L %P %t %m (%C)"
+            }
+        );
+
+    Now you can simplify it with
+
+        $log->set_default_param(
+            timeformat => "%b %d %Y %H:%M:%S",
+            message_layout => "[%T] %L %P %t %m (%C)"
+        );
+
+        $logg->add(
+            file => {
+                filename => "debug.log",
+                maxlevel => "info"
+            }
+        );
+
+        $log->add(
+            file => {
+                filename => "error.log",
+                maxlevel => "error"
             }
         );
 

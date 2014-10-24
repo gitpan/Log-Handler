@@ -1,3 +1,6 @@
+0.84    Released at 2014-10-24.
+        - Fixed some version conflicts.
+
 0.83    Released at 2014-10-23.
         - Added method set_default_param.
 

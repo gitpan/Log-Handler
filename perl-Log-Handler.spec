@@ -1,6 +1,6 @@
 Summary: Log Handler
 Name: perl-Log-Handler
-Version: 0.83
+Version: 0.84
 Release: 1%{dist}
 License: GPL+ or Artistic
 Group: Development/Libraries
@@ -44,6 +44,8 @@ rm -rf %{buildroot}
 %{_mandir}/man3/*
 
 %changelog
+* Fri Oct 24 2014 Jonny Schulz <js@bloonix.de> - 0.84-1
+- Fixed some version conflicts.
 * Thu Oct 23 2014 Jonny Schulz <js@bloonix.de> - 0.83-1
 - Added method set_default_param.
 * Mon Aug 25 2014 Jonny Schulz <js@bloonix.de> - 0.82-1
